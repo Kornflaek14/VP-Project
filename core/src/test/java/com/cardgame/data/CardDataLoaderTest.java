@@ -21,34 +21,34 @@ class CardDataLoaderTest {
         try (InputStream is = getClass().getResourceAsStream("/cards.json")) {
             assertNotNull(is, "cards.json not found on test classpath");
             List<CardData> cards = CardDataLoader.load(is);
-            assertEquals(4, cards.size(), "Expected 4 cards in cards.json");
+            assertEquals(6, cards.size(), "Expected 6 cards in cards.json");
         }
     }
 
     @Test
-    void load_goblinGrunt_hasCorrectStats() throws Exception {
+    void load_scalpel_hasCorrectStats() throws Exception {
         try (InputStream is = getClass().getResourceAsStream("/cards.json")) {
             Map<String, CardData> map = CardDataLoader.loadAsMap(is);
-            CardData goblin = map.get("goblin_grunt");
+            CardData scalpel = map.get("scalpel");
 
-            assertNotNull(goblin, "goblin_grunt not found");
-            assertEquals("Goblin Grunt", goblin.name());
-            assertEquals(1, goblin.manaCost());
-            assertEquals(1, goblin.attack());
-            assertEquals(2, goblin.health());
-            assertTrue(goblin.abilityIds().isEmpty());
+            assertNotNull(scalpel, "scalpel not found");
+            assertEquals("Scalpel", scalpel.name());
+            assertEquals(1, scalpel.bloodCost());
+            assertEquals(2, scalpel.attack());
+            assertEquals(1, scalpel.health());
+            assertTrue(scalpel.abilityIds().isEmpty());
         }
     }
 
     @Test
-    void load_stoneGolem_hasTauntAbility() throws Exception {
+    void load_mask_hasTauntAbility() throws Exception {
         try (InputStream is = getClass().getResourceAsStream("/cards.json")) {
             Map<String, CardData> map = CardDataLoader.loadAsMap(is);
-            CardData golem = map.get("stone_golem");
+            CardData brute = map.get("mask");
 
-            assertNotNull(golem);
-            assertTrue(golem.abilityIds().contains("taunt"),
-                    "stone_golem should have the 'taunt' ability ID");
+            assertNotNull(brute);
+            assertTrue(brute.abilityIds().contains("taunt"),
+                    "mask should have the 'taunt' ability ID");
         }
     }
 

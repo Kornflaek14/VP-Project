@@ -2,12 +2,14 @@ package com.cardgame.logic;
 
 import com.cardgame.data.CardData;
 import com.cardgame.logic.events.GameEvent;
+import com.cardgame.logic.events.GameOverEvent;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Authoritative snapshot of every piece of game state.
@@ -26,18 +28,21 @@ public final class GameState {
      * All runtime data for one player (hand, board, deck, mana, health).
      */
     public static final class PlayerState {
-        public final List<CardInstance> hand  = new ArrayList<>();
-        public final List<CardInstance> board = new ArrayList<>();
-        public final List<CardData>     deck  = new ArrayList<>();
-        public int mana    = 0;
-        public int maxMana = 0;
-        public int health  = Constants.STARTING_HEALTH;
+        public final List<CardInstance> hand        = new ArrayList<>();
+        public final CardInstance[]     board       = new CardInstance[Constants.MAX_BOARD_SIZE];
+        public final List<CardData>     deck        = new ArrayList<>();
+        public final List<CardData>     discardPile = new ArrayList<>();
+        public int bones           = 0;
+        public int sacrificeCredit = 0; // consumed when playing a card with bloodCost
     }
 
     // ── Fields ─────────────────────────────────────────────────────────────────
 
     private final PlayerState[] players;
     private int currentPlayer = 0;  // whose turn it is (0 or 1)
+    
+    // Scale starts balanced at 0. Positive is Player 0 advantage. Negative is Player 1 advantage.
+    private int scaleBalance = 0; 
 
     /** Events produced by actions; drained by the rendering layer each frame. */
     private final Deque<GameEvent> eventQueue = new ArrayDeque<>();
@@ -67,13 +72,32 @@ public final class GameState {
     // ── Convenience wrappers ───────────────────────────────────────────────────
 
     public List<CardInstance> getHand(int player)  { return getPlayer(player).hand;  }
-    public List<CardInstance> getBoard(int player) { return getPlayer(player).board; }
-    public int getMana(int player)                 { return getPlayer(player).mana;  }
-    public int getHealth(int player)               { return getPlayer(player).health; }
+    public CardInstance[] getBoard(int player)     { return getPlayer(player).board; }
+    public int getBones(int player)                { return getPlayer(player).bones; }
+    public void setBones(int player, int bones)    { getPlayer(player).bones = bones; }
 
-    public void setMana(int player, int mana)      { getPlayer(player).mana    = mana;    }
-    public void setMaxMana(int player, int max)    { getPlayer(player).maxMana = max;     }
-    public void setHealth(int player, int health)  { getPlayer(player).health  = health;  }
+    public int getScaleBalance()                   { return scaleBalance; }
+    public void setScaleBalance(int scaleBalance)  { this.scaleBalance = scaleBalance; }
+
+    /**
+     * Checks whether the scale has tipped far enough to end the game.
+     *
+     * <p>Per Inscryption Act 1 rules: a win is triggered the instant the
+     * scale reaches ±{@link Constants#WINNING_SCALE_THRESHOLD} points.
+     * Player 0 wins on +{@value Constants#WINNING_SCALE_THRESHOLD},
+     * Player 1 wins on -{@value Constants#WINNING_SCALE_THRESHOLD}.
+     *
+     * @return an {@link Optional} containing the {@link GameOverEvent} if the
+     *         game should end, or {@link Optional#empty()} if it continues.
+     */
+    public Optional<GameOverEvent> checkWinCondition() {
+        if (scaleBalance >= Constants.WINNING_SCALE_THRESHOLD) {
+            return Optional.of(new GameOverEvent(0)); // player 0 wins
+        } else if (scaleBalance <= -Constants.WINNING_SCALE_THRESHOLD) {
+            return Optional.of(new GameOverEvent(1)); // player 1 (opponent) wins
+        }
+        return Optional.empty();
+    }
 
     // ── Event queue ────────────────────────────────────────────────────────────
 
@@ -109,8 +133,22 @@ public final class GameState {
      */
     public int findBoardOwner(CardInstance card) {
         for (int i = 0; i < players.length; i++) {
-            if (players[i].board.contains(card)) return i;
+            for (CardInstance c : players[i].board) {
+                if (c == card) return i;
+            }
         }
         return -1;
+    }
+
+    public boolean removeCardFromBoard(CardInstance card) {
+        for (int i = 0; i < players.length; i++) {
+            for (int j = 0; j < players[i].board.length; j++) {
+                if (players[i].board[j] == card) {
+                    players[i].board[j] = null;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

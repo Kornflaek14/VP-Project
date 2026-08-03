@@ -11,9 +11,12 @@ public sealed interface GameEvent
                 CardAttackedEvent,
                 CardDiedEvent,
                 DamageDealtEvent,
-                HeroDamagedEvent,
+                ScaleChangedEvent,
                 CardDrawnEvent,
-                ManaChangedEvent,
                 TurnChangedEvent,
-                GameOverEvent {
+                GameOverEvent,
+                StatusEffectAppliedEvent,
+                StatusEffectExpiredEvent,
+                TokenSpawnedEvent,
+                SacrificeEvent {
 }

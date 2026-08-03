@@ -46,7 +46,24 @@ public final class AbilityRegistry {
     public void registerDefaults() {
         register("taunt",           new TauntAbility());
         register("charge",          new ChargeAbility());
-        register("deathrattle_draw", new DeathrattleDrawAbility());
+        register("deathrattle_draw",new DeathrattleDrawAbility());
+        
+        // New thematic abilities
+        register("thorns_2", new com.cardgame.logic.abilities.impl.ThornsAbility(2));
+        register("freeze_on_hit_1", new com.cardgame.logic.abilities.impl.FreezeOnHitAbility(1));
+        register("heal_hero_2", new com.cardgame.logic.abilities.impl.HealHeroAbility(2));
+        register("heal_hero_5", new com.cardgame.logic.abilities.impl.HealHeroAbility(5));
+        register("aoe_buff_atk_1", new com.cardgame.logic.abilities.impl.AoeBuffAtkAbility(1));
+        register("spell_damage_3", new com.cardgame.logic.abilities.impl.SpellDamageAbility(3));
+        register("spell_damage_5", new com.cardgame.logic.abilities.impl.SpellDamageAbility(5));
+        register("targeted_freeze_2", new com.cardgame.logic.abilities.impl.TargetedFreezeAbility(2));
+        register("area_freeze_1", new com.cardgame.logic.abilities.impl.AreaFreezeAbility(1));
+        register("area_poison_1_3", new com.cardgame.logic.abilities.impl.AreaPoisonAbility(1, 3));
+        register("airborne", new com.cardgame.logic.abilities.impl.AirborneAbility());
+        register("mighty_leap", new com.cardgame.logic.abilities.impl.MightyLeapAbility());
+        register("bifurcated_strike", new com.cardgame.logic.abilities.impl.BifurcatedStrikeAbility());
+        register("ranged", new com.cardgame.logic.abilities.impl.RangedAbility());
+        register("give_blood_3", new com.cardgame.logic.abilities.impl.GiveBloodAbility(3));
     }
 
     // ── Lookup ─────────────────────────────────────────────────────────────────

@@ -17,9 +17,9 @@ import java.util.List;
 public interface Ability {
 
     /**
-     * Called after the card is placed on the board (Battlecry equivalent).
+     * Called after the card is played (Battlecry/Spell effect). target can be null.
      */
-    default List<GameEvent> onPlay(CardInstance source, GameState state) {
+    default List<GameEvent> onPlayTargeted(CardInstance source, CardInstance target, GameState state) {
         return List.of();
     }
 
@@ -43,5 +43,21 @@ public interface Ability {
      */
     default List<GameEvent> onTurnStart(CardInstance source, GameState state) {
         return List.of();
+    }
+
+    /**
+     * Allows a sigil to override which slots this card attacks.
+     * By default, returns null (meaning the card attacks the slot directly in front of it).
+     */
+    default List<Integer> getAttackTargets(CardInstance attacker, GameState state, int attackerSlot) {
+        return null;
+    }
+
+    /**
+     * Allows a sigil to bypass an opposing defender and attack the scale directly.
+     * (e.g. Airborne bypassing non-Mighty Leap defenders).
+     */
+    default boolean canAttackDirectly(CardInstance attacker, CardInstance defender) {
+        return false;
     }
 }

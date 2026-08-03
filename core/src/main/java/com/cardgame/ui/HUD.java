@@ -30,17 +30,16 @@ public class HUD extends Group {
     private final BitmapFont      smallFont;
     private final TextButton      endTurnBtn;
     private final Texture         barTexture;
-    private final Texture         manaCrystalFull;
-    private final Texture         manaCrystalEmpty;
 
     // Snapshot updated each frame by BattleScreen
     private GameState snapshot;
+    private int       turnNumber = 1;
 
     // ── Colors ─────────────────────────────────────────────────────────────────
     private static final Color BAR_COLOR  = new Color(0.10f, 0.10f, 0.20f, 0.90f);
-    private static final Color MANA_FULL  = new Color(0.35f, 0.55f, 1.00f, 1.00f);
-    private static final Color MANA_EMPTY = new Color(0.20f, 0.20f, 0.40f, 1.00f);
     private static final Color GOLD       = new Color(0.96f, 0.84f, 0.38f, 1.00f);
+    
+    private String inputModeMessage = "SELECT A CARD";
 
     public HUD(GameState initialState, Runnable onEndTurn) {
         this.snapshot = initialState;
@@ -55,8 +54,6 @@ public class HUD extends Group {
 
         // ── Textures ───────────────────────────────────────────────────────────
         barTexture       = singlePixel(BAR_COLOR);
-        manaCrystalFull  = singlePixel(MANA_FULL);
-        manaCrystalEmpty = singlePixel(MANA_EMPTY);
 
         // ── End Turn button ────────────────────────────────────────────────────
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
@@ -70,7 +67,9 @@ public class HUD extends Group {
         endTurnBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (onEndTurn != null) onEndTurn.run();
+                if (snapshot != null && snapshot.getCurrentPlayer() == 0 && onEndTurn != null) {
+                    onEndTurn.run();
+                }
             }
         });
         addActor(endTurnBtn);
@@ -78,9 +77,18 @@ public class HUD extends Group {
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
-    /** Call each frame with the latest game state. */
+    /** Call each frame with the latest game state and current turn number. */
     public void update(GameState state) {
         this.snapshot = state;
+    }
+
+    /** Sets the turn number displayed in the centre turn indicator. */
+    public void setTurnNumber(int turnNumber) {
+        this.turnNumber = turnNumber;
+    }
+    
+    public void setInputModeMessage(String msg) {
+        this.inputModeMessage = msg;
     }
 
     // ── Draw ───────────────────────────────────────────────────────────────────
@@ -98,49 +106,43 @@ public class HUD extends Group {
 
         font.setColor(1f, 1f, 1f, parentAlpha);
         font.draw(batch,
-                "Opponent  ❤ " + snapshot.getHealth(1),
+                "Opponent Bones: " + snapshot.getBones(1),
                 14f, Constants.VIEWPORT_HEIGHT - 10f);
+        
+        // ── Top Center (Scale) ────────────────────────────────────────────────
+        int balance = snapshot.getScaleBalance();
+        String scaleText = "SCALE: " + balance + " / ±" + com.cardgame.utils.Constants.WINNING_SCALE_THRESHOLD;
+        if (balance > 0)      scaleText += "  ▶ Winning";
+        else if (balance < 0) scaleText += "  ◀ Losing";
+        font.draw(batch, scaleText, W / 2f - 100f, Constants.VIEWPORT_HEIGHT - 10f);
 
         // ── Bottom bar (player / player 0) ────────────────────────────────────
         batch.setColor(1f, 1f, 1f, parentAlpha * 0.9f);
         batch.draw(barTexture, 0, 0, W, barH);
 
         font.setColor(1f, 1f, 1f, parentAlpha);
-        font.draw(batch, "Player  ❤ " + snapshot.getHealth(0), 14f, barH - 8f);
-
-        // ── Mana crystals (bottom, after HP label) ────────────────────────────
-        drawManaCrystals(batch, parentAlpha, 180f, 8f,
-                snapshot.getMana(0), snapshot.getPlayer(0).maxMana);
+        font.draw(batch, "Bones: " + snapshot.getBones(0) + " | Blood: " + snapshot.getPlayer(0).sacrificeCredit, 14f, barH - 8f);
 
         // ── Turn indicator (centre) ────────────────────────────────────────────
         String turnText = "Turn " + currentTurn()
                         + "  |  " + (snapshot.getCurrentPlayer() == 0 ? "YOUR TURN" : "OPPONENT TURN");
         smallFont.setColor(GOLD.r, GOLD.g, GOLD.b, parentAlpha);
         smallFont.draw(batch, turnText, W / 2f - 80f, Constants.VIEWPORT_HEIGHT / 2f + 12f);
+        
+        // ── Input Mode Message (bottom center) ─────────────────────────────────
+        smallFont.setColor(0.7f, 0.9f, 1.0f, parentAlpha);
+        smallFont.draw(batch, inputModeMessage, W / 2f - 60f, barH - 12f);
 
         // ── Draw children (End Turn button) ───────────────────────────────────
         batch.setColor(1f, 1f, 1f, parentAlpha);
         super.draw(batch, parentAlpha);
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private void drawManaCrystals(Batch batch, float alpha,
-                                  float startX, float startY,
-                                  int current, int max) {
-        float crystalW = 18f, crystalH = 18f, gap = 4f;
-        for (int i = 0; i < max; i++) {
-            Texture tex = i < current ? manaCrystalFull : manaCrystalEmpty;
-            batch.setColor(1f, 1f, 1f, alpha);
-            batch.draw(tex, startX + i * (crystalW + gap), startY, crystalW, crystalH);
-        }
-        batch.setColor(1f, 1f, 1f, 1f);
-    }
 
-    // Lazily determined from the snapshot — avoids coupling to TurnManager
+    // Reads the turn number supplied by BattleScreen via setTurnNumber()
     private int currentTurn() {
-        // We don't hold TurnManager ref here; this is purely cosmetic
-        return 1; // BattleScreen may set this via a dedicated setter if needed
+        return turnNumber;
     }
 
     private static Texture singlePixel(Color c) {
@@ -158,7 +160,5 @@ public class HUD extends Group {
         font.dispose();
         smallFont.dispose();
         barTexture.dispose();
-        manaCrystalFull.dispose();
-        manaCrystalEmpty.dispose();
     }
 }
