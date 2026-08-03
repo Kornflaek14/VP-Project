@@ -25,13 +25,16 @@ public final class GameState {
     // ── Inner type ─────────────────────────────────────────────────────────────
 
     /**
-     * All runtime data for one player (hand, board, deck, mana, health).
+     * All runtime data for one player (hand, board, deck, health, resources).
      */
     public static final class PlayerState {
         public final List<CardInstance> hand        = new ArrayList<>();
         public final CardInstance[]     board       = new CardInstance[Constants.MAX_BOARD_SIZE];
+        public final CardInstance[]     queueBoard  = new CardInstance[Constants.MAX_BOARD_SIZE];
         public final List<CardData>     deck        = new ArrayList<>();
         public final List<CardData>     discardPile = new ArrayList<>();
+        /** Cards that died or were consumed; reshuffled into deck when deck is empty. */
+        public final List<CardData>     deadPool    = new ArrayList<>();
         public int bones           = 0;
         public int sacrificeCredit = 0; // consumed when playing a card with bloodCost
     }
@@ -41,8 +44,11 @@ public final class GameState {
     private final PlayerState[] players;
     private int currentPlayer = 0;  // whose turn it is (0 or 1)
     
-    // Scale starts balanced at 0. Positive is Player 0 advantage. Negative is Player 1 advantage.
-    private int scaleBalance = 0; 
+    /** 
+     * Positive means leaning towards player 0 (player winning). 
+     * Negative means leaning towards player 1 (opponent winning). 
+     */
+    public int scaleBalance = 0;
 
     /** Events produced by actions; drained by the rendering layer each frame. */
     private final Deque<GameEvent> eventQueue = new ArrayDeque<>();
@@ -76,25 +82,26 @@ public final class GameState {
     public int getBones(int player)                { return getPlayer(player).bones; }
     public void setBones(int player, int bones)    { getPlayer(player).bones = bones; }
 
-    public int getScaleBalance()                   { return scaleBalance; }
-    public void setScaleBalance(int scaleBalance)  { this.scaleBalance = scaleBalance; }
+    // ── Scale accessors ────────────────────────────────────────────────────────
+
+    public int  getScaleBalance()          { return scaleBalance; }
+    public void setScaleBalance(int b)     { scaleBalance = b; }
+    
+    public void addScaleBalance(int amount) {
+        scaleBalance += amount;
+    }
 
     /**
-     * Checks whether the scale has tipped far enough to end the game.
-     *
-     * <p>Per Inscryption Act 1 rules: a win is triggered the instant the
-     * scale reaches ±{@link Constants#WINNING_SCALE_THRESHOLD} points.
-     * Player 0 wins on +{@value Constants#WINNING_SCALE_THRESHOLD},
-     * Player 1 wins on -{@value Constants#WINNING_SCALE_THRESHOLD}.
+     * Checks whether the scale has tipped fully to either side (±5).
      *
      * @return an {@link Optional} containing the {@link GameOverEvent} if the
      *         game should end, or {@link Optional#empty()} if it continues.
      */
     public Optional<GameOverEvent> checkWinCondition() {
-        if (scaleBalance >= Constants.WINNING_SCALE_THRESHOLD) {
-            return Optional.of(new GameOverEvent(0)); // player 0 wins
-        } else if (scaleBalance <= -Constants.WINNING_SCALE_THRESHOLD) {
-            return Optional.of(new GameOverEvent(1)); // player 1 (opponent) wins
+        if (scaleBalance >= 5) {
+            return Optional.of(new GameOverEvent(0)); // Player 0 wins
+        } else if (scaleBalance <= -5) {
+            return Optional.of(new GameOverEvent(1)); // Player 1 wins
         }
         return Optional.empty();
     }

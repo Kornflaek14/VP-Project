@@ -11,17 +11,16 @@ public final class Constants {
 
     // ── Board ──────────────────────────────────────────────────────────────────
     public static final int MAX_BOARD_SIZE          = 4;
-    public static final int MAX_HAND_SIZE           = 10;
-    public static final int STARTING_HAND_SIZE      = 4;
-    public static final int STARTING_HEALTH         = 30;
+    public static final int MAX_HAND_SIZE           = 6;
+    public static final int STARTING_HAND_SIZE      = 6;
 
-    // ── Scale (Health System) ─────────────────────────────────────────────────
-    /**
-     * The scale tips this many points in either direction to trigger a win.
-     * +{@value} = Player 0 wins; -{@value} = Player 1 (opponent) wins.
-     * Mirrors Inscryption Act 1 rules.
-     */
-    public static final int WINNING_SCALE_THRESHOLD = 5;
+    // ── Health ────────────────────────────────────────────────────────────────
+    /** Starting hit-points for each player. Game ends when any player's HP ≤ 0. */
+    public static final int STARTING_HEALTH         = 10;
+
+    // ── Deck ──────────────────────────────────────────────────────────────────
+    /** Number of cards each player starts with in their draw pile. */
+    public static final int DECK_SIZE               = 19;
 
     // ── Viewport ───────────────────────────────────────────────────────────────
     public static final int VIEWPORT_WIDTH      = 1280;

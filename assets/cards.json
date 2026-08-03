@@ -10,7 +10,8 @@
     "attack": 2,
     "health": 1,
     "statusEffects": [],
-    "abilityIds": []
+    "abilityIds": [],
+    "deckCount": 4
   },
   {
     "id": "handsaw",
@@ -23,7 +24,8 @@
     "attack": 3,
     "health": 2,
     "statusEffects": [],
-    "abilityIds": []
+    "abilityIds": [],
+    "deckCount": 3
   },
   {
     "id": "mask",
@@ -36,7 +38,8 @@
     "attack": 1,
     "health": 4,
     "statusEffects": [],
-    "abilityIds": ["taunt"]
+    "abilityIds": ["taunt"],
+    "deckCount": 3
   },
   {
     "id": "gas",
@@ -49,7 +52,8 @@
     "attack": 2,
     "health": 2,
     "statusEffects": [],
-    "abilityIds": ["ranged"]
+    "abilityIds": ["ranged"],
+    "deckCount": 2
   },
   {
     "id": "syringe",
@@ -62,7 +66,8 @@
     "attack": 0,
     "health": 0,
     "statusEffects": [],
-    "abilityIds": ["aoe_buff_atk_1"]
+    "abilityIds": ["aoe_buff_atk_1"],
+    "deckCount": 1
   },
   {
     "id": "blood_bag",
@@ -75,11 +80,12 @@
     "attack": 0,
     "health": 0,
     "statusEffects": [],
-    "abilityIds": ["give_blood_3"]
+    "abilityIds": ["give_blood_3"],
+    "deckCount": 1
   },
   {
-    "id": "vial",
-    "name": "Test Tube",
+    "id": "squirrel",
+    "name": "Squirrel",
     "cardType": "UNIT",
     "unitArchetype": "STANDARD",
     "affinityType": "NEUTRAL",
@@ -88,6 +94,7 @@
     "attack": 0,
     "health": 1,
     "statusEffects": [],
-    "abilityIds": []
+    "abilityIds": [],
+    "deckCount": 5
   }
 ]

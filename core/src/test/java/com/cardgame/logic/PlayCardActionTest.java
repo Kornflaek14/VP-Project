@@ -32,7 +32,7 @@ class PlayCardActionTest {
         state = new GameState();
         goblinData = new CardData("goblin_grunt", "Goblin Grunt", 1, 2, 0, 0, 
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", List.of(), List.of(), "A scrappy fighter.");
+                "", List.of(), List.of(), "A scrappy fighter.", 1);
         goblin = new CardInstance(goblinData, 0);
         state.getPlayer(0).hand.add(goblin);
         state.getPlayer(0).bones = 3;
@@ -88,7 +88,7 @@ class PlayCardActionTest {
     void playCard_tauntAbility_setsTauntFlag() {
         CardData tauntCard = new CardData("stone_golem", "Stone Golem", 1, 7, 0, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", List.of("taunt"), List.of(), "Taunt.");
+                "", List.of("taunt"), List.of(), "Taunt.", 1);
         CardInstance golem = new CardInstance(tauntCard, 0);
         state.getPlayer(0).hand.add(golem);
 
@@ -102,7 +102,7 @@ class PlayCardActionTest {
     void playCard_chargeAbility_clearsExhaustedFlag() {
         CardData chargeCard = new CardData("fire_imp", "Fire Imp", 3, 1, 0, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", List.of("charge"), List.of(), "Charge.");
+                "", List.of("charge"), List.of(), "Charge.", 1);
         CardInstance imp = new CardInstance(chargeCard, 0);
         state.getPlayer(0).hand.add(imp);
 
@@ -118,7 +118,7 @@ class PlayCardActionTest {
     void playCard_insufficientBones_throws() {
         CardData expensive = new CardData("expensive", "Expensive", 0, 5, 0, 5,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", List.of(), List.of(), "");
+                "", List.of(), List.of(), "", 1);
         CardInstance expCard = new CardInstance(expensive, 0);
         state.getPlayer(0).hand.add(expCard);
         
