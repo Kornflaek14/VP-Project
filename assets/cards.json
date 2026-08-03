@@ -1,0 +1,38 @@
+[
+  {
+    "id": "goblin_grunt",
+    "name": "Goblin Grunt",
+    "manaCost": 1,
+    "attack": 1,
+    "health": 2,
+    "abilityIds": [],
+    "description": "A scrappy little fighter."
+  },
+  {
+    "id": "stone_golem",
+    "name": "Stone Golem",
+    "manaCost": 3,
+    "attack": 2,
+    "health": 7,
+    "abilityIds": ["taunt"],
+    "description": "Taunt. A massive rock creature."
+  },
+  {
+    "id": "fire_imp",
+    "name": "Fire Imp",
+    "manaCost": 2,
+    "attack": 3,
+    "health": 1,
+    "abilityIds": ["charge"],
+    "description": "Charge. Hits hard but dies fast."
+  },
+  {
+    "id": "forest_guardian",
+    "name": "Forest Guardian",
+    "manaCost": 4,
+    "attack": 3,
+    "health": 4,
+    "abilityIds": ["deathrattle_draw"],
+    "description": "Deathrattle: Draw a card when this dies."
+  }
+]
