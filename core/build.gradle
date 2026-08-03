@@ -1,0 +1,31 @@
+// core — shared game code; NO LWJGL3 / rendering dependency
+apply plugin: 'java-library'
+dependencies {
+    // libGDX core (Json util, FileHandle, ApplicationListener, Scene2D for screens/ui packages)
+    api "com.badlogicgames.gdx:gdx:${gdxVersion}"
+
+    // Gson — used ONLY by CardDataLoader; keeps data/ and logic/ pure-Java-testable
+    implementation "com.google.code.gson:gson:${gsonVersion}"
+
+    // ---------- Test scope ----------
+    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+    testRuntimeOnly   "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+    useJUnitPlatform()
+    // Run JUnit 5 tests with no LWJGL graphics context
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+// Expose assets/ folder as a test resource so CardDataLoaderTest can read cards.json
+sourceSets {
+    test {
+        resources {
+            srcDirs += [rootProject.file('assets')]
+        }
+    }
+}
