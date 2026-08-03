@@ -33,10 +33,17 @@ class CombatResolverTest {
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private CardInstance minion(String name, int atk, int hp, int owner, List<String> abilities) {
-        CardData d = new CardData("id_" + name, name, 0, atk, hp, abilities, "");
+        CardData d = new CardData("id_" + name, name, atk, hp, 0, 0,
+                com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
+                "", abilities, List.of(), "");
         CardInstance ci = new CardInstance(d, owner);
         ci.setExhausted(false);
-        state.getPlayer(owner).board.add(ci);
+        for (int i = 0; i < state.getPlayer(owner).board.length; i++) {
+            if (state.getPlayer(owner).board[i] == null) {
+                state.getPlayer(owner).board[i] = ci;
+                break;
+            }
+        }
         return ci;
     }
 
@@ -48,101 +55,76 @@ class CombatResolverTest {
 
     @Test
     @DisplayName("Attacker deals damage equal to its attack to the defender")
-    void resolve_dealsDamageToDefender() {
+    void resolveCombatPhase_dealsDamageToDefender() {
         CardInstance atk = minion("Attacker", 3, 5, 0);
         CardInstance def = minion("Defender", 1, 4, 1);
 
-        resolver.resolve(atk, def, state);
+        resolver.resolveCombatPhase(state, 0);
 
         assertEquals(1, def.getCurrentHealth(), "4 HP − 3 damage = 1 HP");
     }
 
     @Test
-    @DisplayName("Defender deals damage equal to its attack back to the attacker")
-    void resolve_dealsDamageToAttacker() {
+    @DisplayName("Attacker does not receive retaliation damage")
+    void resolveCombatPhase_noRetaliation() {
         CardInstance atk = minion("Attacker", 2, 3, 0);
         CardInstance def = minion("Defender", 2, 5, 1);
 
-        resolver.resolve(atk, def, state);
+        resolver.resolveCombatPhase(state, 0);
 
-        assertEquals(1, atk.getCurrentHealth(), "3 HP − 2 damage = 1 HP");
+        assertEquals(3, atk.getCurrentHealth(), "Attacker should not take damage in its own combat phase");
     }
 
     @Test
-    @DisplayName("A minion with 0 HP is marked dead")
-    void resolve_minionDies_isMarkedDead() {
+    @DisplayName("A minion with 0 HP is marked dead and gives a bone")
+    void resolveCombatPhase_minionDies_isMarkedDeadAndGivesBone() {
         CardInstance atk = minion("Attacker", 5, 5, 0);
         CardInstance def = minion("Defender", 1, 2, 1);
+        
+        state.setBones(1, 0);
 
-        resolver.resolve(atk, def, state);
+        resolver.resolveCombatPhase(state, 0);
 
         assertTrue(def.isDead(), "Defender should be dead after taking 5 damage to 2 HP");
+        assertEquals(1, state.getBones(1), "Player 1 should get a bone when their minion dies");
     }
 
     @Test
     @DisplayName("Dead minion is removed from its owner's board")
-    void resolve_deadMinion_removedFromBoard() {
+    void resolveCombatPhase_deadMinion_removedFromBoard() {
         CardInstance atk = minion("Attacker", 5, 5, 0);
         CardInstance def = minion("Defender", 1, 2, 1);
 
-        resolver.resolve(atk, def, state);
+        resolver.resolveCombatPhase(state, 0);
 
-        assertFalse(state.getPlayer(1).board.contains(def),
+        assertFalse(java.util.Arrays.asList(state.getPlayer(1).board).contains(def),
                 "Dead defender should be removed from player 1's board");
     }
 
     @Test
-    @DisplayName("resolve() emits a CardDiedEvent when a minion dies")
-    void resolve_deadMinion_emitsCardDiedEvent() {
-        CardInstance atk = minion("Attacker", 5, 5, 0);
-        CardInstance def = minion("Defender", 1, 2, 1);
-
-        List<GameEvent> events = resolver.resolve(atk, def, state);
-
-        assertTrue(events.stream().anyMatch(e -> e instanceof CardDiedEvent cde && cde.card() == def),
-                "Expected a CardDiedEvent for the dead defender");
-    }
-
-    @Test
-    @DisplayName("resolve() emits DamageDealtEvent for each minion that takes damage")
-    void resolve_emitsDamageDealtEvents() {
+    @DisplayName("Direct attack damages the scale")
+    void resolveCombatPhase_directAttack_damagesScale() {
         CardInstance atk = minion("Attacker", 3, 5, 0);
-        CardInstance def = minion("Defender", 2, 4, 1);
+        // no defender
 
-        List<GameEvent> events = resolver.resolve(atk, def, state);
+        resolver.resolveCombatPhase(state, 0);
 
-        long damageEvents = events.stream().filter(e -> e instanceof DamageDealtEvent).count();
-        assertEquals(2, damageEvents, "Two DamageDealtEvents expected (one per combatant)");
-    }
-
-    @Test
-    @DisplayName("Both minions can die in the same combat exchange")
-    void resolve_tradeKills_bothDie() {
-        CardInstance atk = minion("Attacker", 5, 2, 0);
-        CardInstance def = minion("Defender", 5, 2, 1);
-
-        List<GameEvent> events = resolver.resolve(atk, def, state);
-
-        assertTrue(atk.isDead(), "Attacker should be dead");
-        assertTrue(def.isDead(), "Defender should be dead");
-        assertFalse(state.getPlayer(0).board.contains(atk));
-        assertFalse(state.getPlayer(1).board.contains(def));
-
-        long deathEvents = events.stream().filter(e -> e instanceof CardDiedEvent).count();
-        assertEquals(2, deathEvents, "Two CardDiedEvents expected");
+        assertEquals(3, state.getScaleBalance(), "Player 0 deals 3 damage to the scale");
     }
 
     @Test
     @DisplayName("Deathrattle: Draw draws a card for the owner on death")
-    void resolve_deathrattleDraw_drawsCard() {
+    void resolveCombatPhase_deathrattleDraw_drawsCard() {
         // Give player 1 a deck with one card
-        CardData deckCard = new CardData("deck_c", "Deck Card", 1, 1, 1, List.of(), "");
+        CardData deckCard = new CardData("deck_c", "Deck Card", 1, 1, 1, 1,
+                com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
+                "", List.of(), List.of(), "");
         state.getPlayer(1).deck.add(deckCard);
 
         CardInstance atk = minion("Attacker", 5, 5, 0);
         CardInstance def = minion("Deathrattler", 1, 1, 1, List.of("deathrattle_draw"));
 
-        List<GameEvent> events = resolver.resolve(atk, def, state);
+        List<GameEvent> events = resolver.resolveCombatPhase(state, 0);
 
         assertTrue(events.stream().anyMatch(e -> e instanceof CardDrawnEvent cde && cde.playerIndex() == 1),
                 "Expected a CardDrawnEvent for player 1 from deathrattle");

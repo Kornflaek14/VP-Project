@@ -15,7 +15,7 @@ import java.util.List;
 public final class TauntAbility implements Ability {
 
     @Override
-    public List<GameEvent> onPlay(CardInstance source, GameState state) {
+    public List<GameEvent> onPlayTargeted(CardInstance source, CardInstance target, GameState state) {
         source.setTaunt(true);
         return List.of(); // taunt is a passive flag; no event needed
     }

@@ -34,6 +34,7 @@ public class MainMenuScreen implements Screen {
     // Shared font/style (disposed on hide)
     private BitmapFont titleFont;
     private BitmapFont buttonFont;
+    private BitmapFont subFont;
 
     public MainMenuScreen(CardBattlerGame game) {
         this.game = game;
@@ -72,7 +73,7 @@ public class MainMenuScreen implements Screen {
         Label title = new Label("CARD  BATTLER", titleStyle);
 
         // ── Subtitle ───────────────────────────────────────────────────────────
-        BitmapFont subFont = new BitmapFont();
+        subFont = new BitmapFont();
         subFont.getData().setScale(1.1f);
         subFont.setColor(new Color(0.65f, 0.65f, 0.75f, 1f));
         Label.LabelStyle subStyle = new Label.LabelStyle(subFont, subFont.getColor());
@@ -134,6 +135,7 @@ public class MainMenuScreen implements Screen {
         if (bgTexture != null) bgTexture.dispose();
         if (titleFont != null) titleFont.dispose();
         if (buttonFont != null) buttonFont.dispose();
+        if (subFont   != null) subFont.dispose();
         stage = null;
     }
 }

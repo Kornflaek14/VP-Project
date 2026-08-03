@@ -7,15 +7,16 @@ import com.cardgame.logic.events.GameEvent;
 
 import java.util.List;
 
-/**
- * <b>Charge</b> — removes summoning sickness on play so the minion can attack
- * immediately the turn it is summoned.
- */
-public final class ChargeAbility implements Ability {
-
+public final class ThornsAbility implements Ability {
+    private final int damage;
+    
+    public ThornsAbility(int damage) {
+        this.damage = damage;
+    }
+    
     @Override
     public List<GameEvent> onPlayTargeted(CardInstance source, CardInstance target, GameState state) {
-        source.setExhausted(false); // override the default summoning sickness
+        source.setThornsValue(source.getThornsValue() + damage);
         return List.of();
     }
 }

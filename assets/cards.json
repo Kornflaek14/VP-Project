@@ -1,38 +1,93 @@
 [
   {
-    "id": "goblin_grunt",
-    "name": "Goblin Grunt",
-    "manaCost": 1,
-    "attack": 1,
-    "health": 2,
-    "abilityIds": [],
-    "description": "A scrappy little fighter."
-  },
-  {
-    "id": "stone_golem",
-    "name": "Stone Golem",
-    "manaCost": 3,
+    "id": "scalpel",
+    "name": "Scalpel",
+    "cardType": "UNIT",
+    "unitArchetype": "STANDARD",
+    "affinityType": "BLADE",
+    "bloodCost": 1,
+    "boneCost": 0,
     "attack": 2,
-    "health": 7,
-    "abilityIds": ["taunt"],
-    "description": "Taunt. A massive rock creature."
-  },
-  {
-    "id": "fire_imp",
-    "name": "Fire Imp",
-    "manaCost": 2,
-    "attack": 3,
     "health": 1,
-    "abilityIds": ["charge"],
-    "description": "Charge. Hits hard but dies fast."
+    "statusEffects": [],
+    "abilityIds": []
   },
   {
-    "id": "forest_guardian",
-    "name": "Forest Guardian",
-    "manaCost": 4,
+    "id": "handsaw",
+    "name": "Handsaw",
+    "cardType": "UNIT",
+    "unitArchetype": "STANDARD",
+    "affinityType": "BLADE",
+    "bloodCost": 2,
+    "boneCost": 0,
     "attack": 3,
+    "health": 2,
+    "statusEffects": [],
+    "abilityIds": []
+  },
+  {
+    "id": "mask",
+    "name": "Mask",
+    "cardType": "UNIT",
+    "unitArchetype": "TAUNT",
+    "affinityType": "MEDICAL",
+    "bloodCost": 1,
+    "boneCost": 0,
+    "attack": 1,
     "health": 4,
-    "abilityIds": ["deathrattle_draw"],
-    "description": "Deathrattle: Draw a card when this dies."
+    "statusEffects": [],
+    "abilityIds": ["taunt"]
+  },
+  {
+    "id": "gas",
+    "name": "Gas",
+    "cardType": "UNIT",
+    "unitArchetype": "RANGED",
+    "affinityType": "CHEMICAL",
+    "bloodCost": 2,
+    "boneCost": 0,
+    "attack": 2,
+    "health": 2,
+    "statusEffects": [],
+    "abilityIds": ["ranged"]
+  },
+  {
+    "id": "syringe",
+    "name": "Syringe",
+    "cardType": "ITEM",
+    "unitArchetype": "STANDARD",
+    "affinityType": "MEDICAL",
+    "bloodCost": 0,
+    "boneCost": 2,
+    "attack": 0,
+    "health": 0,
+    "statusEffects": [],
+    "abilityIds": ["aoe_buff_atk_1"]
+  },
+  {
+    "id": "blood_bag",
+    "name": "Blood Bag",
+    "cardType": "ITEM",
+    "unitArchetype": "STANDARD",
+    "affinityType": "MEDICAL",
+    "bloodCost": 0,
+    "boneCost": 0,
+    "attack": 0,
+    "health": 0,
+    "statusEffects": [],
+    "abilityIds": ["give_blood_3"]
+  },
+  {
+    "id": "vial",
+    "name": "Test Tube",
+    "cardType": "UNIT",
+    "unitArchetype": "STANDARD",
+    "affinityType": "NEUTRAL",
+    "bloodCost": 0,
+    "boneCost": 0,
+    "attack": 0,
+    "health": 1,
+    "statusEffects": [],
+    "abilityIds": []
   }
 ]

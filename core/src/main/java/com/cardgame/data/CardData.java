@@ -14,47 +14,82 @@ public final class CardData {
 
     private final String id;
     private final String name;
-    private final int manaCost;
+    
+    // Core stats
     private final int attack;
     private final int health;
+    private final int bloodCost;
+    private final int boneCost;
+    
+    // Thematic properties
+    private final CardType cardType;
+    private final UnitArchetype unitArchetype;
+    private final AffinityType affinityType;
+    private final String imagePath;
+    
+    // Abilities & Effects
     private final List<String> abilityIds;
+    private final List<StatusEffectData> statusEffects;
     private final String description;
 
     // No-arg constructor required by Gson for deserialization
     public CardData() {
-        this("", "", 0, 0, 0, List.of(), "");
+        this("", "", 0, 0, 0, 0,
+             CardType.UNIT, UnitArchetype.STANDARD, AffinityType.NEUTRAL, 
+             null, 
+             List.of(), List.of(), "");
     }
 
     public CardData(String id,
                     String name,
-                    int manaCost,
                     int attack,
                     int health,
+                    int bloodCost,
+                    int boneCost,
+                    CardType cardType,
+                    UnitArchetype unitArchetype,
+                    AffinityType affinityType,
+                    String imagePath,
                     List<String> abilityIds,
+                    List<StatusEffectData> statusEffects,
                     String description) {
-        this.id          = Objects.requireNonNull(id,          "id must not be null");
-        this.name        = Objects.requireNonNull(name,        "name must not be null");
-        this.manaCost    = manaCost;
-        this.attack      = attack;
-        this.health      = health;
-        this.abilityIds  = abilityIds == null ? List.of() : Collections.unmodifiableList(abilityIds);
-        this.description = description == null ? "" : description;
+        this.id            = Objects.requireNonNull(id,   "id must not be null");
+        this.name          = Objects.requireNonNull(name, "name must not be null");
+        this.attack        = attack;
+        this.health        = health;
+        this.bloodCost     = Math.max(0, bloodCost);
+        this.boneCost      = Math.max(0, boneCost);
+        
+        this.cardType      = cardType == null ? CardType.UNIT : cardType;
+        this.unitArchetype = unitArchetype == null ? UnitArchetype.STANDARD : unitArchetype;
+        this.affinityType  = affinityType == null ? AffinityType.NEUTRAL : affinityType;
+        this.imagePath     = imagePath;
+        
+        this.abilityIds    = abilityIds == null ? List.of() : Collections.unmodifiableList(abilityIds);
+        this.statusEffects = statusEffects == null ? List.of() : Collections.unmodifiableList(statusEffects);
+        this.description   = description == null ? "" : description;
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
 
-    public String       id()          { return id;          }
-    public String       name()        { return name;        }
-    public int          manaCost()    { return manaCost;    }
-    public int          attack()      { return attack;      }
-    public int          health()      { return health;      }
-    public List<String> abilityIds()  { return abilityIds;  }
-    public String       description() { return description; }
+    public String       id()            { return id;            }
+    public String       name()          { return name;          }
+    public int          attack()        { return attack;        }
+    public int          health()        { return health;        }
+    public int          bloodCost()     { return bloodCost;     }
+    public int          boneCost()      { return boneCost;      }
+    public CardType     cardType()      { return cardType;      }
+    public UnitArchetype unitArchetype(){ return unitArchetype; }
+    public AffinityType affinityType()  { return affinityType;  }
+    public String       imagePath()     { return imagePath;     }
+    public List<String> abilityIds()    { return abilityIds;    }
+    public List<StatusEffectData> statusEffects() { return statusEffects; }
+    public String       description()   { return description;   }
 
     @Override
     public String toString() {
-        return String.format("CardData[id=%s, name=%s, cost=%d, atk=%d, hp=%d, abilities=%s]",
-                id, name, manaCost, attack, health, abilityIds);
+        return String.format("CardData[id=%s, name=%s, blood=%d, bones=%d, attack=%d, health=%d]",
+                id, name, bloodCost, boneCost, attack, health);
     }
 
     @Override
@@ -69,3 +104,4 @@ public final class CardData {
         return id.hashCode();
     }
 }
+

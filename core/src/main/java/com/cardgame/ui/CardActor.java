@@ -40,6 +40,12 @@ public class CardActor extends Actor {
     // ── Colors ─────────────────────────────────────────────────────────────────
     private static final Color BG_NORMAL     = new Color(0.18f, 0.22f, 0.32f, 1f);
     private static final Color BG_TAUNT      = new Color(0.22f, 0.14f, 0.06f, 1f);
+    private static final Color BG_BLADE      = new Color(0.3f, 0.3f, 0.4f, 1f);
+    private static final Color BG_CHEMICAL   = new Color(0.2f, 0.4f, 0.2f, 1f);
+    private static final Color BG_MEDICAL    = new Color(0.4f, 0.2f, 0.2f, 1f);
+    private static final Color BG_BLUNT      = new Color(0.4f, 0.3f, 0.1f, 1f);
+    private static final Color BG_ELECTRIC   = new Color(0.2f, 0.3f, 0.5f, 1f);
+    
     private static final Color BORDER_SELECT = new Color(0.96f, 0.84f, 0.38f, 1f);
     private static final Color BORDER_TAUNT  = new Color(0.85f, 0.45f, 0.12f, 1f);
     private static final Color COLOR_ATK     = new Color(0.95f, 0.35f, 0.25f, 1f);
@@ -68,7 +74,20 @@ public class CardActor extends Actor {
     // ── Private helpers ────────────────────────────────────────────────────────
 
     private void buildTextures() {
-        Color bgColor = card.hasTaunt() ? BG_TAUNT : BG_NORMAL;
+        Color bgColor = BG_NORMAL;
+        if (card.hasTaunt()) {
+            bgColor = BG_TAUNT;
+        } else if (card.getTemplate().affinityType() != null) {
+            switch (card.getTemplate().affinityType()) {
+                case BLADE: bgColor = BG_BLADE; break;
+                case CHEMICAL: bgColor = BG_CHEMICAL; break;
+                case MEDICAL: bgColor = BG_MEDICAL; break;
+                case BLUNT: bgColor = BG_BLUNT; break;
+                case ELECTRIC: bgColor = BG_ELECTRIC; break;
+                default: break;
+            }
+        }
+        
         cardBg          = singlePixel(bgColor);
         selectedBorder  = singlePixel(BORDER_SELECT);
         tauntBorder     = singlePixel(BORDER_TAUNT);
@@ -97,6 +116,7 @@ public class CardActor extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         float x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        float alpha = parentAlpha * getColor().a;
 
         // ── Border ──────────────────────────────────────────────────────────
         float border = 3f;
@@ -104,28 +124,32 @@ public class CardActor extends Actor {
                            : card.hasTaunt() ? tauntBorder
                            : null;
         if (borderTex != null) {
-            batch.setColor(1f, 1f, 1f, parentAlpha);
+            batch.setColor(1f, 1f, 1f, alpha);
             batch.draw(borderTex, x - border, y - border, w + border * 2, h + border * 2);
         }
 
         // ── Card background ──────────────────────────────────────────────────
-        batch.setColor(1f, 1f, 1f, parentAlpha);
+        batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(cardBg, x, y, w, h);
 
         // ── Exhausted overlay ────────────────────────────────────────────────
         if (card.isExhausted()) {
-            batch.setColor(1f, 1f, 1f, 0.5f * parentAlpha);
+            batch.setColor(1f, 1f, 1f, 0.5f * alpha);
             batch.draw(exhaustedOverlay, x, y, w, h);
-            batch.setColor(1f, 1f, 1f, parentAlpha);
+            batch.setColor(1f, 1f, 1f, alpha);
         }
 
-        // ── Mana cost badge (top-left) ───────────────────────────────────────
-        font.setColor(new Color(0.55f, 0.85f, 1f, parentAlpha));
-        font.draw(batch, String.valueOf(card.getTemplate().manaCost()),
-                x + 6f, y + h - 6f);
+        // ── Cost badges (top-left) ───────────────────────────────────────────
+        int blood = card.getTemplate().bloodCost();
+        int bone = card.getTemplate().boneCost();
+        String costStr = "";
+        if (blood > 0) costStr += blood + " Blood ";
+        if (bone > 0) costStr += bone + " Bone";
+        font.setColor(new Color(0.85f, 0.25f, 0.25f, alpha));
+        font.draw(batch, costStr.trim(), x + 6f, y + h - 6f);
 
         // ── Card name (centred, top third) ───────────────────────────────────
-        font.setColor(new Color(1f, 1f, 1f, parentAlpha));
+        font.setColor(new Color(1f, 1f, 1f, alpha));
         String name = card.getTemplate().name();
         // Truncate long names
         if (name.length() > 10) name = name.substring(0, 9) + "…";
@@ -134,7 +158,7 @@ public class CardActor extends Actor {
         // ── Description (small, middle) ──────────────────────────────────────
         if (!card.getTemplate().abilityIds().isEmpty()) {
             font.getData().setScale(0.65f);
-            font.setColor(new Color(0.9f, 0.75f, 0.4f, parentAlpha));
+            font.setColor(new Color(0.9f, 0.75f, 0.4f, alpha));
             String tag = String.join(", ", card.getTemplate().abilityIds()).toUpperCase();
             font.draw(batch, tag, x + 5f, y + h * 0.45f);
             font.getData().setScale(0.85f);
@@ -142,20 +166,20 @@ public class CardActor extends Actor {
 
         // ── ATK badge (bottom-left) ──────────────────────────────────────────
         float badgeSize = 24f;
-        batch.setColor(1f, 1f, 1f, parentAlpha);
+        batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(atkBadge, x + 4f, y + 4f, badgeSize, badgeSize);
-        font.setColor(Color.WHITE);
+        font.setColor(new Color(1f, 1f, 1f, alpha));
         font.draw(batch, String.valueOf(card.getTemplate().attack()),
                 x + 4f + badgeSize * 0.25f, y + 4f + badgeSize * 0.72f);
 
         // ── HP badge (bottom-right) ──────────────────────────────────────────
         Color hpColor = card.getCurrentHealth() < card.getTemplate().health()
-                        ? new Color(0.95f, 0.3f, 0.3f, parentAlpha)   // damaged → red
-                        : new Color(0.25f, 0.80f, 0.35f, parentAlpha); // full → green
+                        ? new Color(0.95f, 0.3f, 0.3f, alpha)   // damaged → red
+                        : new Color(0.25f, 0.80f, 0.35f, alpha); // full → green
         batch.setColor(hpColor);
         batch.draw(hpBadge, x + w - badgeSize - 4f, y + 4f, badgeSize, badgeSize);
-        batch.setColor(1f, 1f, 1f, parentAlpha);
-        font.setColor(Color.WHITE);
+        batch.setColor(1f, 1f, 1f, alpha);
+        font.setColor(new Color(1f, 1f, 1f, alpha));
         font.draw(batch, String.valueOf(card.getCurrentHealth()),
                 x + w - badgeSize + 2f, y + 4f + badgeSize * 0.72f);
 
