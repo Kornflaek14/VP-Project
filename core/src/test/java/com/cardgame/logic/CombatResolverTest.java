@@ -33,7 +33,7 @@ class CombatResolverTest {
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private CardInstance minion(String name, int atk, int hp, int owner, List<String> abilities) {
-        CardData d = new CardData("id_" + name, name, atk, hp, 0, 0,
+        CardData d = new CardData("id_" + name, name, atk, hp, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", abilities, List.of(), "", 1);
         CardInstance ci = new CardInstance(d, owner);
@@ -81,12 +81,9 @@ class CombatResolverTest {
         CardInstance atk = minion("Attacker", 5, 5, 0);
         CardInstance def = minion("Defender", 1, 2, 1);
         
-        state.setBones(1, 0);
-
         resolver.resolveCombatPhase(state, 0);
 
         assertTrue(def.isDead(), "Defender should be dead after taking 5 damage to 2 HP");
-        assertEquals(1, state.getBones(1), "Player 1 should get a bone when their minion dies");
     }
 
     @Test
@@ -107,10 +104,10 @@ class CombatResolverTest {
         CardInstance atk = minion("Attacker", 3, 5, 0);
         // no defender — empty lane
 
-        int scaleBefore = state.getScaleBalance();
+        int hpBefore = state.getPlayer(1).hp;
         resolver.resolveCombatPhase(state, 0);
 
-        assertEquals(scaleBefore + 3, state.getScaleBalance(), "Player 0 deals 3 damage, tipping scale by +3");
+        assertEquals(hpBefore - 3, state.getPlayer(1).hp, "Player 0 deals 3 damage, reducing HP by 3");
     }
 
     @Test
@@ -119,11 +116,11 @@ class CombatResolverTest {
         CardInstance atk = minion("Attacker", 5, 5, 0);
         CardInstance def = minion("Defender", 1, 2, 1);
 
-        int scaleBefore = state.getScaleBalance();
+        int hpBefore = state.getPlayer(1).hp;
         resolver.resolveCombatPhase(state, 0);
 
         // 5 ATK vs 2 HP defender → 3 overflow
-        assertEquals(scaleBefore + 3, state.getScaleBalance(), "Overflow damage (5 - 2 = 3) should tip scale by +3");
+        assertEquals(hpBefore - 3, state.getPlayer(1).hp, "Overflow damage (5 - 2 = 3) should reduce HP by 3");
     }
 
     @Test
@@ -142,7 +139,7 @@ class CombatResolverTest {
     @DisplayName("Deathrattle: Draw draws a card for the owner on death")
     void resolveCombatPhase_deathrattleDraw_drawsCard() {
         // Give player 1 a deck with one card
-        CardData deckCard = new CardData("deck_c", "Deck Card", 1, 1, 1, 1,
+        CardData deckCard = new CardData("deck_c", "Deck Card", 1, 1, 1,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", List.of(), List.of(), "", 1);
         state.getPlayer(1).deck.add(deckCard);

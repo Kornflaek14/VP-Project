@@ -1,76 +1,83 @@
 package com.cardgame.data;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
- * Parses a JSON array of card definitions into {@link CardData} objects.
- *
- * <pre>
- * // Game runtime (inside a libGDX lifecycle method):
- * FileHandle fh = Gdx.files.internal("assets/cards.json");
- * Map&lt;String, CardData&gt; templates =
- *     CardDataLoader.loadAsMap(new InputStreamReader(fh.read(), StandardCharsets.UTF_8));
- *
- * // Unit test (no libGDX context required):
- * InputStream is = CardDataLoaderTest.class.getResourceAsStream("/cards.json");
- * List&lt;CardData&gt; cards = CardDataLoader.load(is);
- * </pre>
- *
- * HARD RULE: this class must NOT import any libGDX class.
+ * Loads all game data from JSON files under assets/data/.
  */
 public final class CardDataLoader {
 
-    private static final Gson GSON = new GsonBuilder()
-            .serializeNulls()
-            .create();
-
-    private static final Type LIST_TYPE = new TypeToken<List<CardData>>() {}.getType();
+    private static final Gson GSON = new Gson();
 
     private CardDataLoader() {}
 
-    // ── Public API ─────────────────────────────────────────────────────────────
+    // ── Cards ──────────────────────────────────────────────────
 
-    /**
-     * Parses an ordered list of {@link CardData} from the supplied {@link Reader}.
-     * Caller is responsible for closing the reader.
-     */
-    public static List<CardData> load(Reader reader) {
-        List<CardData> cards = GSON.fromJson(reader, LIST_TYPE);
-        return cards == null ? Collections.emptyList() : Collections.unmodifiableList(cards);
+    /** Loads cards from a Reader (for backward-compat). */
+    public static List<CardData> loadCards(Reader reader) {
+        Type listType = new TypeToken<List<CardData>>() {}.getType();
+        List<CardData> list = GSON.fromJson(reader, listType);
+        return list == null ? Collections.emptyList() : list;
     }
 
-    /**
-     * Convenience overload: reads from an {@link InputStream} using UTF-8.
-     */
-    public static List<CardData> load(InputStream stream) {
-        return load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+    /** Loads cards from an InputStream. */
+    public static List<CardData> loadCards(InputStream is) {
+        return loadCards(new InputStreamReader(is, StandardCharsets.UTF_8));
     }
 
-    /**
-     * Loads cards and returns them indexed by {@link CardData#id()}.
-     */
+    /** Loads cards as a map keyed by id. */
     public static Map<String, CardData> loadAsMap(Reader reader) {
-        return load(reader).stream()
-                .collect(Collectors.toUnmodifiableMap(CardData::id, c -> c));
+        List<CardData> list = loadCards(reader);
+        Map<String, CardData> map = new LinkedHashMap<>();
+        for (CardData c : list) map.put(c.id(), c);
+        return map;
     }
 
-    /**
-     * Convenience overload: reads from an {@link InputStream} using UTF-8.
-     */
-    public static Map<String, CardData> loadAsMap(InputStream stream) {
-        return loadAsMap(new InputStreamReader(stream, StandardCharsets.UTF_8));
+    public static Map<String, CardData> loadAsMap(InputStream is) {
+        return loadAsMap(new InputStreamReader(is, StandardCharsets.UTF_8));
+    }
+
+    // ── Characters ─────────────────────────────────────────────
+
+    public static List<CharacterData> loadCharacters(InputStream is) {
+        Type listType = new TypeToken<List<CharacterData>>() {}.getType();
+        List<CharacterData> list = GSON.fromJson(
+                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    // ── Monsters ───────────────────────────────────────────────
+
+    public static List<MonsterData> loadMonsters(InputStream is) {
+        Type listType = new TypeToken<List<MonsterData>>() {}.getType();
+        List<MonsterData> list = GSON.fromJson(
+                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    // ── Relics ─────────────────────────────────────────────────
+
+    public static List<RelicData> loadRelics(InputStream is) {
+        Type listType = new TypeToken<List<RelicData>>() {}.getType();
+        List<RelicData> list = GSON.fromJson(
+                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    // ── Potions ────────────────────────────────────────────────
+
+    public static List<PotionData> loadPotions(InputStream is) {
+        Type listType = new TypeToken<List<PotionData>>() {}.getType();
+        List<PotionData> list = GSON.fromJson(
+                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
+        return list == null ? Collections.emptyList() : list;
     }
 }

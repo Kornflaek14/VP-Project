@@ -1,204 +1,118 @@
 package com.cardgame.logic;
 
-import com.cardgame.logic.abilities.AbilityRegistry;
+import com.cardgame.data.CardData;
 import com.cardgame.logic.events.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Resolves the outcome of a minion-vs-minion combat exchange.
- * <p>
- * <ul>
- *   <li>Both minions deal their attack damage simultaneously.</li>
- *   <li>Dead minions are removed from their owner's board.</li>
- *   <li>{@code onDeath} ability hooks are triggered after removal.</li>
- *   <li>Overflow damage from killing a defender hits the defender's owner's HP.</li>
- *   <li>Empty-lane attacks hit the opposing player's HP directly.</li>
- * </ul>
- *
- *
- * HARD RULE: no libGDX imports.
+ * Resolves STS combat actions.
+ * - Play attack card → deal damage to monster (reduced by monster block)
+ * - Play skill card → gain block
+ * - Monster turn → monster attacks player or gains block
  */
 public final class CombatResolver {
 
     /**
-     * Resolves the combat phase for the active player.
+     * Play a card from the player's hand.
+     * Returns events produced.
      */
-    public List<GameEvent> resolveCombatPhase(GameState state, int attackingPlayerIndex) {
+    public List<GameEvent> playCard(GameState state, CardData card) {
         List<GameEvent> events = new ArrayList<>();
-        CardInstance[] board = state.getBoard(attackingPlayerIndex);
-        int defendingPlayer = 1 - attackingPlayerIndex;
-        CardInstance[] defenderBoard = state.getBoard(defendingPlayer);
 
-        // Pre-compute taunt slot: if the defending board has any live taunt unit,
-        // every attacker that would hit an empty slot or a non-taunt unit must
-        // redirect to the first taunt unit's slot instead.
-        int tauntSlot = -1;
-        for (int i = 0; i < defenderBoard.length; i++) {
-            CardInstance d = defenderBoard[i];
-            if (d != null && !d.isDead() && d.hasTaunt()) {
-                tauntSlot = i;
-                break;
-            }
+        if (state.playerEnergy < card.energyCost()) {
+            return events; // not enough energy — no-op
         }
 
-        for (int i = 0; i < board.length; i++) {
-            CardInstance attacker = board[i];
-            if (attacker == null || attacker.isDead()) continue;
+        // Spend energy
+        state.playerEnergy -= card.energyCost();
 
-            // Determine targets based on sigils
-            List<Integer> targetSlots = getAttackTargets(attacker, state, i);
+        // Remove from hand, add to discard
+        state.hand.remove(card);
+        state.discardPile.add(card);
 
-            for (int targetSlot : targetSlots) {
-                if (targetSlot < 0 || targetSlot >= com.cardgame.utils.Constants.MAX_BOARD_SIZE) continue;
+        int damageDealt = 0;
+        int blockGained = 0;
 
-                // Enforce taunt: redirect to taunt slot if a taunt unit exists and
-                // the attacker cannot bypass it (Airborne bypasses via canAttackDirectly).
-                if (tauntSlot != -1 && targetSlot != tauntSlot) {
-                    CardInstance intended = defenderBoard[targetSlot];
-                    boolean canBypass = false;
-                    for (String id : attacker.getTemplate().abilityIds()) {
-                        com.cardgame.logic.abilities.Ability a =
-                                AbilityRegistry.getInstance().get(id).orElse(null);
-                        if (a != null && a.canAttackDirectly(attacker, intended)) {
-                            canBypass = true;
-                            break;
-                        }
-                    }
-                    if (!canBypass) {
-                        targetSlot = tauntSlot;
-                    }
+        // Apply relic attack boost from RunManager
+        int atkBoost = RunManager.getInstance().getTotalAttackBoost();
+
+        // Apply damage to monster
+        if (card.damage() > 0) {
+            int rawDamage = card.damage() + atkBoost;
+            // Damage absorbed by monster block first
+            if (state.monsterBlock > 0) {
+                if (rawDamage <= state.monsterBlock) {
+                    state.monsterBlock -= rawDamage;
+                    damageDealt = 0;
+                } else {
+                    rawDamage -= state.monsterBlock;
+                    state.monsterBlock = 0;
+                    state.monsterHp -= rawDamage;
+                    damageDealt = rawDamage;
                 }
-
-                events.addAll(resolveAttack(attacker, targetSlot, state, attackingPlayerIndex));
+            } else {
+                state.monsterHp -= rawDamage;
+                damageDealt = rawDamage;
+            }
+            if (damageDealt > 0) {
+                events.add(new DamageDealtEvent("player", "monster", damageDealt));
             }
         }
+
+        // Apply block to player
+        if (card.defence() > 0) {
+            int defBoost = RunManager.getInstance().getTotalDefenceBoost();
+            blockGained = card.defence() + defBoost;
+            state.playerBlock += blockGained;
+            events.add(new BlockGainedEvent("player", blockGained));
+        }
+
+        events.add(0, new CardPlayedEvent(card, damageDealt, blockGained));
+
+        // Check win
+        state.checkWinCondition().ifPresent(events::add);
+
         return events;
     }
 
-    private List<GameEvent> resolveAttack(CardInstance attacker, int targetSlot, GameState state, int attackingPlayer) {
+    /**
+     * Execute the monster's turn based on its rolled intent.
+     */
+    public List<GameEvent> executeMonsterTurn(GameState state) {
         List<GameEvent> events = new ArrayList<>();
-        int defendingPlayer = 1 - attackingPlayer;
-        CardInstance defender = state.getBoard(defendingPlayer)[targetSlot];
 
-        // Check Airborne / direct-hit bypass
-        boolean canAttackDirectly = false;
-        for (String id : attacker.getTemplate().abilityIds()) {
-            com.cardgame.logic.abilities.Ability a = AbilityRegistry.getInstance().get(id).orElse(null);
-            if (a != null && a.canAttackDirectly(attacker, defender)) {
-                canAttackDirectly = true;
-            }
-        }
-
-        int damage = attacker.getEffectiveAttack();
-        if (damage <= 0) return events;
-
-        if (defender == null || canAttackDirectly) {
-            // ── Direct HP hit (empty lane or airborne bypass) ───────────────
-            int sign = (attackingPlayer == 0) ? 1 : -1;
-            state.addScaleBalance(damage * sign);
-            events.add(new PlayerDamagedEvent(defendingPlayer, damage));
-            state.checkWinCondition().ifPresent(events::add);
-        } else {
-            // ── Minion vs minion ────────────────────────────────────────────
-            events.add(new CardAttackedEvent(attacker, defender));
-
-            // 1. Affinity multiplier on attacker → defender
-            float attackMult = AffinityResolver.getMultiplier(
-                    attacker.getTemplate().affinityType(),
-                    defender.getTemplate().affinityType());
-            int finalDamage = (int) (damage * attackMult);
-
-            if (finalDamage > 0) {
-                int defenderHpBefore = defender.getCurrentHealth();
-                defender.dealDamage(finalDamage);
-                events.add(new DamageDealtEvent(attacker, defender, finalDamage, true));
-
-                // Overflow damage: excess damage beyond what kills the defender
-                // hits the defender's owner's HP directly
-                if (defender.isDead()) {
-                    int overflow = finalDamage - defenderHpBefore;
-                    if (overflow > 0) {
-                        int sign = (attackingPlayer == 0) ? 1 : -1;
-                        state.addScaleBalance(overflow * sign);
-                        events.add(new PlayerDamagedEvent(defendingPlayer, overflow));
-                    }
-                }
-
-                events.addAll(processDeath(defender, state));
-                state.checkWinCondition().ifPresent(events::add);
-            }
-
-            // 2. Melee retaliation: defender strikes back unless attacker is Ranged
-            //    (attacker.isRangedThisTurn() is set by RangedAbility.onAttack which
-            //    fires below — so we must check the template's ability list here instead)
-            boolean isRanged = attacker.getTemplate().abilityIds().stream()
-                    .anyMatch(id -> id.equals("ranged"));
-            if (!isRanged && !attacker.isDead() && !defender.isDead()) {
-                int retaliationDamage = defender.getEffectiveAttack();
-                if (retaliationDamage > 0) {
-                    float retMult = AffinityResolver.getMultiplier(
-                            defender.getTemplate().affinityType(),
-                            attacker.getTemplate().affinityType());
-                    int finalRetaliation = (int) (retaliationDamage * retMult);
-                    if (finalRetaliation > 0) {
-                        attacker.dealDamage(finalRetaliation);
-                        events.add(new DamageDealtEvent(defender, attacker, finalRetaliation, true));
-                        events.addAll(processDeath(attacker, state));
-                    }
+        if ("ATTACK".equals(state.intentType)) {
+            int damage = state.intentValue;
+            // Damage absorbed by player block first
+            if (state.playerBlock > 0) {
+                if (damage <= state.playerBlock) {
+                    state.playerBlock -= damage;
+                    damage = 0;
+                } else {
+                    damage -= state.playerBlock;
+                    state.playerBlock = 0;
                 }
             }
-
-            // 3. Thorns: if defender has thorns and attacker is alive (melee only)
-            if (!isRanged && !attacker.isDead() && defender.getThornsValue() > 0) {
-                int thornsDmg = defender.getThornsValue();
-                attacker.dealDamage(thornsDmg);
-                events.add(new DamageDealtEvent(defender, attacker, thornsDmg, false));
-                events.addAll(processDeath(attacker, state));
+            if (damage > 0) {
+                state.playerHp -= damage;
+                events.add(new DamageDealtEvent("monster", "player", damage));
+                events.add(new PlayerDamagedEvent(damage));
             }
-
-            // 4. Trigger onAttack abilities (e.g. FreezeOnHit, RangedAbility flag)
-            for (String id : attacker.getTemplate().abilityIds()) {
-                AbilityRegistry.getInstance()
-                               .get(id)
-                               .ifPresent(a -> events.addAll(a.onAttack(attacker, defender, state)));
-            }
+        } else if ("DEFEND".equals(state.intentType)) {
+            state.monsterBlock += state.intentValue;
+            events.add(new BlockGainedEvent("monster", state.intentValue));
         }
-        return events;
-    }
 
-    private List<Integer> getAttackTargets(CardInstance attacker, GameState state, int attackerSlot) {
-        for (String id : attacker.getTemplate().abilityIds()) {
-            com.cardgame.logic.abilities.Ability a = AbilityRegistry.getInstance().get(id).orElse(null);
-            if (a != null) {
-                List<Integer> override = a.getAttackTargets(attacker, state, attackerSlot);
-                if (override != null && !override.isEmpty()) {
-                    return override;
-                }
-            }
-        }
-        return List.of(attackerSlot); // default
-    }
+        // Check loss
+        state.checkWinCondition().ifPresent(events::add);
 
-    private List<GameEvent> processDeath(CardInstance card, GameState state) {
-        List<GameEvent> events = new ArrayList<>();
-        if (!card.isDead()) return events;
+        // Roll next intent
+        state.rollMonsterIntent();
+        events.add(new MonsterIntentEvent(state.intentType, state.intentValue));
 
-        int ownerIdx = state.findBoardOwner(card);
-        if (ownerIdx == -1) return events;
-
-        state.removeCardFromBoard(card);
-        state.setBones(ownerIdx, state.getBones(ownerIdx) + 1); // Grant bone
-        // Dead cards go to the dead pool (reshuffled into deck when deck is empty)
-        state.getPlayer(ownerIdx).deadPool.add(card.getTemplate());
-        events.add(new CardDiedEvent(ownerIdx, card));
-
-        for (String id : card.getTemplate().abilityIds()) {
-            AbilityRegistry.getInstance()
-                           .get(id)
-                           .ifPresent(a -> events.addAll(a.onDeath(card, state)));
-        }
         return events;
     }
 }

@@ -30,13 +30,13 @@ class PlayCardActionTest {
     @BeforeEach
     void setUp() {
         state = new GameState();
-        goblinData = new CardData("goblin_grunt", "Goblin Grunt", 1, 2, 0, 0, 
+        goblinData = new CardData("goblin_grunt", "Goblin Grunt", 1, 2, 0, 
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", List.of(), List.of(), "A scrappy fighter.", 1);
         goblin = new CardInstance(goblinData, 0);
         state.getPlayer(0).hand.add(goblin);
-        state.getPlayer(0).bones = 3;
-        state.getPlayer(0).sacrificeCredit = 3;
+        state.getPlayer(0).maxEnergy = 3;
+        state.getPlayer(0).currentEnergy = 3;
     }
 
     // ── Happy-path tests ───────────────────────────────────────────────────────
@@ -56,8 +56,8 @@ class PlayCardActionTest {
     }
 
     @Test
-    @DisplayName("Playing a card deducts its bone cost")
-    void playCard_deductsBone() {
+    @DisplayName("Playing a card deducts its energy cost")
+    void playCard_deductsEnergy() {
         new PlayCardAction(0, goblin, -1, null).execute(state);
         assertTrue(java.util.Arrays.asList(state.getPlayer(0).board).contains(goblin));
     }
@@ -86,7 +86,7 @@ class PlayCardActionTest {
     @Test
     @DisplayName("Playing a Taunt card sets its taunt flag")
     void playCard_tauntAbility_setsTauntFlag() {
-        CardData tauntCard = new CardData("stone_golem", "Stone Golem", 1, 7, 0, 0,
+        CardData tauntCard = new CardData("stone_golem", "Stone Golem", 1, 7, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", List.of("taunt"), List.of(), "Taunt.", 1);
         CardInstance golem = new CardInstance(tauntCard, 0);
@@ -100,7 +100,7 @@ class PlayCardActionTest {
     @Test
     @DisplayName("Playing a Charge card clears its exhausted flag")
     void playCard_chargeAbility_clearsExhaustedFlag() {
-        CardData chargeCard = new CardData("fire_imp", "Fire Imp", 3, 1, 0, 0,
+        CardData chargeCard = new CardData("fire_imp", "Fire Imp", 3, 1, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", List.of("charge"), List.of(), "Charge.", 1);
         CardInstance imp = new CardInstance(chargeCard, 0);
@@ -114,15 +114,15 @@ class PlayCardActionTest {
     // ── Error-path tests ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Playing with insufficient bones throws IllegalStateException")
-    void playCard_insufficientBones_throws() {
-        CardData expensive = new CardData("expensive", "Expensive", 0, 5, 0, 5,
+    @DisplayName("Playing with insufficient energy throws IllegalStateException")
+    void playCard_insufficientEnergy_throws() {
+        CardData expensive = new CardData("expensive", "Expensive", 0, 5, 5,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
                 "", List.of(), List.of(), "", 1);
         CardInstance expCard = new CardInstance(expensive, 0);
         state.getPlayer(0).hand.add(expCard);
         
-        state.getPlayer(0).bones = 0;
+        state.getPlayer(0).currentEnergy = 0;
 
         assertThrows(IllegalStateException.class,
                 () -> new PlayCardAction(0, expCard, -1, null).execute(state));

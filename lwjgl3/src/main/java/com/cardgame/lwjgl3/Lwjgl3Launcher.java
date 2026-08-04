@@ -18,8 +18,8 @@ public class Lwjgl3Launcher {
         if (StartupHelper.startNewJvmIfRequired()) return; // required on macOS for LWJGL3
 
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setTitle("Card Battler — 1v1 Duelling");
-        config.setWindowedMode(1280, 720);
+        config.setTitle("Slay The Spire");
+        config.setWindowedMode(1440, 900);
         // config.setWindowIcon("icon128.png", "icon64.png", "icon32.png", "icon16.png");
         config.setForegroundFPS(60);
         config.setBackBufferConfig(8, 8, 8, 8, 16, 0, 0);

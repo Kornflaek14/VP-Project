@@ -1,189 +1,103 @@
 package com.cardgame.logic;
 
 import com.cardgame.data.CardData;
-import com.cardgame.logic.abilities.AbilityRegistry;
-import com.cardgame.logic.events.GameEvent;
-import com.cardgame.logic.events.TurnChangedEvent;
-import com.cardgame.logic.events.CardDrawnEvent;
-import com.cardgame.utils.Constants;
+import com.cardgame.logic.events.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Phase state machine that advances game turns.
- *
- * <p>New flow (one move per turn):
- * <ol>
- *   <li>Player places ONE card (or performs one sacrifice+play).</li>
- *   <li>{@link #onMoveMade} is called immediately after.</li>
- *   <li>Combat resolves for the current player.</li>
- *   <li>Control switches to the other player; hand refills to 6.</li>
- * </ol>
- *
- * HARD RULE: no libGDX imports.
+ * STS turn flow:
+ * 1. Start turn: reset block, refill energy, draw 5 cards
+ * 2. Player plays cards (main phase)
+ * 3. End turn: discard hand, monster acts, start new turn
  */
 public final class TurnManager {
 
-    /** Game-phase enum visible to the UI for showing phase indicators. */
-    public enum Phase { DRAW, MAIN, COMBAT, END }
+    public static final int CARDS_PER_TURN = 5;
 
-    private Phase currentPhase = Phase.DRAW;
-    private int   turnNumber   = 1;
+    private int turnNumber = 0;
 
-    // ── Accessors ──────────────────────────────────────────────────────────────
+    public int getTurnNumber() { return turnNumber; }
 
-    public Phase getCurrentPhase() { return currentPhase; }
-    public int   getTurnNumber()   { return turnNumber;   }
-
-    // ── API ────────────────────────────────────────────────────────────────────
-
-    public List<GameEvent> startGame(GameState state) {
+    /**
+     * Start the combat: draw initial hand.
+     */
+    public List<GameEvent> startCombat(GameState state) {
         List<GameEvent> events = new ArrayList<>();
+        turnNumber = 1;
+        state.setTurnNumber(turnNumber);
+        state.setPlayerTurn(true);
 
-        // Player 0 gets a normal hand
-        drawCardsTo(0, Constants.STARTING_HAND_SIZE, state, events);
-        
-        // Player 1 (Leshy) fills his queue
-        GameState.PlayerState p1 = state.getPlayer(1);
-        for (int i = 0; i < Constants.MAX_BOARD_SIZE; i++) {
-            if (!p1.deck.isEmpty()) {
-                CardData drawn = p1.deck.remove(0);
-                p1.queueBoard[i] = new CardInstance(drawn, 1);
-            }
-        }
-
-        events.add(new TurnChangedEvent(state.getCurrentPlayer(), turnNumber));
-        currentPhase = Phase.MAIN;
+        // Draw initial hand
+        events.addAll(drawCards(state, CARDS_PER_TURN));
+        events.add(new TurnChangedEvent(turnNumber, true));
+        events.add(new MonsterIntentEvent(state.intentType, state.intentValue));
         return events;
     }
 
     /**
-     * Called after the active player makes ONE move (play a card).
-     * Now allows multiple moves per turn by doing nothing.
+     * End the player's turn.
+     * 1. Discard remaining hand
+     * 2. Monster acts
+     * 3. Start new player turn
      */
-    public List<GameEvent> onMoveMade(GameState state) {
-        return Collections.emptyList();
-    }
-
-    /**
-     * Ends the current player's turn.
-     * Resolves combat → switches player → refills hand → fires events.
-     */
-    public List<GameEvent> endTurn(GameState state) {
+    public List<GameEvent> endPlayerTurn(GameState state) {
         List<GameEvent> events = new ArrayList<>();
-        int activePlayer = state.getCurrentPlayer();
-        
-        currentPhase = Phase.COMBAT;
-        
-        // ── Resolve Combat Phase ───────────────────────────────────────────────
-        CombatResolver combatResolver = new CombatResolver();
-        events.addAll(combatResolver.resolveCombatPhase(state, activePlayer));
 
-        // ── Switch active player ───────────────────────────────────────────────
-        int next = 1 - activePlayer;
-        state.setCurrentPlayer(next);
+        // 1. Discard entire hand
+        state.discardPile.addAll(state.hand);
+        state.hand.clear();
+
+        // 2. Monster acts
+        state.setPlayerTurn(false);
+        CombatResolver resolver = new CombatResolver();
+        events.addAll(resolver.executeMonsterTurn(state));
+
+        // Check if game is over
+        if (state.playerHp <= 0 || state.monsterHp <= 0) {
+            return events;
+        }
+
+        // 3. Start new player turn
         turnNumber++;
+        state.setTurnNumber(turnNumber);
+        state.setPlayerTurn(true);
 
-        // ── Process Status Effects ─────────────────────────────────────────────
-        StatusEffectProcessor.processTurnStart(state, next);
+        // Reset player block at start of turn
+        state.playerBlock = 0;
 
-        // ── Un-exhaust & Reset flags ───────────────────────────────────────────
-        GameState.PlayerState ps = state.getPlayer(next);
-        for (CardInstance c : ps.board) {
-            if (c != null) {
-                c.setExhausted(false);
-                c.setRangedThisTurn(false);
-            }
-        }
-        
-        // Reset sacrifice credits at the end of the turn
-        state.getPlayer(0).sacrificeCredit = 0;
-        state.getPlayer(1).sacrificeCredit = 0;
+        // Reset monster block at start of player turn
+        state.monsterBlock = 0;
 
-        // ── Draw to fill hand to STARTING_HAND_SIZE (Player 0 only) ────────────
-        if (next == 0) {
-            drawCardsTo(next, Constants.STARTING_HAND_SIZE, state, events);
-        }
+        // Refill energy
+        state.playerEnergy = state.playerMaxEnergy;
 
-        events.add(new TurnChangedEvent(next, turnNumber));
+        // Draw new hand
+        events.addAll(drawCards(state, CARDS_PER_TURN));
+        events.add(new TurnChangedEvent(turnNumber, true));
 
-        // ── onTurnStart ability hooks ──────────────────────────────────────────
-        CardInstance[] boardSnapshot = ps.board.clone(); // snapshot to avoid ConcurrentModification
-        for (CardInstance ci : boardSnapshot) {
-            if (ci != null) {
-                for (String id : ci.getTemplate().abilityIds()) {
-                    AbilityRegistry.getInstance()
-                                   .get(id)
-                                   .ifPresent(a -> events.addAll(a.onTurnStart(ci, state)));
-                }
-            }
-        }
-
-        currentPhase = Phase.MAIN;
         return events;
     }
 
     /**
-     * Executes Leshy's (Player 1) fully automated turn.
-     * 1. Advance queue to active board
-     * 2. Fill queue from deck
-     * 3. Resolve combat
-     * 4. Switch turn back to Player 0
+     * Draw cards from draw pile into hand.
+     * If draw pile is empty, shuffle discard pile into draw pile.
      */
-    public List<GameEvent> executeLeshyTurn(GameState state) {
+    private List<GameEvent> drawCards(GameState state, int count) {
         List<GameEvent> events = new ArrayList<>();
-        GameState.PlayerState p1 = state.getPlayer(1);
-
-        // 1. Advance Queue
-        for (int i = 0; i < Constants.MAX_BOARD_SIZE; i++) {
-            if (p1.board[i] == null && p1.queueBoard[i] != null) {
-                p1.board[i] = p1.queueBoard[i];
-                p1.queueBoard[i] = null;
-                events.add(new com.cardgame.logic.events.CardPlayedEvent(1, p1.board[i], i));
+        for (int i = 0; i < count; i++) {
+            if (state.drawPile.isEmpty()) {
+                if (state.discardPile.isEmpty()) break; // truly out of cards
+                state.drawPile.addAll(state.discardPile);
+                state.discardPile.clear();
+                Collections.shuffle(state.drawPile);
             }
+            CardData card = state.drawPile.remove(0);
+            state.hand.add(card);
+            events.add(new CardDrawnEvent(card));
         }
-
-        // 2. Fill Queue
-        for (int i = 0; i < Constants.MAX_BOARD_SIZE; i++) {
-            if (p1.queueBoard[i] == null) {
-                if (p1.deck.isEmpty() && !p1.deadPool.isEmpty()) {
-                    p1.deck.addAll(p1.deadPool);
-                    p1.deadPool.clear();
-                    java.util.Collections.shuffle(p1.deck);
-                }
-                if (!p1.deck.isEmpty()) {
-                    CardData drawn = p1.deck.remove(0);
-                    // Create instance directly into queue
-                    CardInstance ci = new CardInstance(drawn, 1);
-                    p1.queueBoard[i] = ci;
-                }
-            }
-        }
-
-        // 3 & 4. Combat & Switch (re-use endTurn for Player 1)
-        events.addAll(endTurn(state));
         return events;
-    }
-
-    private void drawCardsTo(int playerIndex, int targetHandSize, GameState state, List<GameEvent> events) {
-        GameState.PlayerState ps = state.getPlayer(playerIndex);
-        while (ps.hand.size() < targetHandSize) {
-            if (ps.deck.isEmpty()) {
-                // Dead pool reshuffle: only deadPool goes back, NEVER discardPile
-                if (!ps.deadPool.isEmpty()) {
-                    ps.deck.addAll(ps.deadPool);
-                    ps.deadPool.clear();
-                    Collections.shuffle(ps.deck);
-                } else {
-                    break; // Truly out of cards
-                }
-            }
-            CardData drawn = ps.deck.remove(0);
-            CardInstance ci = new CardInstance(drawn, playerIndex);
-            ps.hand.add(ci);
-            events.add(new CardDrawnEvent(playerIndex, ci));
-        }
     }
 }
