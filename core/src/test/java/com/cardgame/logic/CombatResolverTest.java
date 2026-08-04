@@ -35,7 +35,7 @@ class CombatResolverTest {
     private CardInstance minion(String name, int atk, int hp, int owner, List<String> abilities) {
         CardData d = new CardData("id_" + name, name, atk, hp, 0, 0,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", abilities, List.of(), "");
+                "", abilities, List.of(), "", 1);
         CardInstance ci = new CardInstance(d, owner);
         ci.setExhausted(false);
         for (int i = 0; i < state.getPlayer(owner).board.length; i++) {
@@ -65,14 +65,14 @@ class CombatResolverTest {
     }
 
     @Test
-    @DisplayName("Attacker does not receive retaliation damage")
-    void resolveCombatPhase_noRetaliation() {
-        CardInstance atk = minion("Attacker", 2, 3, 0);
+    @DisplayName("Attacker does not receive retaliation damage when ranged")
+    void resolveCombatPhase_noRetaliationWhenRanged() {
+        CardInstance atk = minion("Attacker", 2, 3, 0, List.of("ranged"));
         CardInstance def = minion("Defender", 2, 5, 1);
 
         resolver.resolveCombatPhase(state, 0);
 
-        assertEquals(3, atk.getCurrentHealth(), "Attacker should not take damage in its own combat phase");
+        assertEquals(3, atk.getCurrentHealth(), "Ranged attacker should not take retaliation damage");
     }
 
     @Test
@@ -102,14 +102,40 @@ class CombatResolverTest {
     }
 
     @Test
-    @DisplayName("Direct attack damages the scale")
-    void resolveCombatPhase_directAttack_damagesScale() {
+    @DisplayName("Direct attack damages the opponent's HP")
+    void resolveCombatPhase_directAttack_damagesHp() {
         CardInstance atk = minion("Attacker", 3, 5, 0);
-        // no defender
+        // no defender — empty lane
+
+        int scaleBefore = state.getScaleBalance();
+        resolver.resolveCombatPhase(state, 0);
+
+        assertEquals(scaleBefore + 3, state.getScaleBalance(), "Player 0 deals 3 damage, tipping scale by +3");
+    }
+
+    @Test
+    @DisplayName("Overflow damage hits player HP")
+    void resolveCombatPhase_overflowDamage_hitsPlayerHp() {
+        CardInstance atk = minion("Attacker", 5, 5, 0);
+        CardInstance def = minion("Defender", 1, 2, 1);
+
+        int scaleBefore = state.getScaleBalance();
+        resolver.resolveCombatPhase(state, 0);
+
+        // 5 ATK vs 2 HP defender → 3 overflow
+        assertEquals(scaleBefore + 3, state.getScaleBalance(), "Overflow damage (5 - 2 = 3) should tip scale by +3");
+    }
+
+    @Test
+    @DisplayName("Dead card goes to dead pool")
+    void resolveCombatPhase_deadCard_goesToDeadPool() {
+        CardInstance atk = minion("Attacker", 5, 5, 0);
+        CardInstance def = minion("Defender", 1, 2, 1);
 
         resolver.resolveCombatPhase(state, 0);
 
-        assertEquals(3, state.getScaleBalance(), "Player 0 deals 3 damage to the scale");
+        assertTrue(state.getPlayer(1).deadPool.contains(def.getTemplate()),
+                "Dead card template should be added to player 1's dead pool");
     }
 
     @Test
@@ -118,7 +144,7 @@ class CombatResolverTest {
         // Give player 1 a deck with one card
         CardData deckCard = new CardData("deck_c", "Deck Card", 1, 1, 1, 1,
                 com.cardgame.data.CardType.UNIT, com.cardgame.data.UnitArchetype.STANDARD, com.cardgame.data.AffinityType.NEUTRAL, 
-                "", List.of(), List.of(), "");
+                "", List.of(), List.of(), "", 1);
         state.getPlayer(1).deck.add(deckCard);
 
         CardInstance atk = minion("Attacker", 5, 5, 0);

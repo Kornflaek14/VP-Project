@@ -13,6 +13,8 @@ import java.util.List;
  *   <li>Both minions deal their attack damage simultaneously.</li>
  *   <li>Dead minions are removed from their owner's board.</li>
  *   <li>{@code onDeath} ability hooks are triggered after removal.</li>
+ *   <li>Overflow damage from killing a defender hits the defender's owner's HP.</li>
+ *   <li>Empty-lane attacks hit the opposing player's HP directly.</li>
  * </ul>
  *
  *
@@ -93,17 +95,13 @@ public final class CombatResolver {
         if (damage <= 0) return events;
 
         if (defender == null || canAttackDirectly) {
-            // ── Direct scale hit ────────────────────────────────────────────────
-            if (attackingPlayer == 0) {
-                state.setScaleBalance(state.getScaleBalance() + damage);
-            } else {
-                state.setScaleBalance(state.getScaleBalance() - damage);
-            }
-            events.add(new ScaleChangedEvent(state.getScaleBalance(), damage, attackingPlayer));
-            // Win condition: scale tips ±WINNING_SCALE_THRESHOLD
+            // ── Direct HP hit (empty lane or airborne bypass) ───────────────
+            int sign = (attackingPlayer == 0) ? 1 : -1;
+            state.addScaleBalance(damage * sign);
+            events.add(new PlayerDamagedEvent(defendingPlayer, damage));
             state.checkWinCondition().ifPresent(events::add);
         } else {
-            // ── Minion vs minion ────────────────────────────────────────────────
+            // ── Minion vs minion ────────────────────────────────────────────
             events.add(new CardAttackedEvent(attacker, defender));
 
             // 1. Affinity multiplier on attacker → defender
@@ -113,9 +111,23 @@ public final class CombatResolver {
             int finalDamage = (int) (damage * attackMult);
 
             if (finalDamage > 0) {
+                int defenderHpBefore = defender.getCurrentHealth();
                 defender.dealDamage(finalDamage);
                 events.add(new DamageDealtEvent(attacker, defender, finalDamage, true));
+
+                // Overflow damage: excess damage beyond what kills the defender
+                // hits the defender's owner's HP directly
+                if (defender.isDead()) {
+                    int overflow = finalDamage - defenderHpBefore;
+                    if (overflow > 0) {
+                        int sign = (attackingPlayer == 0) ? 1 : -1;
+                        state.addScaleBalance(overflow * sign);
+                        events.add(new PlayerDamagedEvent(defendingPlayer, overflow));
+                    }
+                }
+
                 events.addAll(processDeath(defender, state));
+                state.checkWinCondition().ifPresent(events::add);
             }
 
             // 2. Melee retaliation: defender strikes back unless attacker is Ranged
@@ -178,6 +190,8 @@ public final class CombatResolver {
 
         state.removeCardFromBoard(card);
         state.setBones(ownerIdx, state.getBones(ownerIdx) + 1); // Grant bone
+        // Dead cards go to the dead pool (reshuffled into deck when deck is empty)
+        state.getPlayer(ownerIdx).deadPool.add(card.getTemplate());
         events.add(new CardDiedEvent(ownerIdx, card));
 
         for (String id : card.getTemplate().abilityIds()) {

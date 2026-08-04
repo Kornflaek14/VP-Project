@@ -30,6 +30,9 @@ public final class CardData {
     // Abilities & Effects
     private final List<String> abilityIds;
     private final List<StatusEffectData> statusEffects;
+    
+    // Deck building
+    private final int deckCount;
     private final String description;
 
     // No-arg constructor required by Gson for deserialization
@@ -37,7 +40,7 @@ public final class CardData {
         this("", "", 0, 0, 0, 0,
              CardType.UNIT, UnitArchetype.STANDARD, AffinityType.NEUTRAL, 
              null, 
-             List.of(), List.of(), "");
+             List.of(), List.of(), "", 1);
     }
 
     public CardData(String id,
@@ -52,7 +55,8 @@ public final class CardData {
                     String imagePath,
                     List<String> abilityIds,
                     List<StatusEffectData> statusEffects,
-                    String description) {
+                    String description,
+                    int deckCount) {
         this.id            = Objects.requireNonNull(id,   "id must not be null");
         this.name          = Objects.requireNonNull(name, "name must not be null");
         this.attack        = attack;
@@ -68,6 +72,7 @@ public final class CardData {
         this.abilityIds    = abilityIds == null ? List.of() : Collections.unmodifiableList(abilityIds);
         this.statusEffects = statusEffects == null ? List.of() : Collections.unmodifiableList(statusEffects);
         this.description   = description == null ? "" : description;
+        this.deckCount     = Math.max(1, deckCount);
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
@@ -85,6 +90,8 @@ public final class CardData {
     public List<String> abilityIds()    { return abilityIds;    }
     public List<StatusEffectData> statusEffects() { return statusEffects; }
     public String       description()   { return description;   }
+    /** Number of copies of this card in the starting deck (default 1). */
+    public int          deckCount()     { return deckCount;     }
 
     @Override
     public String toString() {

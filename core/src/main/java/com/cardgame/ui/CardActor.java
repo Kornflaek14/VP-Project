@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.cardgame.logic.CardInstance;
 import com.cardgame.utils.Constants;
 
@@ -15,7 +15,7 @@ import com.cardgame.utils.Constants;
  * Scene2D {@link Actor} that renders one {@link CardInstance} visually.
  * <p>
  * Responsibilities: draw card background, name, attack, health, taunt border.
- * No game rules live here — input events call back to {@link BattleInputHandler}.
+ * Supports drag interaction via {@link CardInteractionCallback}.
  * <p>
  * The same actor class is used for hand cards and board cards; callers size
  * it appropriately via {@link #setSize}.
@@ -25,6 +25,8 @@ public class CardActor extends Actor {
     // ── State ──────────────────────────────────────────────────────────────────
     private final CardInstance card;
     private boolean selected = false;
+    private boolean lifted   = false;
+    private float homeX, homeY; // snap-back position
 
     // ── Textures (per-instance; disposed in dispose()) ─────────────────────────
     private Texture cardBg;
@@ -53,8 +55,75 @@ public class CardActor extends Actor {
     private static final Color EXHAUSTED_TINT = new Color(0f, 0f, 0f, 0.42f);
 
     // ── Callback ───────────────────────────────────────────────────────────────
+    
+    /** Callback for card interactions (click for board cards, drag for hand cards). */
+    public interface CardInteractionCallback {
+        /** Called on simple click (board cards). */
+        default void onClick(CardActor actor) {}
+        /** Called when drag starts (hand cards). */
+        default void onDragStart(CardActor actor) {}
+        /** Called each frame during drag. */
+        default void onDrag(CardActor actor, float stageX, float stageY) {}
+        /** Called when drag ends (mouse up). */
+        default void onDragEnd(CardActor actor, float stageX, float stageY) {}
+    }
+
+    /** Legacy click-only callback for board cards. */
     public interface OnClickCallback { void onClick(CardActor actor); }
 
+    /**
+     * Creates a CardActor with drag support (for hand cards).
+     */
+    public CardActor(CardInstance card, CardInteractionCallback callback) {
+        this.card = card;
+        this.font = new BitmapFont();
+        this.font.getData().setScale(0.85f);
+        this.font.setColor(Color.WHITE);
+
+        buildTextures();
+
+        addListener(new InputListener() {
+            private boolean dragging = false;
+            
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true; // claim the event
+            }
+
+            @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                if (!dragging) {
+                    dragging = true;
+                    if (callback != null) callback.onDragStart(CardActor.this);
+                }
+                if (callback != null) {
+                    // Convert to stage coordinates
+                    com.badlogic.gdx.math.Vector2 stagePos = CardActor.this.localToStageCoordinates(
+                            new com.badlogic.gdx.math.Vector2(x, y));
+                    callback.onDrag(CardActor.this, stagePos.x, stagePos.y);
+                }
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (dragging) {
+                    dragging = false;
+                    if (callback != null) {
+                        com.badlogic.gdx.math.Vector2 stagePos = CardActor.this.localToStageCoordinates(
+                                new com.badlogic.gdx.math.Vector2(x, y));
+                        callback.onDragEnd(CardActor.this, stagePos.x, stagePos.y);
+                    }
+                } else {
+                    // Simple click (no drag occurred)
+                    if (callback != null) callback.onClick(CardActor.this);
+                }
+            }
+        });
+    }
+
+    /**
+     * Creates a CardActor with simple click support (for board cards).
+     */
     public CardActor(CardInstance card, OnClickCallback callback) {
         this.card = card;
         this.font = new BitmapFont();
@@ -63,9 +132,13 @@ public class CardActor extends Actor {
 
         buildTextures();
 
-        addListener(new ClickListener() {
+        addListener(new InputListener() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                return true;
+            }
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
                 if (callback != null) callback.onClick(CardActor.this);
             }
         });
@@ -110,12 +183,50 @@ public class CardActor extends Actor {
     public CardInstance getCard()           { return card;     }
     public boolean      isSelected()        { return selected; }
     public void         setSelected(boolean s) { selected = s; }
+    
+    public boolean      isLifted()          { return lifted;   }
+    public void         setLifted(boolean l) { lifted = l;     }
+    
+    /** Store current position as the snap-back home position. */
+    public void saveHomePosition() {
+        homeX = getX();
+        homeY = getY();
+    }
+    
+    public float getHomeX() { return homeX; }
+    public float getHomeY() { return homeY; }
+    
+    private float currentLift = 0f;
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        float targetLift = lifted ? Constants.CARD_HEIGHT * 0.2f : 0f;
+        currentLift = com.badlogic.gdx.math.MathUtils.lerp(currentLift, targetLift, 15f * delta);
+        
+        float targetScale = lifted ? 1.15f : 1.0f;
+        float currentScale = com.badlogic.gdx.math.MathUtils.lerp(getScaleX(), targetScale, 15f * delta);
+        setScale(currentScale);
+    }
+
+    /** Snap card back to its home position smoothly. */
+    public void snapBack() {
+        setLifted(false);
+        addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.moveTo(homeX, homeY, 0.25f, com.badlogic.gdx.math.Interpolation.pow2Out));
+    }
 
     // ── Scene2D draw ───────────────────────────────────────────────────────────
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        float x = getX(), y = getY(), w = getWidth(), h = getHeight();
+        float baseW = getWidth();
+        float baseH = getHeight();
+        float scale = getScaleX() == 0 ? 1f : getScaleX(); // safe fallback
+        float w = baseW * scale;
+        float h = baseH * scale;
+        float x = getX() + (baseW - w) / 2f;
+        float y = getY() + currentLift + (baseH - h) / 2f;
+        
         float alpha = parentAlpha * getColor().a;
 
         // ── Border ──────────────────────────────────────────────────────────

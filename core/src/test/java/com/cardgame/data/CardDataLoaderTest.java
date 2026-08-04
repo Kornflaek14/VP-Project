@@ -21,7 +21,7 @@ class CardDataLoaderTest {
         try (InputStream is = getClass().getResourceAsStream("/cards.json")) {
             assertNotNull(is, "cards.json not found on test classpath");
             List<CardData> cards = CardDataLoader.load(is);
-            assertEquals(6, cards.size(), "Expected 6 cards in cards.json");
+            assertEquals(7, cards.size(), "Expected 7 card templates in cards.json");
         }
     }
 

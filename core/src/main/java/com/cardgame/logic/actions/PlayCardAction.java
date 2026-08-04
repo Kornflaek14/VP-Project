@@ -88,8 +88,8 @@ public final class PlayCardAction implements GameAction {
         if (isUnit) {
             ps.board[pos] = card;
         } else {
-            // Spells go to discard pile
-            ps.discardPile.add(card.getTemplate());
+            // Spells/items go to dead pool (reshuffle into deck when deck is empty)
+            ps.deadPool.add(card.getTemplate());
         }
 
         events.add(new CardPlayedEvent(playerIndex, card, pos)); // pos=-1 for spells

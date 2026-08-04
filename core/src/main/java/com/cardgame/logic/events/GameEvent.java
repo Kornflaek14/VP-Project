@@ -11,7 +11,7 @@ public sealed interface GameEvent
                 CardAttackedEvent,
                 CardDiedEvent,
                 DamageDealtEvent,
-                ScaleChangedEvent,
+                PlayerDamagedEvent,
                 CardDrawnEvent,
                 TurnChangedEvent,
                 GameOverEvent,

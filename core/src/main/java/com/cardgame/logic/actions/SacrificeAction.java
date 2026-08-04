@@ -35,6 +35,7 @@ public final class SacrificeAction implements GameAction {
             
             ps.sacrificeCredit++;
             ps.bones++; // Inscryption: sacrificing a card gives a bone
+            ps.deadPool.add(target.getTemplate()); // goes to dead pool for reshuffling
             events.add(new SacrificeEvent(playerIndex, target));
             events.add(new CardDiedEvent(playerIndex, target));
             
