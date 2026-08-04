@@ -33,7 +33,7 @@ class CardDataLoaderTest {
 
             assertNotNull(scalpel, "scalpel not found");
             assertEquals("Scalpel", scalpel.name());
-            assertEquals(1, scalpel.bloodCost());
+            assertEquals(1, scalpel.energyCost());
             assertEquals(2, scalpel.attack());
             assertEquals(1, scalpel.health());
             assertTrue(scalpel.abilityIds().isEmpty());

@@ -1,0 +1,182 @@
+﻿[
+    {
+        "id":  "relic_1",
+        "name":  "Burning Blood",
+        "attackBoost":  5,
+        "defenceBoost":  3,
+        "hpBoost":  10,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/BurningBlood.png"
+    },
+    {
+        "id":  "relic_2",
+        "name":  "Cracked Core",
+        "attackBoost":  0,
+        "defenceBoost":  20,
+        "hpBoost":  20,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/CrackedCore.png"
+    },
+    {
+        "id":  "relic_3",
+        "name":  "Ring of the Snake",
+        "attackBoost":  8,
+        "defenceBoost":  3,
+        "hpBoost":  4,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/RingoftheSnake.png"
+    },
+    {
+        "id":  "relic_4",
+        "name":  "Akabeko",
+        "attackBoost":  10,
+        "defenceBoost":  10,
+        "hpBoost":  10,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/Akabeko.png"
+    },
+    {
+        "id":  "relic_5",
+        "name":  "Fusion Hammer",
+        "attackBoost":  5,
+        "defenceBoost":  5,
+        "hpBoost":  15,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/FusionHammer.png"
+    },
+    {
+        "id":  "relic_6",
+        "name":  "Champion Belt",
+        "attackBoost":  0,
+        "defenceBoost":  0,
+        "hpBoost":  0,
+        "energyBoost":  2,
+        "image":  "IMAGES/RelicImages/ChampionBelt.png"
+    },
+    {
+        "id":  "relic_7",
+        "name":  "Busted Crown",
+        "attackBoost":  0,
+        "defenceBoost":  0,
+        "hpBoost":  40,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/BustedCrown.png"
+    },
+    {
+        "id":  "relic_8",
+        "name":  "Emotion Chip",
+        "attackBoost":  15,
+        "defenceBoost":  10,
+        "hpBoost":  10,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/EmotionChip.png"
+    },
+    {
+        "id":  "relic_9",
+        "name":  "Ginger",
+        "attackBoost":  5,
+        "defenceBoost":  5,
+        "hpBoost":  5,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/Ginger.png"
+    },
+    {
+        "id":  "relic_10",
+        "name":  "Ceramic Fish",
+        "attackBoost":  9,
+        "defenceBoost":  5,
+        "hpBoost":  15,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/CeramicFish.png"
+    },
+    {
+        "id":  "relic_11",
+        "name":  "Cables",
+        "attackBoost":  7,
+        "defenceBoost":  5,
+        "hpBoost":  5,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/Cables.png"
+    },
+    {
+        "id":  "relic_12",
+        "name":  "Cracked Core",
+        "attackBoost":  10,
+        "defenceBoost":  15,
+        "hpBoost":  0,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/CrackedCore.png"
+    },
+    {
+        "id":  "relic_13",
+        "name":  "Eternal Feather",
+        "attackBoost":  20,
+        "defenceBoost":  0,
+        "hpBoost":  0,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/EternalFeather.png"
+    },
+    {
+        "id":  "relic_14",
+        "name":  "Damaru",
+        "attackBoost":  0,
+        "defenceBoost":  20,
+        "hpBoost":  20,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/Damaru.png"
+    },
+    {
+        "id":  "relic_15",
+        "name":  "Cursed Key",
+        "attackBoost":  10,
+        "defenceBoost":  0,
+        "hpBoost":  0,
+        "energyBoost":  2,
+        "image":  "IMAGES/RelicImages/CursedKey.png"
+    },
+    {
+        "id":  "relic_16",
+        "name":  "Art of War",
+        "attackBoost":  15,
+        "defenceBoost":  15,
+        "hpBoost":  20,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/ArtofWar.png"
+    },
+    {
+        "id":  "relic_17",
+        "name":  "Black Star",
+        "attackBoost":  10,
+        "defenceBoost":  0,
+        "hpBoost":  0,
+        "energyBoost":  2,
+        "image":  "IMAGES/RelicImages/BlackStar.png"
+    },
+    {
+        "id":  "relic_18",
+        "name":  "Empty Cage",
+        "attackBoost":  0,
+        "defenceBoost":  0,
+        "hpBoost":  0,
+        "energyBoost":  3,
+        "image":  "IMAGES/RelicImages/EmptyCage.png"
+    },
+    {
+        "id":  "relic_19",
+        "name":  "Happy Flower",
+        "attackBoost":  5,
+        "defenceBoost":  10,
+        "hpBoost":  15,
+        "energyBoost":  1,
+        "image":  "IMAGES/RelicImages/HappyFlower.png"
+    },
+    {
+        "id":  "relic_20",
+        "name":  "Blue Candle",
+        "attackBoost":  10,
+        "defenceBoost":  5,
+        "hpBoost":  30,
+        "energyBoost":  0,
+        "image":  "IMAGES/RelicImages/BlueCandle.png"
+    }
+]

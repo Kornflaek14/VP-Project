@@ -1,7 +1,5 @@
 package com.cardgame.logic.events;
 
-import com.cardgame.logic.CardInstance;
+import com.cardgame.data.CardData;
 
-/** Fired when a minion is successfully played from hand onto the board. */
-public record CardPlayedEvent(int playerIndex, CardInstance card, int boardPosition)
-        implements GameEvent {}
+public record CardPlayedEvent(CardData card, int damageDealt, int blockGained) implements GameEvent {}
