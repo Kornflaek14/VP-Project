@@ -143,34 +143,12 @@ public class CardActor extends Actor {
             batch.draw(costBg, sx, sy, sw, sh);
         }
 
-        // Dark overlay at bottom for text
-        batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(statBg, sx, sy, sw, sh * 0.28f);
-
         // Energy cost badge (top-left circle)
         float badgeR = 18f * scale;
         batch.draw(costBg, sx + 4f, sy + sh - badgeR * 2 - 4f, badgeR * 2, badgeR * 2);
         font.setColor(1f, 1f, 1f, alpha);
         font.draw(batch, String.valueOf(card.energyCost()),
                 sx + 4f + badgeR * 0.55f, sy + sh - 4f - badgeR * 0.55f);
-
-        // Card name (bottom area)
-        smallFont.setColor(1f, 1f, 1f, alpha);
-        String name = card.name();
-        if (name.length() > 14) name = name.substring(0, 13) + "…";
-        smallFont.draw(batch, name, sx + 6f, sy + sh * 0.24f);
-
-        // Damage (bottom-left)
-        if (card.damage() > 0) {
-            font.setColor(1f, 0.35f, 0.25f, alpha);
-            font.draw(batch, "⚔" + card.damage(), sx + 6f, sy + sh * 0.12f);
-        }
-
-        // Block (bottom-right)
-        if (card.defence() > 0) {
-            font.setColor(0.3f, 0.7f, 1f, alpha);
-            font.draw(batch, "🛡" + card.defence(), sx + sw - 45f * scale, sy + sh * 0.12f);
-        }
 
         batch.setColor(1f, 1f, 1f, 1f);
     }

@@ -76,7 +76,7 @@ public class GameOverScreen implements Screen {
 
             RunManager rm = RunManager.getInstance();
             if (rm.getCurrentNodeIndex() >= rm.getMaxNodes()) {
-                Label winLabel = new Label("YOU BEAT THE SPIRE!", new Label.LabelStyle(font, Color.GOLD));
+                Label winLabel = new Label("YOU WIN! RUN COMPLETE!", new Label.LabelStyle(font, Color.GOLD));
                 root.add(winLabel).padBottom(40).row();
 
                 TextButton menuBtn = new TextButton("RESTART RUN", btnStyle);

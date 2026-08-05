@@ -54,13 +54,14 @@ public class MainMenuScreen implements Screen {
         buttonFont.setColor(Color.WHITE);
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
-        Label title = new Label("SLAY THE SPIRE", titleStyle);
+        Label title = new Label("CARD BATTLER", titleStyle);
 
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font       = buttonFont;
         btnStyle.fontColor  = Color.WHITE;
         btnStyle.overFontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
 
+        // ── Play button ───────────────────────────────────────────
         TextButton playBtn = new TextButton("PLAY", btnStyle);
         playBtn.addListener(new ChangeListener() {
             @Override
@@ -69,12 +70,32 @@ public class MainMenuScreen implements Screen {
             }
         });
 
+        // ── Settings button ───────────────────────────────────────
+        TextButton settingsBtn = new TextButton("SETTINGS", btnStyle);
+        settingsBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new SettingsScreen(game));
+            }
+        });
+
+        // ── Exit button ───────────────────────────────────────────
+        TextButton exitBtn = new TextButton("EXIT", btnStyle);
+        exitBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                Gdx.app.exit();
+            }
+        });
+
         Table root = new Table();
         root.setFillParent(true);
         root.center();
 
         root.add(title).padBottom(80).row();
-        root.add(playBtn).size(260, 60).row();
+        root.add(playBtn).size(260, 60).padBottom(20).row();
+        root.add(settingsBtn).size(260, 60).padBottom(20).row();
+        root.add(exitBtn).size(260, 60).row();
 
         stage.addActor(root);
     }
