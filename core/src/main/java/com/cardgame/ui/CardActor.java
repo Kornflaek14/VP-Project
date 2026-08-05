@@ -18,7 +18,9 @@ import java.util.Map;
 
 /**
  * Scene2D Actor for rendering a single card in STS style.
- * Displays: full card art image, energy cost badge, damage/block text, name, type color border.
+ *
+ * On hover: lifts card 20px, scales slightly, and shows a full
+ * CardPreviewOverlay centered on screen.
  */
 public class CardActor extends Actor {
 
@@ -41,7 +43,20 @@ public class CardActor extends Actor {
     private static final Color SKILL_COLOR  = new Color(0.20f, 0.50f, 0.85f, 1f);
     private static final Color POWER_COLOR  = new Color(0.85f, 0.75f, 0.20f, 1f);
 
+    /** Shared texture cache across all card actors. */
     private static final Map<String, Texture> imageCache = new HashMap<>();
+
+    /** The active preview overlay — set by BattleScreen. */
+    private static CardPreviewOverlay previewOverlay = null;
+
+    public static void setPreviewOverlay(CardPreviewOverlay overlay) {
+        previewOverlay = overlay;
+    }
+
+    /** Returns a cached texture for the given path (used by CardPreviewOverlay). */
+    public static Texture getCachedTexture(String path) {
+        return imageCache.get(path);
+    }
 
     public CardActor(CardData card, OnClickCallback callback) {
         this.card = card;
@@ -64,10 +79,12 @@ public class CardActor extends Actor {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 hovered = true;
+                if (previewOverlay != null) previewOverlay.show(card);
             }
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                 hovered = false;
+                if (previewOverlay != null) previewOverlay.hide();
             }
         });
     }
@@ -83,7 +100,7 @@ public class CardActor extends Actor {
         costBg    = singlePixel(new Color(0.1f, 0.1f, 0.1f, 0.85f));
         statBg    = singlePixel(new Color(0.05f, 0.05f, 0.08f, 0.75f));
 
-        // Load card image from assets
+        // Load card image from assets (shared cache)
         String imagePath = card.image();
         if (imagePath != null && !imagePath.isEmpty()) {
             if (imageCache.containsKey(imagePath)) {
@@ -121,17 +138,18 @@ public class CardActor extends Actor {
         float y = getY();
         float alpha = parentAlpha * getColor().a;
 
-        // Lift on hover
+        // Lift & scale on hover
         float liftY = hovered ? 20f : 0f;
         float scale = hovered ? 1.08f : 1f;
-        float sw = w * scale;
-        float sh = h * scale;
-        float sx = x - (sw - w) / 2f;
-        float sy = y + liftY - (sh - h) / 2f;
+        float sw  = w * scale;
+        float sh  = h * scale;
+        float sx  = x - (sw - w) / 2f;
+        float sy  = y + liftY - (sh - h) / 2f;
 
-        // Border (3px)
-        float bw = 3f;
-        batch.setColor(1f, 1f, 1f, alpha);
+        // Glow/border (brighter on hover)
+        float bw = hovered ? 4f : 3f;
+        float glowAlpha = hovered ? 1f : 0.7f;
+        batch.setColor(1f, 1f, 1f, glowAlpha * alpha);
         batch.draw(borderTex, sx - bw, sy - bw, sw + bw * 2, sh + bw * 2);
 
         // Card image or fallback
@@ -143,12 +161,19 @@ public class CardActor extends Actor {
             batch.draw(costBg, sx, sy, sw, sh);
         }
 
-        // Energy cost badge (top-left circle)
+        // Energy cost badge (top-left)
         float badgeR = 18f * scale;
         batch.draw(costBg, sx + 4f, sy + sh - badgeR * 2 - 4f, badgeR * 2, badgeR * 2);
         font.setColor(1f, 1f, 1f, alpha);
         font.draw(batch, String.valueOf(card.energyCost()),
                 sx + 4f + badgeR * 0.55f, sy + sh - 4f - badgeR * 0.55f);
+
+        // Upgraded indicator
+        if (card.isUpgraded()) {
+            batch.setColor(1f, 0.9f, 0.2f, alpha);
+            font.setColor(1f, 0.9f, 0.2f, alpha);
+            font.draw(batch, "+", sx + sw - 16f, sy + sh - 4f);
+        }
 
         batch.setColor(1f, 1f, 1f, 1f);
     }
@@ -159,6 +184,6 @@ public class CardActor extends Actor {
         statBg.dispose();
         font.dispose();
         smallFont.dispose();
-        // Don't dispose cardImage — it's cached
+        // Don't dispose cardImage — it's in the shared cache
     }
 }

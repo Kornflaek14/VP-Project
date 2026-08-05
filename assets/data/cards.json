@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "id":  "card_1",
         "name":  "Anger",
@@ -8,7 +8,8 @@
         "defence":  0,
         "description":  "Deal 6 damage. Add a copy of this card into your discard pile.",
         "image":  "IMAGES/cards/Ironclad/Anger.png",
-        "cardType":  "ATTACK"
+        "cardType":  "ATTACK",
+        "specialEffect": "ADD_COPY_TO_DISCARD"
     },
     {
         "id":  "card_2",
@@ -19,7 +20,8 @@
         "defence":  0,
         "description":  "Deal 8 damage. Apply 2 vulnerable.",
         "image":  "IMAGES/cards/Ironclad/Bash.png",
-        "cardType":  "ATTACK"
+        "cardType":  "ATTACK",
+        "specialEffect": "APPLY_VULNERABLE_2"
     },
     {
         "id":  "card_3",
@@ -85,7 +87,8 @@
         "defence":  0,
         "description":  "Deal 12 damage. Apply 2 weak.",
         "image":  "IMAGES/cards/Ironclad/Clothesline.png",
-        "cardType":  "ATTACK"
+        "cardType":  "ATTACK",
+        "specialEffect": "APPLY_WEAK_2"
     },
     {
         "id":  "card_9",

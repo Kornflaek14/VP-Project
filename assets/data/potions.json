@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "id":  "potion_1",
         "name":  "Ancient Potion",
@@ -25,7 +25,7 @@
     },
     {
         "id":  "potion_4",
-        "name":  "",
+        "name":  "Duplication Potion",
         "attackBoost":  15,
         "defendBoost":  2,
         "hpBoost":  8,

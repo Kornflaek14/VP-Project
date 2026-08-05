@@ -123,13 +123,28 @@ public class MapScreen implements Screen {
         topBar.top().left().pad(20);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
-        Label hpLabel = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));
-        Label goldLabel = new Label("Gold: " + rm.getGold(), new Label.LabelStyle(font, Color.GOLD));
+        Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));
+        Label goldLabel  = new Label("Gold: " + rm.getGold(), new Label.LabelStyle(font, Color.GOLD));
         Label floorLabel = new Label("Floor: " + (rm.getCurrentNodeIndex() + 1), new Label.LabelStyle(font, Color.WHITE));
+
+        TextButton.TextButtonStyle deckBtnStyle = new TextButton.TextButtonStyle();
+        deckBtnStyle.font = smallFont;
+        deckBtnStyle.fontColor = new Color(0.7f, 0.85f, 1f, 1f);
+        deckBtnStyle.overFontColor = Color.WHITE;
+
+        TextButton deckBtn = new TextButton("VIEW DECK (" + rm.getDeck().size() + ")", deckBtnStyle);
+        deckBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (paused) return;
+                game.setScreen(new DeckViewerScreen(game, new MapScreen(game)));
+            }
+        });
 
         topBar.add(hpLabel).padRight(40);
         topBar.add(goldLabel).padRight(40);
-        topBar.add(floorLabel);
+        topBar.add(floorLabel).padRight(60);
+        topBar.add(deckBtn);
 
         stage.addActor(topBar);
     }
