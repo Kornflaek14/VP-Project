@@ -1,6 +1,7 @@
 package com.cardgame.logic;
 
 import com.cardgame.data.*;
+import com.cardgame.logic.GameState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -244,6 +245,30 @@ public class RunManager {
         if (index >= 0 && index < potions.size()) {
             PotionData p = potions.remove(index);
             currentHp = Math.min(currentHp + p.hpBoost(), maxHp);
+        }
+    }
+
+    /**
+     * Use a potion during combat: applies HP boost to persistent state
+     * and attack/defend boosts to the active GameState for this combat.
+     */
+    public void usePotion(int index, GameState state) {
+        if (index >= 0 && index < potions.size()) {
+            PotionData p = potions.remove(index);
+            // HP boost: apply to persistent HP
+            if (p.hpBoost() > 0) {
+                currentHp = Math.min(currentHp + p.hpBoost(), maxHp);
+                if (state != null) state.playerHp = Math.min(state.playerHp + p.hpBoost(), state.playerMaxHp);
+            }
+            // Attack boost: temporarily boost this combat's player block/damage
+            if (p.attackBoost() > 0 && state != null) {
+                // Apply as Strength for this combat
+                state.playerStatus.apply(com.cardgame.data.StatusEffect.STRENGTH, p.attackBoost());
+            }
+            // Defend boost: give immediate block
+            if (p.defendBoost() > 0 && state != null) {
+                state.playerBlock += p.defendBoost();
+            }
         }
     }
 
