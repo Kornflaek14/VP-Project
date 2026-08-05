@@ -52,7 +52,7 @@ public class CardBattlerGame extends Game {
             Gdx.app.error("Game", "Failed to load potions.json", e);
         }
 
-        startNewGame();
+        setScreen(new MainMenuScreen(this));
     }
 
     public void startNewGame() {

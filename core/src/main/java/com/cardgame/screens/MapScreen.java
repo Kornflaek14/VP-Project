@@ -1,6 +1,9 @@
 package com.cardgame.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -18,11 +21,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
+import com.cardgame.logic.RunManager.MapNodeData;
+import com.cardgame.ui.PauseOverlay;
 import com.cardgame.utils.Constants;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 public class MapScreen implements Screen {
 
@@ -31,26 +36,14 @@ public class MapScreen implements Screen {
     private Texture bgTexture;
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
-    
-    private final List<MapNode> nodes = new ArrayList<>();
-    private final Random rand = new Random();
+    private BitmapFont smallFont;
+    private BitmapFont tinyFont;
 
-    enum NodeType { COMBAT, ELITE, REST, TREASURE, SHOP, BOSS }
+    private PauseOverlay pauseOverlay;
+    private boolean paused = false;
 
-    class MapNode {
-        float x, y;
-        int level;
-        NodeType type;
-        List<MapNode> nextNodes = new ArrayList<>();
-        TextButton btn;
-
-        public MapNode(float x, float y, int level, NodeType type) {
-            this.x = x;
-            this.y = y;
-            this.level = level;
-            this.type = type;
-        }
-    }
+    // Map from node ID to its position for drawing connections
+    private final Map<Integer, float[]> nodePositions = new HashMap<>();
 
     public MapScreen(CardBattlerGame game) {
         this.game = game;
@@ -59,7 +52,6 @@ public class MapScreen implements Screen {
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
-        Gdx.input.setInputProcessor(stage);
 
         try {
             bgTexture = new Texture(Gdx.files.internal("IMAGES/play/mapBg.jpg"));
@@ -74,14 +66,58 @@ public class MapScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         font = new BitmapFont();
         font.getData().setScale(1.5f);
+        smallFont = new BitmapFont();
+        smallFont.getData().setScale(1.0f);
+        tinyFont = new BitmapFont();
+        tinyFont.getData().setScale(0.8f);
 
         buildMap();
         buildHUD();
+        buildPauseOverlay();
+
+        // Set up input: ESC key + stage
+        InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(new InputAdapter() {
+            @Override
+            public boolean keyDown(int keycode) {
+                if (keycode == Input.Keys.ESCAPE) {
+                    togglePause();
+                    return true;
+                }
+                return false;
+            }
+        });
+        multiplexer.addProcessor(stage);
+        Gdx.input.setInputProcessor(multiplexer);
+    }
+
+    private void togglePause() {
+        paused = !paused;
+        pauseOverlay.toggle();
+    }
+
+    private void buildPauseOverlay() {
+        pauseOverlay = new PauseOverlay(new PauseOverlay.PauseCallback() {
+            @Override
+            public void onResume() {
+                paused = false;
+                pauseOverlay.hide();
+            }
+            @Override
+            public void onEndRun() {
+                game.setScreen(new MainMenuScreen(game));
+            }
+            @Override
+            public void onExitGame() {
+                Gdx.app.exit();
+            }
+        });
+        stage.addActor(pauseOverlay);
     }
 
     private void buildHUD() {
         RunManager rm = RunManager.getInstance();
-        
+
         Table topBar = new Table();
         topBar.setFillParent(true);
         topBar.top().left().pad(20);
@@ -94,122 +130,120 @@ public class MapScreen implements Screen {
         topBar.add(hpLabel).padRight(40);
         topBar.add(goldLabel).padRight(40);
         topBar.add(floorLabel);
-        
+
         stage.addActor(topBar);
     }
 
     private void buildMap() {
-        int maxLevels = RunManager.getInstance().getMaxNodes();
-        int currentLevel = RunManager.getInstance().getCurrentNodeIndex();
+        RunManager rm = RunManager.getInstance();
+        List<MapNodeData> allNodes = rm.getMapNodes();
+        List<Integer> reachableIds = rm.getReachableNodeIds();
+        int lastVisitedId = rm.getLastVisitedNodeId();
 
-        float startY = 100f;
-        float endY = Constants.VIEWPORT_HEIGHT - 100f;
-        float spacingY = (endY - startY) / (maxLevels - 1);
+        // Debug logging
+        Gdx.app.log("MapScreen", "Building map. lastVisitedId=" + lastVisitedId
+            + ", reachableIds=" + reachableIds + ", totalNodes=" + allNodes.size());
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
-        btnStyle.fontColor = Color.GRAY;
-        btnStyle.overFontColor = Color.WHITE;
+        // Determine visited level for "done" coloring
+        MapNodeData lastVisited = rm.getNodeById(lastVisitedId);
+        int visitedLevel = (lastVisited != null) ? lastVisited.level : -1;
 
-        TextButton.TextButtonStyle activeStyle = new TextButton.TextButtonStyle(btnStyle);
-        activeStyle.fontColor = Color.WHITE;
-        activeStyle.overFontColor = Color.YELLOW;
+        Gdx.app.log("MapScreen", "visitedLevel=" + visitedLevel);
 
-        List<MapNode> prevLevelNodes = new ArrayList<>();
+        // ── Button styles ─────────────────────────────────────
 
-        for (int l = 0; l < maxLevels; l++) {
-            int nodesInLevel = (l == 0 || l == maxLevels - 1) ? 1 : 2 + rand.nextInt(3);
-            float spacingX = Constants.VIEWPORT_WIDTH / (nodesInLevel + 1f);
+        // DONE nodes: dark gray, disabled
+        TextButton.TextButtonStyle doneStyle = new TextButton.TextButtonStyle();
+        doneStyle.font = tinyFont;
+        doneStyle.fontColor = new Color(0.3f, 0.3f, 0.3f, 1f);
 
-            List<MapNode> currentLevelNodes = new ArrayList<>();
-            for (int i = 0; i < nodesInLevel; i++) {
-                float x = spacingX * (i + 1);
-                float y = startY + l * spacingY;
+        // REACHABLE nodes: bright green, clickable
+        TextButton.TextButtonStyle reachableStyle = new TextButton.TextButtonStyle();
+        reachableStyle.font = smallFont;
+        reachableStyle.fontColor = new Color(0.3f, 1f, 0.3f, 1f);
+        reachableStyle.overFontColor = Color.YELLOW;
 
-                NodeType type = determineNodeType(l, maxLevels);
-                MapNode node = new MapNode(x, y, l, type);
-                nodes.add(node);
-                currentLevelNodes.add(node);
+        // LOCKED nodes: dim, disabled
+        TextButton.TextButtonStyle lockedStyle = new TextButton.TextButtonStyle();
+        lockedStyle.font = tinyFont;
+        lockedStyle.fontColor = new Color(0.25f, 0.25f, 0.3f, 1f);
 
-                TextButton btn = new TextButton(type.name(), l == currentLevel ? activeStyle : btnStyle);
-                btn.setPosition(x - 50f, y - 20f);
-                btn.setSize(100f, 40f);
-                node.btn = btn;
+        // CURRENT node (last visited): gold
+        TextButton.TextButtonStyle currentStyle = new TextButton.TextButtonStyle();
+        currentStyle.font = smallFont;
+        currentStyle.fontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
 
-                if (l < currentLevel) {
-                    btn.setText("DONE");
-                    btn.setDisabled(true);
-                } else if (l > currentLevel) {
-                    btn.setDisabled(true);
-                } else {
-                    btn.addListener(new ChangeListener() {
-                        @Override
-                        public void changed(ChangeEvent event, Actor actor) {
-                            handleNodeClick(node.type);
-                        }
-                    });
-                }
-                stage.addActor(btn);
+        for (MapNodeData node : allNodes) {
+            // Store position for line drawing
+            nodePositions.put(node.id, new float[]{node.x, node.y});
+
+            boolean isReachable = reachableIds.contains(Integer.valueOf(node.id));
+            boolean isDone = node.level <= visitedLevel;
+            boolean isLastVisited = (node.id == lastVisitedId);
+
+            // Determine style and label
+            TextButton.TextButtonStyle style;
+            String label;
+
+            if (isLastVisited) {
+                style = currentStyle;
+                label = ">> " + node.type + " <<";
+            } else if (isDone) {
+                style = doneStyle;
+                label = "---";
+            } else if (isReachable) {
+                style = reachableStyle;
+                label = "[ " + node.type + " ]";
+            } else {
+                style = lockedStyle;
+                label = node.type;
             }
 
-            if (!prevLevelNodes.isEmpty()) {
-                for (int i = 0; i < prevLevelNodes.size(); i++) {
-                    MapNode prev = prevLevelNodes.get(i);
-                    int targetIndex = (i * currentLevelNodes.size()) / prevLevelNodes.size();
-                    prev.nextNodes.add(currentLevelNodes.get(targetIndex));
-                    
-                    if (rand.nextBoolean() && targetIndex + 1 < currentLevelNodes.size()) {
-                        prev.nextNodes.add(currentLevelNodes.get(targetIndex + 1));
+            TextButton btn = new TextButton(label, style);
+            btn.setPosition(node.x - 55f, node.y - 20f);
+            btn.setSize(110f, 40f);
+
+            if (isReachable && !isDone) {
+                // Only reachable, non-done nodes are clickable
+                final MapNodeData clickedNode = node;
+                btn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        if (paused) return;
+                        Gdx.app.log("MapScreen", "Node clicked: id=" + clickedNode.id
+                            + " level=" + clickedNode.level + " type=" + clickedNode.type);
+                        handleNodeClick(clickedNode);
                     }
-                }
-                for (int i = 0; i < currentLevelNodes.size(); i++) {
-                    MapNode curr = currentLevelNodes.get(i);
-                    boolean hasIncoming = false;
-                    for (MapNode prev : prevLevelNodes) {
-                        if (prev.nextNodes.contains(curr)) {
-                            hasIncoming = true;
-                            break;
-                        }
-                    }
-                    if (!hasIncoming) {
-                        MapNode randomPrev = prevLevelNodes.get(rand.nextInt(prevLevelNodes.size()));
-                        if (!randomPrev.nextNodes.contains(curr)) {
-                            randomPrev.nextNodes.add(curr);
-                        }
-                    }
-                }
+                });
+            } else {
+                btn.setDisabled(true);
             }
-            prevLevelNodes = currentLevelNodes;
+
+            stage.addActor(btn);
         }
     }
 
-    private NodeType determineNodeType(int level, int maxLevels) {
-        if (level == maxLevels - 1) return NodeType.BOSS;
-        if (level == 0) return NodeType.COMBAT;
-        
-        int roll = rand.nextInt(100);
-        if (roll < 40) return NodeType.COMBAT;
-        if (roll < 60) return NodeType.ELITE;
-        if (roll < 75) return NodeType.REST;
-        if (roll < 90) return NodeType.SHOP;
-        return NodeType.TREASURE;
-    }
+    private void handleNodeClick(MapNodeData node) {
+        RunManager rm = RunManager.getInstance();
+        rm.setLastVisitedNodeId(node.id);
+        rm.advanceNode();
 
-    private void handleNodeClick(NodeType type) {
-        RunManager.getInstance().advanceNode();
-        switch (type) {
-            case COMBAT:
-            case ELITE:
-            case BOSS:
+        Gdx.app.log("MapScreen", "Navigating to node " + node.id + " type=" + node.type
+            + ". Next reachable: " + rm.getReachableNodeIds());
+
+        switch (node.type) {
+            case "COMBAT":
+            case "ELITE":
+            case "BOSS":
                 game.setScreen(new BattleScreen(game));
                 break;
-            case REST:
+            case "REST":
                 game.setScreen(new RestScreen(game));
                 break;
-            case SHOP:
+            case "SHOP":
                 game.setScreen(new ShopScreen(game));
                 break;
-            case TREASURE:
+            case "TREASURE":
                 game.setScreen(new TreasureScreen(game));
                 break;
         }
@@ -227,12 +261,32 @@ public class MapScreen implements Screen {
             batch.end();
         }
 
+        // Draw connection lines
+        RunManager rm = RunManager.getInstance();
+        List<MapNodeData> allNodes = rm.getMapNodes();
+        List<Integer> reachableIds = rm.getReachableNodeIds();
+        int lastVisitedId = rm.getLastVisitedNodeId();
+
+        Gdx.gl.glLineWidth(2f);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(new Color(0.4f, 0.4f, 0.5f, 1f));
-        for (MapNode node : nodes) {
-            for (MapNode next : node.nextNodes) {
-                shapeRenderer.line(node.x, node.y, next.x, next.y);
+        for (MapNodeData node : allNodes) {
+            for (int nextId : node.nextNodeIds) {
+                float[] from = nodePositions.get(node.id);
+                float[] to = nodePositions.get(nextId);
+                if (from != null && to != null) {
+                    if (node.id == lastVisitedId && reachableIds.contains(Integer.valueOf(nextId))) {
+                        // Gold highlight for paths from current node to reachable nodes
+                        shapeRenderer.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
+                    } else if (node.level <= (rm.getNodeById(lastVisitedId) != null ? rm.getNodeById(lastVisitedId).level : -1)) {
+                        // Dim for already-passed paths
+                        shapeRenderer.setColor(new Color(0.2f, 0.2f, 0.25f, 0.5f));
+                    } else {
+                        // Default dim for future paths
+                        shapeRenderer.setColor(new Color(0.3f, 0.3f, 0.4f, 0.6f));
+                    }
+                    shapeRenderer.line(from[0], from[1], to[0], to[1]);
+                }
             }
         }
         shapeRenderer.end();
@@ -256,5 +310,8 @@ public class MapScreen implements Screen {
         if (bgTexture != null) bgTexture.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
         if (font != null) font.dispose();
+        if (smallFont != null) smallFont.dispose();
+        if (tinyFont != null) tinyFont.dispose();
+        if (pauseOverlay != null) pauseOverlay.disposeResources();
     }
 }
