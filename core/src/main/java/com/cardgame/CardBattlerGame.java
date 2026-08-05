@@ -3,7 +3,6 @@ package com.cardgame;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.cardgame.data.*;
-import com.cardgame.screens.MainMenuScreen;
 
 import java.util.*;
 

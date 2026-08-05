@@ -1,122 +1,338 @@
 ﻿[
     {
-        "id":  "potion_1",
-        "name":  "Ancient Potion",
-        "attackBoost":  7,
-        "defendBoost":  5,
-        "hpBoost":  11,
-        "image":  "IMAGES/PotionImages/AncientPotion.png"
+        "id": "potion_1",
+        "name": "Vial of Divinity",
+        "attackBoost": 15,
+        "defendBoost": 0,
+        "hpBoost": 5,
+        "image": "IMAGES/PotionImages/Ambrosia.png"
     },
     {
-        "id":  "potion_2",
-        "name":  "Block Potion",
-        "attackBoost":  4,
-        "defendBoost":  11,
-        "hpBoost":  2,
-        "image":  "IMAGES/PotionImages/BlockPotion.png"
+        "id": "potion_2",
+        "name": "Dust of Ages",
+        "attackBoost": 0,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/AncientPotion.png"
     },
     {
-        "id":  "potion_3",
-        "name":  "Bottled Miracle",
-        "attackBoost":  3,
-        "defendBoost":  3,
-        "hpBoost":  1,
-        "image":  "IMAGES/PotionImages/BottledMiracle.png"
+        "id": "potion_3",
+        "name": "Aggression Tonic",
+        "attackBoost": 10,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/AttackPotion.png"
     },
     {
-        "id":  "potion_4",
-        "name":  "",
-        "attackBoost":  15,
-        "defendBoost":  2,
-        "hpBoost":  8,
-        "image":  "IMAGES/PotionImages/Duplication_Potion.png"
+        "id": "potion_4",
+        "name": "Liquid Fire",
+        "attackBoost": 8,
+        "defendBoost": 8,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/Blessing_Of_The_Forge_temporary.png"
     },
     {
-        "id":  "potion_5",
-        "name":  "CultistPotion",
-        "attackBoost":  3,
-        "defendBoost":  5,
-        "hpBoost":  4,
-        "image":  "IMAGES/PotionImages/CultistPotion.png"
+        "id": "potion_5",
+        "name": "Pill of Numbness",
+        "attackBoost": 0,
+        "defendBoost": 12,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/BlockPotion.png"
     },
     {
-        "id":  "potion_6",
-        "name":  "EssenceOfDarkness",
-        "attackBoost":  6,
-        "defendBoost":  2,
-        "hpBoost":  3,
-        "image":  "IMAGES/PotionImages/EssenceOfDarkness.png"
+        "id": "potion_6",
+        "name": "Vampiric Extract",
+        "attackBoost": 0,
+        "defendBoost": 0,
+        "hpBoost": 20,
+        "image": "IMAGES/PotionImages/BloodPotion.png"
     },
     {
-        "id":  "potion_7",
-        "name":  "FairyinaBottle",
-        "attackBoost":  10,
-        "defendBoost":  1,
-        "hpBoost":  0,
-        "image":  "IMAGES/PotionImages/FairyinaBottle.png"
+        "id": "potion_7",
+        "name": "Canned Hope",
+        "attackBoost": 5,
+        "defendBoost": 5,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/BottledMiracle.png"
     },
     {
-        "id":  "potion_8",
-        "name":  "Stance Potion",
-        "attackBoost":  5,
-        "defendBoost":  5,
-        "hpBoost":  10,
-        "image":  "IMAGES/PotionImages/StancePotion.png"
+        "id": "potion_8",
+        "name": "Blank Stare",
+        "attackBoost": 0,
+        "defendBoost": 5,
+        "hpBoost": 5,
+        "image": "IMAGES/PotionImages/Colorless_Potion.png"
     },
     {
-        "id":  "potion_9",
-        "name":  "SteroidPotion",
-        "attackBoost":  4,
-        "defendBoost":  4,
-        "hpBoost":  20,
-        "image":  "IMAGES/PotionImages/SteroidPotion.png"
+        "id": "potion_9",
+        "name": "Zealot's Brew",
+        "attackBoost": 12,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/CultistPotion.png"
     },
     {
-        "id":  "potion_10",
-        "name":  "ExplosivePotion",
-        "attackBoost":  10,
-        "defendBoost":  15,
-        "hpBoost":  10,
-        "image":  "IMAGES/PotionImages/ExplosivePotion.png"
+        "id": "potion_10",
+        "name": "Assassin's Draught",
+        "attackBoost": 15,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/CunningPotion.png"
     },
     {
-        "id":  "potion_11",
-        "name":  "Elixir",
-        "attackBoost":  8,
-        "defendBoost":  3,
-        "hpBoost":  16,
-        "image":  "IMAGES/PotionImages/Elixir.png"
+        "id": "potion_11",
+        "name": "Twitchy Syrup",
+        "attackBoost": 0,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/DexterityPotion.png"
     },
     {
-        "id":  "potion_12",
-        "name":  "SwiftPotion",
-        "attackBoost":  20,
-        "defendBoost":  0,
-        "hpBoost":  0,
-        "image":  "IMAGES/PotionImages/SwiftPotion.png"
+        "id": "potion_12",
+        "name": "Bottled Chaos",
+        "attackBoost": 10,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/DistilledChaos_Potion.png"
     },
     {
-        "id":  "potion_13",
-        "name":  "FearPotion",
-        "attackBoost":  5,
-        "defendBoost":  5,
-        "hpBoost":  25,
-        "image":  "IMAGES/PotionImages/FearPotion.png"
+        "id": "potion_13",
+        "name": "Echo Phial",
+        "attackBoost": 15,
+        "defendBoost": 5,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/Duplication_Potion.png"
     },
     {
-        "id":  "potion_14",
-        "name":  "FruitJuice",
-        "attackBoost":  0,
-        "defendBoost":  25,
-        "hpBoost":  0,
-        "image":  "IMAGES/PotionImages/FruitJuice.png"
+        "id": "potion_14",
+        "name": "Memory Eraser",
+        "attackBoost": 0,
+        "defendBoost": 5,
+        "hpBoost": 15,
+        "image": "IMAGES/PotionImages/Elixir.png"
     },
     {
-        "id":  "potion_15",
-        "name":  "WeakPotion",
-        "attackBoost":  4,
-        "defendBoost":  4,
-        "hpBoost":  4,
-        "image":  "IMAGES/PotionImages/WeakPotion.png"
+        "id": "potion_15",
+        "name": "Adrenaline Shot",
+        "attackBoost": 10,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/EnergyPotion.png"
+    },
+    {
+        "id": "potion_16",
+        "name": "Madman's Mix",
+        "attackBoost": 5,
+        "defendBoost": 5,
+        "hpBoost": 15,
+        "image": "IMAGES/PotionImages/EntropicBrew_Potion.png"
+    },
+    {
+        "id": "potion_17",
+        "name": "Void Essence",
+        "attackBoost": 20,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/EssenceOfDarkness.png"
+    },
+    {
+        "id": "potion_18",
+        "name": "Iron Shell",
+        "attackBoost": 0,
+        "defendBoost": 15,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/EssenceOfSteel.png"
+    },
+    {
+        "id": "potion_19",
+        "name": "Combustible Fluid",
+        "attackBoost": 15,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/ExplosivePotion.png"
+    },
+    {
+        "id": "potion_20",
+        "name": "Trapped Spirit",
+        "attackBoost": 0,
+        "defendBoost": 0,
+        "hpBoost": 30,
+        "image": "IMAGES/PotionImages/FairyinaBottle.png"
+    },
+    {
+        "id": "potion_21",
+        "name": "Vial of Paranoia",
+        "attackBoost": 12,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/FearPotion.png"
+    },
+    {
+        "id": "potion_22",
+        "name": "Napalm Flask",
+        "attackBoost": 20,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/FirePotion.png"
+    },
+    {
+        "id": "potion_23",
+        "name": "Frenzy Serum",
+        "attackBoost": 15,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/SteroidPotion.png"
+    },
+    {
+        "id": "potion_24",
+        "name": "Clarity Drop",
+        "attackBoost": 5,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/FocusPotion.png"
+    },
+    {
+        "id": "potion_25",
+        "name": "Ambrosia of the Delirious",
+        "attackBoost": 0,
+        "defendBoost": 0,
+        "hpBoost": 10,
+        "image": "IMAGES/PotionImages/FruitJuice.png"
+    },
+    {
+        "id": "potion_26",
+        "name": "Risk-Taker's Swill",
+        "attackBoost": 0,
+        "defendBoost": 5,
+        "hpBoost": 5,
+        "image": "IMAGES/PotionImages/GamblersBrew.png"
+    },
+    {
+        "id": "potion_27",
+        "name": "Ethereal Vapor",
+        "attackBoost": 0,
+        "defendBoost": 20,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/GhostInAJar.png"
+    },
+    {
+        "id": "potion_28",
+        "name": "Unfeeling Core",
+        "attackBoost": 0,
+        "defendBoost": 15,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/HeartofIron.png"
+    },
+    {
+        "id": "potion_29",
+        "name": "Spiked Drink",
+        "attackBoost": 5,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/LiquidBronze.png"
+    },
+    {
+        "id": "potion_30",
+        "name": "Brain Fluid",
+        "attackBoost": 8,
+        "defendBoost": 8,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/LiquidMemories.png"
+    },
+    {
+        "id": "potion_31",
+        "name": "Toxic Vial",
+        "attackBoost": 15,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/PoisonPotion.png"
+    },
+    {
+        "id": "potion_32",
+        "name": "Mind Expander",
+        "attackBoost": 5,
+        "defendBoost": 5,
+        "hpBoost": 5,
+        "image": "IMAGES/PotionImages/PotionofCapacity.png"
+    },
+    {
+        "id": "potion_33",
+        "name": "Delusion Draught",
+        "attackBoost": 8,
+        "defendBoost": 8,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/PowerPotion.png"
+    },
+    {
+        "id": "potion_34",
+        "name": "Flesh Mend",
+        "attackBoost": 0,
+        "defendBoost": 0,
+        "hpBoost": 15,
+        "image": "IMAGES/PotionImages/RegenPotion.png"
+    },
+    {
+        "id": "potion_35",
+        "name": "Tactician's Tea",
+        "attackBoost": 0,
+        "defendBoost": 15,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/SkillPotion.png"
+    },
+    {
+        "id": "potion_36",
+        "name": "Illusory Cloud",
+        "attackBoost": 0,
+        "defendBoost": 30,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/SmokeBomb.png"
+    },
+    {
+        "id": "potion_37",
+        "name": "Snake Venom",
+        "attackBoost": 15,
+        "defendBoost": 15,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/SneckoOil.png"
+    },
+    {
+        "id": "potion_38",
+        "name": "Haste Extract",
+        "attackBoost": 0,
+        "defendBoost": 15,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/SpeedPotion.png"
+    },
+    {
+        "id": "potion_39",
+        "name": "Mood Swinger",
+        "attackBoost": 10,
+        "defendBoost": 10,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/StancePotion.png"
+    },
+    {
+        "id": "potion_40",
+        "name": "Maniac's Blood",
+        "attackBoost": 10,
+        "defendBoost": 0,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/StrengthPotion.png"
+    },
+    {
+        "id": "potion_41",
+        "name": "Blur Potion",
+        "attackBoost": 5,
+        "defendBoost": 5,
+        "hpBoost": 5,
+        "image": "IMAGES/PotionImages/SwiftPotion.png"
+    },
+    {
+        "id": "potion_42",
+        "name": "Tonic of Despair",
+        "attackBoost": 0,
+        "defendBoost": 12,
+        "hpBoost": 0,
+        "image": "IMAGES/PotionImages/WeakPotion.png"
     }
 ]

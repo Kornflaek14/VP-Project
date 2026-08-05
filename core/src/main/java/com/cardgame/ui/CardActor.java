@@ -10,8 +10,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.cardgame.data.CardData;
-import com.cardgame.data.CardType;
-import com.cardgame.utils.Constants;
 
 import java.util.HashMap;
 import java.util.Map;

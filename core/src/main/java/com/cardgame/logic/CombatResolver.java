@@ -4,7 +4,6 @@ import com.cardgame.data.CardData;
 import com.cardgame.logic.events.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
