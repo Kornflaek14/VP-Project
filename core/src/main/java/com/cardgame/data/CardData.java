@@ -1,102 +1,57 @@
 package com.cardgame.data;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 /**
  * Immutable template for a card, loaded once from cards.json.
- * <p>
- * HARD RULE: this class (and all of data/) must NOT import any libGDX class.
- * It compiles and runs inside a plain JUnit test with no graphics context.
+ * Follows Slay the Spire schema: attack cards deal damage, skill cards give block.
  */
 public final class CardData {
 
     private final String id;
     private final String name;
-    
-    // Core stats
-    private final int attack;
-    private final int health;
-    private final int bloodCost;
-    private final int boneCost;
-    
-    // Thematic properties
-    private final CardType cardType;
-    private final UnitArchetype unitArchetype;
-    private final AffinityType affinityType;
-    private final String imagePath;
-    
-    // Abilities & Effects
-    private final List<String> abilityIds;
-    private final List<StatusEffectData> statusEffects;
-    
-    // Deck building
-    private final int deckCount;
+    private final int energyCost;
+    private final String character; // "Ironclad", "Defect", "Watcher"
+    private final int damage;
+    private final int defence;      // block amount
     private final String description;
+    private final String image;     // relative path under assets/
+    private final CardType cardType;
 
-    // No-arg constructor required by Gson for deserialization
+    /** No-arg constructor for Gson. */
     public CardData() {
-        this("", "", 0, 0, 0, 0,
-             CardType.UNIT, UnitArchetype.STANDARD, AffinityType.NEUTRAL, 
-             null, 
-             List.of(), List.of(), "", 1);
+        this("", "", 0, "", 0, 0, "", "", CardType.ATTACK);
     }
 
-    public CardData(String id,
-                    String name,
-                    int attack,
-                    int health,
-                    int bloodCost,
-                    int boneCost,
-                    CardType cardType,
-                    UnitArchetype unitArchetype,
-                    AffinityType affinityType,
-                    String imagePath,
-                    List<String> abilityIds,
-                    List<StatusEffectData> statusEffects,
-                    String description,
-                    int deckCount) {
-        this.id            = Objects.requireNonNull(id,   "id must not be null");
-        this.name          = Objects.requireNonNull(name, "name must not be null");
-        this.attack        = attack;
-        this.health        = health;
-        this.bloodCost     = Math.max(0, bloodCost);
-        this.boneCost      = Math.max(0, boneCost);
-        
-        this.cardType      = cardType == null ? CardType.UNIT : cardType;
-        this.unitArchetype = unitArchetype == null ? UnitArchetype.STANDARD : unitArchetype;
-        this.affinityType  = affinityType == null ? AffinityType.NEUTRAL : affinityType;
-        this.imagePath     = imagePath;
-        
-        this.abilityIds    = abilityIds == null ? List.of() : Collections.unmodifiableList(abilityIds);
-        this.statusEffects = statusEffects == null ? List.of() : Collections.unmodifiableList(statusEffects);
-        this.description   = description == null ? "" : description;
-        this.deckCount     = Math.max(1, deckCount);
+    public CardData(String id, String name, int energyCost, String character,
+                    int damage, int defence, String description, String image,
+                    CardType cardType) {
+        this.id          = Objects.requireNonNull(id);
+        this.name        = Objects.requireNonNull(name);
+        this.energyCost  = Math.max(0, energyCost);
+        this.character   = character == null ? "" : character;
+        this.damage      = Math.max(0, damage);
+        this.defence     = Math.max(0, defence);
+        this.description = description == null ? "" : description;
+        this.image       = image == null ? "" : image;
+        this.cardType    = cardType == null ? CardType.ATTACK : cardType;
     }
 
-    // ── Accessors ─────────────────────────────────────────────────────────────
-
-    public String       id()            { return id;            }
-    public String       name()          { return name;          }
-    public int          attack()        { return attack;        }
-    public int          health()        { return health;        }
-    public int          bloodCost()     { return bloodCost;     }
-    public int          boneCost()      { return boneCost;      }
-    public CardType     cardType()      { return cardType;      }
-    public UnitArchetype unitArchetype(){ return unitArchetype; }
-    public AffinityType affinityType()  { return affinityType;  }
-    public String       imagePath()     { return imagePath;     }
-    public List<String> abilityIds()    { return abilityIds;    }
-    public List<StatusEffectData> statusEffects() { return statusEffects; }
-    public String       description()   { return description;   }
-    /** Number of copies of this card in the starting deck (default 1). */
-    public int          deckCount()     { return deckCount;     }
+    // ── Accessors ─────────────────────────────────────────────
+    public String   id()          { return id;          }
+    public String   name()        { return name;        }
+    public int      energyCost()  { return energyCost;  }
+    public String   character()   { return character;   }
+    public int      damage()      { return damage;      }
+    public int      defence()     { return defence;     }
+    public String   description() { return description; }
+    public String   image()       { return image;       }
+    public CardType cardType()    { return cardType;    }
 
     @Override
     public String toString() {
-        return String.format("CardData[id=%s, name=%s, blood=%d, bones=%d, attack=%d, health=%d]",
-                id, name, bloodCost, boneCost, attack, health);
+        return String.format("CardData[%s '%s' cost=%d dmg=%d def=%d %s]",
+                id, name, energyCost, damage, defence, cardType);
     }
 
     @Override
@@ -107,8 +62,5 @@ public final class CardData {
     }
 
     @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+    public int hashCode() { return id.hashCode(); }
 }
-

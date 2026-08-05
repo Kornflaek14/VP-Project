@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -17,13 +17,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.utils.Constants;
 
-/**
- * First screen the player sees. Renders a title and a PLAY button that
- * transitions to {@link BattleScreen}.
- * <p>
- * All rendering classes live in {@code screens/} or {@code ui/}; no game
- * logic is executed here.
- */
 public class MainMenuScreen implements Screen {
 
     private final CardBattlerGame game;
@@ -31,10 +24,8 @@ public class MainMenuScreen implements Screen {
     private Stage   stage;
     private Texture bgTexture;
 
-    // Shared font/style (disposed on hide)
     private BitmapFont titleFont;
     private BitmapFont buttonFont;
-    private BitmapFont subFont;
 
     public MainMenuScreen(CardBattlerGame game) {
         this.game = game;
@@ -45,72 +36,60 @@ public class MainMenuScreen implements Screen {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
         Gdx.input.setInputProcessor(stage);
 
-        buildBackground();
+        try {
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/MainMenuBackground.jpg"));
+        } catch (Exception e) {
+            Gdx.app.error("MainMenu", "Missing MainMenuBackground.jpg");
+        }
+
         buildUI();
     }
 
-    // ── UI construction ────────────────────────────────────────────────────────
-
-    private void buildBackground() {
-        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm.setColor(new Color(0.06f, 0.06f, 0.14f, 1f));
-        pm.fill();
-        bgTexture = new Texture(pm);
-        pm.dispose();
-    }
-
     private void buildUI() {
-        // Fonts — fall back to BitmapFont if FreeType is unavailable
         titleFont  = new BitmapFont();
         buttonFont = new BitmapFont();
-        titleFont.getData().setScale(3.5f);
+        titleFont.getData().setScale(4.5f);
         buttonFont.getData().setScale(1.8f);
-        titleFont.setColor(new Color(0.96f, 0.84f, 0.38f, 1f)); // gold
+        titleFont.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
         buttonFont.setColor(Color.WHITE);
 
-        // ── Title label ────────────────────────────────────────────────────────
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
-        Label title = new Label("CARD  BATTLER", titleStyle);
+        Label title = new Label("SLAY THE SPIRE", titleStyle);
 
-        // ── Subtitle ───────────────────────────────────────────────────────────
-        subFont = new BitmapFont();
-        subFont.getData().setScale(1.1f);
-        subFont.setColor(new Color(0.65f, 0.65f, 0.75f, 1f));
-        Label.LabelStyle subStyle = new Label.LabelStyle(subFont, subFont.getColor());
-        Label subtitle = new Label("1v1 Board-Based Duelling", subStyle);
-
-        // ── Play button ────────────────────────────────────────────────────────
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font       = buttonFont;
         btnStyle.fontColor  = Color.WHITE;
         btnStyle.overFontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
 
-        TextButton playBtn = new TextButton("▶  PLAY", btnStyle);
+        TextButton playBtn = new TextButton("PLAY", btnStyle);
         playBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new BattleScreen(game));
+                game.setScreen(new CharacterSelectScreen(game));
             }
         });
 
-        // ── Layout ─────────────────────────────────────────────────────────────
         Table root = new Table();
         root.setFillParent(true);
         root.center();
 
-        root.add(title).padBottom(12).row();
-        root.add(subtitle).padBottom(60).row();
-        root.add(playBtn).size(260, 60).padBottom(20).row();
+        root.add(title).padBottom(80).row();
+        root.add(playBtn).size(260, 60).row();
 
         stage.addActor(root);
     }
 
-    // ── Screen lifecycle ───────────────────────────────────────────────────────
-
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.06f, 0.06f, 0.14f, 1f);
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        if (bgTexture != null) {
+            Batch batch = stage.getBatch();
+            batch.begin();
+            batch.draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+            batch.end();
+        }
 
         stage.act(delta);
         stage.draw();
@@ -123,11 +102,7 @@ public class MainMenuScreen implements Screen {
 
     @Override public void pause()  {}
     @Override public void resume() {}
-
-    @Override
-    public void hide() {
-        dispose();
-    }
+    @Override public void hide() { dispose(); }
 
     @Override
     public void dispose() {
@@ -135,7 +110,6 @@ public class MainMenuScreen implements Screen {
         if (bgTexture != null) bgTexture.dispose();
         if (titleFont != null) titleFont.dispose();
         if (buttonFont != null) buttonFont.dispose();
-        if (subFont   != null) subFont.dispose();
         stage = null;
     }
 }

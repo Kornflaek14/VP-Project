@@ -1,0 +1,122 @@
+﻿[
+    {
+        "id":  "potion_1",
+        "name":  "Ancient Potion",
+        "attackBoost":  7,
+        "defendBoost":  5,
+        "hpBoost":  11,
+        "image":  "IMAGES/PotionImages/AncientPotion.png"
+    },
+    {
+        "id":  "potion_2",
+        "name":  "Block Potion",
+        "attackBoost":  4,
+        "defendBoost":  11,
+        "hpBoost":  2,
+        "image":  "IMAGES/PotionImages/BlockPotion.png"
+    },
+    {
+        "id":  "potion_3",
+        "name":  "Bottled Miracle",
+        "attackBoost":  3,
+        "defendBoost":  3,
+        "hpBoost":  1,
+        "image":  "IMAGES/PotionImages/BottledMiracle.png"
+    },
+    {
+        "id":  "potion_4",
+        "name":  "",
+        "attackBoost":  15,
+        "defendBoost":  2,
+        "hpBoost":  8,
+        "image":  "IMAGES/PotionImages/Duplication_Potion.png"
+    },
+    {
+        "id":  "potion_5",
+        "name":  "CultistPotion",
+        "attackBoost":  3,
+        "defendBoost":  5,
+        "hpBoost":  4,
+        "image":  "IMAGES/PotionImages/CultistPotion.png"
+    },
+    {
+        "id":  "potion_6",
+        "name":  "EssenceOfDarkness",
+        "attackBoost":  6,
+        "defendBoost":  2,
+        "hpBoost":  3,
+        "image":  "IMAGES/PotionImages/EssenceOfDarkness.png"
+    },
+    {
+        "id":  "potion_7",
+        "name":  "FairyinaBottle",
+        "attackBoost":  10,
+        "defendBoost":  1,
+        "hpBoost":  0,
+        "image":  "IMAGES/PotionImages/FairyinaBottle.png"
+    },
+    {
+        "id":  "potion_8",
+        "name":  "Stance Potion",
+        "attackBoost":  5,
+        "defendBoost":  5,
+        "hpBoost":  10,
+        "image":  "IMAGES/PotionImages/StancePotion.png"
+    },
+    {
+        "id":  "potion_9",
+        "name":  "SteroidPotion",
+        "attackBoost":  4,
+        "defendBoost":  4,
+        "hpBoost":  20,
+        "image":  "IMAGES/PotionImages/SteroidPotion.png"
+    },
+    {
+        "id":  "potion_10",
+        "name":  "ExplosivePotion",
+        "attackBoost":  10,
+        "defendBoost":  15,
+        "hpBoost":  10,
+        "image":  "IMAGES/PotionImages/ExplosivePotion.png"
+    },
+    {
+        "id":  "potion_11",
+        "name":  "Elixir",
+        "attackBoost":  8,
+        "defendBoost":  3,
+        "hpBoost":  16,
+        "image":  "IMAGES/PotionImages/Elixir.png"
+    },
+    {
+        "id":  "potion_12",
+        "name":  "SwiftPotion",
+        "attackBoost":  20,
+        "defendBoost":  0,
+        "hpBoost":  0,
+        "image":  "IMAGES/PotionImages/SwiftPotion.png"
+    },
+    {
+        "id":  "potion_13",
+        "name":  "FearPotion",
+        "attackBoost":  5,
+        "defendBoost":  5,
+        "hpBoost":  25,
+        "image":  "IMAGES/PotionImages/FearPotion.png"
+    },
+    {
+        "id":  "potion_14",
+        "name":  "FruitJuice",
+        "attackBoost":  0,
+        "defendBoost":  25,
+        "hpBoost":  0,
+        "image":  "IMAGES/PotionImages/FruitJuice.png"
+    },
+    {
+        "id":  "potion_15",
+        "name":  "WeakPotion",
+        "attackBoost":  4,
+        "defendBoost":  4,
+        "hpBoost":  4,
+        "image":  "IMAGES/PotionImages/WeakPotion.png"
+    }
+]

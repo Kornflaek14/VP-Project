@@ -1,0 +1,14 @@
+[
+  {"name": "Jaw Worm",      "level": 1, "hp": 42, "attackMin": 8,  "attackMax": 12, "defenceMin": 3, "defenceMax": 6, "image": "IMAGES/play/monster1.png"},
+  {"name": "Cultist",        "level": 1, "hp": 50, "attackMin": 6,  "attackMax": 10, "defenceMin": 0, "defenceMax": 3, "image": "IMAGES/play/monster2.png"},
+  {"name": "Louse",          "level": 1, "hp": 35, "attackMin": 5,  "attackMax": 9,  "defenceMin": 4, "defenceMax": 8, "image": "IMAGES/play/monster.png"},
+  {"name": "Fungi Beast",    "level": 2, "hp": 60, "attackMin": 10, "attackMax": 15, "defenceMin": 5, "defenceMax": 10, "image": "IMAGES/play/monster1.png"},
+  {"name": "Chosen",         "level": 2, "hp": 75, "attackMin": 12, "attackMax": 18, "defenceMin": 6, "defenceMax": 12, "image": "IMAGES/play/monster2.png"},
+  {"name": "Snecko",         "level": 2, "hp": 65, "attackMin": 14, "attackMax": 20, "defenceMin": 4, "defenceMax": 8, "image": "IMAGES/play/monster.png"},
+  {"name": "Book of Stabbing","level": 3, "hp": 90, "attackMin": 16, "attackMax": 22, "defenceMin": 8, "defenceMax": 14, "image": "IMAGES/play/monster1.png"},
+  {"name": "Gremlin Nob",    "level": 3, "hp": 110,"attackMin": 18, "attackMax": 25, "defenceMin": 0, "defenceMax": 5, "image": "IMAGES/play/monster2.png"},
+  {"name": "Lagavulin",      "level": 3, "hp": 112,"attackMin": 15, "attackMax": 20, "defenceMin": 10,"defenceMax": 18, "image": "IMAGES/play/monster.png"},
+  {"name": "Slime Boss",     "level": 4, "hp": 150,"attackMin": 20, "attackMax": 30, "defenceMin": 10,"defenceMax": 20, "image": "IMAGES/play/monster1.png"},
+  {"name": "Hexaghost",      "level": 4, "hp": 250,"attackMin": 22, "attackMax": 35, "defenceMin": 12,"defenceMax": 22, "image": "IMAGES/play/monster2.png"},
+  {"name": "The Guardian",   "level": 4, "hp": 240,"attackMin": 25, "attackMax": 32, "defenceMin": 15,"defenceMax": 25, "image": "IMAGES/play/monster.png"}
+]
