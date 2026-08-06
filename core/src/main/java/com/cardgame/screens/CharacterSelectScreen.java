@@ -94,7 +94,21 @@ public class CharacterSelectScreen implements Screen {
             selectBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    RunManager.getInstance().startNewRun(ch, game.getCardsForCharacter(ch.name()));
+                    List<com.cardgame.data.CardData> starterDeck = new ArrayList<>();
+                    if (ch.name().equalsIgnoreCase("Ironclad")) {
+                        for (com.cardgame.data.CardData c : game.getAllCards()) {
+                            if (c.name().equalsIgnoreCase("Frantic Strike")) {
+                                for(int i=0; i<5; i++) starterDeck.add(c);
+                            } else if (c.name().equalsIgnoreCase("Deny Reality")) {
+                                for(int i=0; i<4; i++) starterDeck.add(c);
+                            } else if (c.name().equalsIgnoreCase("Skull Crack")) {
+                                starterDeck.add(c);
+                            }
+                        }
+                    } else {
+                        starterDeck = game.getCardsForCharacter(ch.name());
+                    }
+                    RunManager.getInstance().startNewRun(ch, starterDeck);
                     game.setScreen(new MapScreen(game));
                 }
             });
