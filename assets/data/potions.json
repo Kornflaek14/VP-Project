@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "id": "potion_1",
         "name": "Vial of Divinity",
@@ -30,6 +30,14 @@
         "defendBoost": 8,
         "hpBoost": 0,
         "image": "IMAGES/PotionImages/Blessing_Of_The_Forge_temporary.png"
+    },
+    {
+        "id":  "potion_5",
+        "name":  "Duplication Potion",
+        "attackBoost":  15,
+        "defendBoost":  2,
+        "hpBoost":  8,
+        "image":  "IMAGES/PotionImages/Duplication_Potion.png"
     },
     {
         "id": "potion_5",

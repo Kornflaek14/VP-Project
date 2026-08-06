@@ -10,8 +10,15 @@ import java.util.List;
 
 /**
  * Renders the player's hand of cards in a fan layout.
+ * - Cards arc in a semicircle with slight rotation per card
+ * - Cards overlap when hand is large
+ * - Hovered card pops above others via z-ordering
  */
 public class HandArea extends Group {
+
+    private static final float MAX_ROTATION_DEG = 12f;   // max tilt at hand edges
+    private static final float BASE_Y            = 5f;    // bottom margin
+    private static final float ARC_DROP          = 3f;    // px drop per degree of rotation
 
     private final CardActor.OnClickCallback callback;
     private final List<CardActor> cardActors = new ArrayList<>();
@@ -23,7 +30,7 @@ public class HandArea extends Group {
     public void syncWithState(GameState state) {
         List<CardData> hand = state.hand;
 
-        // Remove old actors
+        // Remove actors for cards no longer in hand
         List<CardActor> toRemove = new ArrayList<>();
         for (CardActor ca : cardActors) {
             if (!hand.contains(ca.getCard())) toRemove.add(ca);
@@ -34,7 +41,7 @@ public class HandArea extends Group {
             ca.dispose();
         }
 
-        // Add new actors
+        // Add actors for new cards
         for (CardData cd : hand) {
             boolean exists = cardActors.stream().anyMatch(ca -> ca.getCard() == cd);
             if (!exists) {
@@ -45,27 +52,42 @@ public class HandArea extends Group {
             }
         }
 
-        // Fan layout
-        float totalWidth = hand.size() * (Constants.CARD_WIDTH + Constants.CARD_GAP) - Constants.CARD_GAP;
+        layoutHand(hand);
+    }
+
+    private void layoutHand(List<CardData> hand) {
+        int n = hand.size();
+        if (n == 0) return;
+
+        // Overlap cards when hand is large so they all fit on screen
+        float cardStep = Math.min(Constants.CARD_WIDTH + Constants.CARD_GAP,
+                (Constants.VIEWPORT_WIDTH - 200f) / Math.max(n, 1));
+
+        float totalWidth = cardStep * (n - 1) + Constants.CARD_WIDTH;
         float startX = (Constants.VIEWPORT_WIDTH - totalWidth) / 2f;
-        float baseY = 10f; // close to bottom
 
         for (int i = 0; i < hand.size(); i++) {
             CardData cd = hand.get(i);
             final int index = i;
+
             cardActors.stream()
-                      .filter(ca -> ca.getCard() == cd)
-                      .findFirst()
-                      .ifPresent(ca -> {
-                          float x = startX + index * (Constants.CARD_WIDTH + Constants.CARD_GAP);
-                          
-                          // Slight arch effect
-                          float mid = (hand.size() - 1) / 2f;
-                          float distFromMid = Math.abs(index - mid);
-                          float yOffset = -distFromMid * distFromMid * 2f; 
-                          
-                          ca.setPosition(x, baseY + yOffset);
-                      });
+                .filter(ca -> ca.getCard() == cd)
+                .findFirst()
+                .ifPresent(ca -> {
+                    float x = startX + index * cardStep;
+
+                    // Fan rotation: edge cards tilt outward
+                    float normalized = n > 1 ? (float)(index) / (n - 1) * 2f - 1f : 0f; // -1 to 1
+                    float rotation   = -normalized * MAX_ROTATION_DEG;
+
+                    // Arc: cards at edges drop slightly
+                    float yDrop = Math.abs(rotation) * ARC_DROP;
+                    float y = BASE_Y - yDrop;
+
+                    ca.setPosition(x, y);
+                    ca.setRotation(rotation);
+                    ca.setZIndex(index); // natural z-order left to right
+                });
         }
     }
 

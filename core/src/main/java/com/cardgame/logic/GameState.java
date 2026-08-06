@@ -2,6 +2,9 @@ package com.cardgame.logic;
 
 import com.cardgame.data.CardData;
 import com.cardgame.data.MonsterData;
+import com.cardgame.data.PotionData;
+import com.cardgame.data.RelicData;
+import com.cardgame.data.StatusEffect;
 import com.cardgame.logic.events.GameEvent;
 import com.cardgame.logic.events.GameOverEvent;
 
@@ -42,6 +45,10 @@ public final class GameState {
     private int monsterAtkMin, monsterAtkMax;
     private int monsterDefMin, monsterDefMax;
 
+    // ── Status effects ────────────────────────────────────────
+    public final StatusEffectState playerStatus  = new StatusEffectState();
+    public final StatusEffectState monsterStatus = new StatusEffectState();
+
     // ── Turn tracking ─────────────────────────────────────────
     private int turnNumber = 0;
     private boolean playerTurn = true;
@@ -62,6 +69,7 @@ public final class GameState {
         Collections.shuffle(this.drawPile);
         this.hand.clear();
         this.discardPile.clear();
+        this.playerStatus.clear();
     }
 
     public void initMonster(MonsterData data) {
@@ -74,6 +82,7 @@ public final class GameState {
         this.monsterAtkMax = data.attackMax();
         this.monsterDefMin = data.defenceMin();
         this.monsterDefMax = data.defenceMax();
+        this.monsterStatus.clear();
         rollMonsterIntent();
     }
 

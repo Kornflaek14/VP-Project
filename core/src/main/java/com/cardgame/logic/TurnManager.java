@@ -65,6 +65,29 @@ public final class TurnManager {
         state.setTurnNumber(turnNumber);
         state.setPlayerTurn(true);
 
+        // Tick poison on both combatants at turn start
+        int playerPoison = state.playerStatus.tickPoison();
+        if (playerPoison > 0) {
+            state.playerHp -= playerPoison;
+            events.add(new DamageDealtEvent("poison", "player", playerPoison));
+            events.add(new PlayerDamagedEvent(playerPoison));
+        }
+        int monsterPoison = state.monsterStatus.tickPoison();
+        if (monsterPoison > 0) {
+            state.monsterHp -= monsterPoison;
+            events.add(new DamageDealtEvent("poison", "monster", monsterPoison));
+        }
+
+        // Decrement duration-based status effects (Vulnerable, Weak)
+        state.playerStatus.tickDurationEffects();
+        state.monsterStatus.tickDurationEffects();
+
+        // Check if game ended due to poison
+        state.checkWinCondition().ifPresent(events::add);
+        if (state.playerHp <= 0 || state.monsterHp <= 0) {
+            return events;
+        }
+
         // Reset player block at start of turn
         state.playerBlock = 0;
 
