@@ -14,7 +14,6 @@ public class DamageLabel extends Actor {
 
     private final String text;
     private final BitmapFont font;
-    private float alpha = 1f;
 
     public DamageLabel(String text, Color color) {
         this.text = text;

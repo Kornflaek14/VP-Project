@@ -1,7 +1,6 @@
 package com.cardgame.logic;
 
 import com.cardgame.data.*;
-import com.cardgame.logic.GameState;
 
 import java.util.ArrayList;
 import java.util.List;

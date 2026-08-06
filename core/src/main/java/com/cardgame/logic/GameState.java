@@ -2,9 +2,6 @@ package com.cardgame.logic;
 
 import com.cardgame.data.CardData;
 import com.cardgame.data.MonsterData;
-import com.cardgame.data.PotionData;
-import com.cardgame.data.RelicData;
-import com.cardgame.data.StatusEffect;
 import com.cardgame.logic.events.GameEvent;
 import com.cardgame.logic.events.GameOverEvent;
 
