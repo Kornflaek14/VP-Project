@@ -9,13 +9,17 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.utils.Constants;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainMenuScreen implements Screen {
 
@@ -23,6 +27,10 @@ public class MainMenuScreen implements Screen {
 
     private Stage   stage;
     private Texture bgTexture;
+    
+    private Animation<TextureRegion> backgroundAnimation;
+    private float stateTime = 0f;
+    private final List<Texture> frameTextures = new ArrayList<>();
 
     private BitmapFont titleFont;
     private BitmapFont buttonFont;
@@ -42,41 +50,117 @@ public class MainMenuScreen implements Screen {
             Gdx.app.error("MainMenu", "Missing MainMenuBackground.jpg");
         }
 
+        Array<TextureRegion> frames = new Array<>();
+        for (int i = 0; i < 240; i++) {
+            String filename = String.format("IMAGES/menu_frames/frame_%03d.jpg", i);
+            if (Gdx.files.internal(filename).exists()) {
+                Texture tex = new Texture(Gdx.files.internal(filename));
+                frameTextures.add(tex);
+                frames.add(new TextureRegion(tex));
+            }
+        }
+        if (frames.size > 0) {
+            backgroundAnimation = new Animation<>(1f / 24f, frames, Animation.PlayMode.LOOP);
+        }
+
         buildUI();
     }
 
     private void buildUI() {
-        titleFont  = new BitmapFont();
-        buttonFont = new BitmapFont();
-        titleFont.getData().setScale(4.5f);
-        buttonFont.getData().setScale(1.8f);
-        titleFont.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
-        buttonFont.setColor(Color.WHITE);
+        try {
+            Texture startTex = new Texture(Gdx.files.internal("IMAGES/start_game.png"));
+            Texture loadTex = new Texture(Gdx.files.internal("IMAGES/load_game.png"));
+            Texture optTex = new Texture(Gdx.files.internal("IMAGES/options.png"));
+            Texture exitTex = new Texture(Gdx.files.internal("IMAGES/exit.png"));
+            
+            frameTextures.add(startTex);
+            frameTextures.add(loadTex);
+            frameTextures.add(optTex);
+            frameTextures.add(exitTex);
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
-        Label title = new Label("SLAY THE SPIRE", titleStyle);
+            Image startBtn = new Image(startTex);
+            Image loadBtn = new Image(loadTex);
+            Image optBtn = new Image(optTex);
+            Image exitBtn = new Image(exitTex);
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font       = buttonFont;
-        btnStyle.fontColor  = Color.WHITE;
-        btnStyle.overFontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
+            // Left side (Left-aligned block, flanking brain)
+            startBtn.setPosition(300, 220);
+            loadBtn.setPosition(300, 120);
+            
+            // Right side (Left-aligned block, flanking brain)
+            optBtn.setPosition(890, 220);
+            exitBtn.setPosition(890, 120);
 
-        TextButton playBtn = new TextButton("PLAY", btnStyle);
-        playBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new CharacterSelectScreen(game));
-            }
-        });
+            Color logoRed = new Color(0.75f, 0.11f, 0.14f, 1f);
 
-        Table root = new Table();
-        root.setFillParent(true);
-        root.center();
+            startBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    game.setScreen(new CharacterSelectScreen(game));
+                }
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    startBtn.setColor(logoRed);
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    startBtn.setColor(Color.WHITE);
+                }
+            });
 
-        root.add(title).padBottom(80).row();
-        root.add(playBtn).size(260, 60).row();
+            loadBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    // game.setScreen(new LoadGameScreen(game));
+                }
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    loadBtn.setColor(logoRed);
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    loadBtn.setColor(Color.WHITE);
+                }
+            });
 
-        stage.addActor(root);
+            optBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    // game.setScreen(new OptionsScreen(game));
+                }
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    optBtn.setColor(logoRed);
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    optBtn.setColor(Color.WHITE);
+                }
+            });
+
+            exitBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    Gdx.app.exit();
+                }
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    exitBtn.setColor(logoRed);
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    exitBtn.setColor(Color.WHITE);
+                }
+            });
+
+            stage.addActor(startBtn);
+            stage.addActor(loadBtn);
+            stage.addActor(optBtn);
+            stage.addActor(exitBtn);
+
+        } catch (Exception e) {
+            Gdx.app.error("MainMenu", "Missing button images");
+        }
     }
 
     @Override
@@ -84,12 +168,17 @@ public class MainMenuScreen implements Screen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        if (bgTexture != null) {
-            Batch batch = stage.getBatch();
-            batch.begin();
+        stateTime += delta;
+
+        Batch batch = stage.getBatch();
+        batch.begin();
+        if (backgroundAnimation != null) {
+            TextureRegion currentFrame = backgroundAnimation.getKeyFrame(stateTime);
+            batch.draw(currentFrame, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+        } else if (bgTexture != null) {
             batch.draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
-            batch.end();
         }
+        batch.end();
 
         stage.act(delta);
         stage.draw();
@@ -110,6 +199,8 @@ public class MainMenuScreen implements Screen {
         if (bgTexture != null) bgTexture.dispose();
         if (titleFont != null) titleFont.dispose();
         if (buttonFont != null) buttonFont.dispose();
+        for (Texture t : frameTextures) t.dispose();
+        frameTextures.clear();
         stage = null;
     }
 }

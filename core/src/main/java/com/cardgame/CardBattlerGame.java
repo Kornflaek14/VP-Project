@@ -51,23 +51,7 @@ public class CardBattlerGame extends Game {
             Gdx.app.error("Game", "Failed to load potions.json", e);
         }
 
-        startNewGame();
-    }
-
-    public void startNewGame() {
-        CharacterData ironclad = null;
-        for (CharacterData c : allCharacters) {
-            if (c.name().equalsIgnoreCase("Ironclad")) {
-                ironclad = c;
-                break;
-            }
-        }
-        if (ironclad == null && !allCharacters.isEmpty()) ironclad = allCharacters.get(0);
-        
-        if (ironclad != null) {
-            com.cardgame.logic.RunManager.getInstance().startNewRun(ironclad, getCardsForCharacter(ironclad.name()));
-        }
-        setScreen(new com.cardgame.screens.MapScreen(this));
+        setScreen(new com.cardgame.screens.MainMenuScreen(this));
     }
 
     public List<CardData>      getAllCards()      { return allCards;      }
