@@ -83,7 +83,7 @@ public class GameOverScreen implements Screen {
                 menuBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
-                        game.startNewGame();
+                        game.setScreen(new MainMenuScreen(game));
                     }
                 });
                 root.add(menuBtn).size(200, 50).row();
@@ -137,7 +137,7 @@ public class GameOverScreen implements Screen {
             menuBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    game.startNewGame();
+                    game.setScreen(new MainMenuScreen(game));
                 }
             });
             root.add(menuBtn).size(200, 50).row();

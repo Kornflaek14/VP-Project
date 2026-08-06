@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.cardgame.data.CardData;
-import com.cardgame.data.CardType;
 import com.cardgame.utils.Constants;
 
 /**
