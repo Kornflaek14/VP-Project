@@ -96,7 +96,20 @@ public class MainMenuScreen implements Screen {
             startBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    game.setScreen(new CharacterSelectScreen(game));
+                    if (game.getAllCharacters().isEmpty()) return;
+                    com.cardgame.data.CharacterData ch = game.getAllCharacters().get(0);
+                    List<com.cardgame.data.CardData> starterDeck = new ArrayList<>();
+                    for (com.cardgame.data.CardData c : game.getAllCards()) {
+                        if (c.name().equalsIgnoreCase("Frantic Strike")) {
+                            for(int i=0; i<5; i++) starterDeck.add(c);
+                        } else if (c.name().equalsIgnoreCase("Deny Reality")) {
+                            for(int i=0; i<4; i++) starterDeck.add(c);
+                        } else if (c.name().equalsIgnoreCase("Skull Crack")) {
+                            starterDeck.add(c);
+                        }
+                    }
+                    com.cardgame.logic.RunManager.getInstance().startNewRun(ch, starterDeck);
+                    game.setScreen(new MapScreen(game));
                 }
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
