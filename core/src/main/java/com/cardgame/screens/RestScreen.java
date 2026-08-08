@@ -18,7 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.data.CardData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
 import com.cardgame.utils.Constants;
@@ -131,8 +131,7 @@ public class RestScreen implements Screen {
 
         root.add(healBtn).size(220, 90).pad(15);
         root.add(smithBtn).size(220, 90).pad(15).row();
-        root.add(removeBtn).size(220, 90).pad(15);
-        root.add(leaveBtn).size(220, 90).pad(15).row();
+        root.add(leaveBtn).size(220, 90).pad(15).colspan(2).row();
 
         stage.addActor(root);
     }
@@ -146,7 +145,7 @@ public class RestScreen implements Screen {
         pickMode = true;
 
         RunManager rm = RunManager.getInstance();
-        List<CardData> deck = rm.getDeck();
+        List<AbstractCard> deck = rm.getDeck();
 
         // Dark backdrop
         Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -181,9 +180,12 @@ public class RestScreen implements Screen {
         float cardW = Constants.CARD_WIDTH  * 0.8f;
         float cardH = Constants.CARD_HEIGHT * 0.8f;
 
+        int displayedIndex = 0;
         for (int i = 0; i < deck.size(); i++) {
-            CardData cd = deck.get(i);
-            final CardData selectedCard = cd;
+            AbstractCard cd = deck.get(i);
+            if (!removeMode && cd.isUpgraded()) continue; // Cannot upgrade an already upgraded card
+            
+            final AbstractCard selectedCard = cd;
 
             CardActor ca = new CardActor(cd, new CardActor.OnClickCallback() {
                 @Override
@@ -201,7 +203,7 @@ public class RestScreen implements Screen {
             ca.setSize(cardW, cardH);
             overlayCardActors.add(ca);
             cardGrid.add(ca).size(cardW, cardH).pad(8);
-            if ((i + 1) % cols == 0) cardGrid.row();
+            if ((++displayedIndex) % cols == 0) cardGrid.row();
         }
 
         ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle();

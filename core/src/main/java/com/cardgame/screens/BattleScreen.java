@@ -14,8 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.data.CardData;
-import com.cardgame.data.MonsterData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.CombatResolver;
 import com.cardgame.logic.GameState;
 import com.cardgame.logic.RunManager;
@@ -28,17 +27,17 @@ import com.cardgame.ui.DamageLabel;
 import com.cardgame.ui.HUD;
 import com.cardgame.ui.HandArea;
 import com.cardgame.ui.PauseOverlay;
+import com.cardgame.ui.TargetingArrow;
 import com.cardgame.utils.Constants;
 
 import java.util.List;
-import java.util.Random;
 
 public class BattleScreen implements Screen {
 
     private final CardBattlerGame game;
     private Stage stage;
     private Texture bgTexture;
-    private Texture monsterTexture;
+    
     private Texture playerTexture;
 
     private GameState gameState;
@@ -46,6 +45,7 @@ public class BattleScreen implements Screen {
     private CombatResolver combatResolver;
 
     private HandArea handArea;
+    private TargetingArrow targetingArrow;
     private HUD hud;
     private CardPreviewOverlay previewOverlay;
 
@@ -59,8 +59,10 @@ public class BattleScreen implements Screen {
     private float shakeOffsetX = 0f;
     private float shakeOffsetY = 0f;
 
-    public BattleScreen(CardBattlerGame game) {
+    private com.cardgame.logic.monsters.MonsterGroup monsters;
+    public BattleScreen(CardBattlerGame game, com.cardgame.logic.monsters.MonsterGroup monsters) {
         this.game = game;
+        this.monsters = monsters;
     }
 
     @Override
@@ -91,18 +93,8 @@ public class BattleScreen implements Screen {
         }
 
         // Init random monster for current floor level
-        int level = rm.getCurrentNodeIndex() / 4 + 1;
-        List<MonsterData> monsters = game.getMonstersForLevel(level);
-        if (monsters.isEmpty()) monsters = game.getAllMonsters();
-
-        MonsterData selectedMonster = monsters.get(new Random().nextInt(monsters.size()));
-        gameState.initMonster(selectedMonster);
-
-        try {
-            if (selectedMonster.image() != null && !selectedMonster.image().isEmpty()) {
-                monsterTexture = new Texture(Gdx.files.internal(selectedMonster.image()));
-            }
-        } catch (Exception e) {}
+        
+        gameState.initMonsters(this.monsters);
 
         buildUI();
         buildPauseOverlay();
@@ -139,19 +131,62 @@ public class BattleScreen implements Screen {
     }
 
     private void buildUI() {
-        handArea = new HandArea(new CardActor.OnClickCallback() {
+        targetingArrow = new TargetingArrow();
+
+        handArea = new HandArea(new CardActor.OnDragCallback() {
             @Override
-            public void onClick(CardActor actor) {
-                if (paused) return;
-                if (gameState.isPlayerTurn()) {
-                    CardData card = actor.getCard();
-                    List<GameEvent> events = combatResolver.playCard(gameState, card);
-                    processEvents(events);
-                    updateUI();
+            public void onDragStart(CardActor actor) {
+                if (paused || !gameState.isPlayerTurn()) return;
+                // If it's an attack, start targeting
+                if (actor.getCard().cardType() == com.cardgame.data.CardType.ATTACK) {
+                    targetingArrow.start.set(actor.getX() + actor.getWidth() / 2f, actor.getY() + actor.getHeight() / 2f);
+                    targetingArrow.end.set(targetingArrow.start);
+                    targetingArrow.setVisible(true);
                 }
             }
+
+            @Override
+            public void onDrag(CardActor actor, float x, float y) {
+                if (paused || !gameState.isPlayerTurn()) return;
+                if (targetingArrow.isVisible()) {
+                    targetingArrow.start.set(actor.getX() + actor.getWidth() / 2f, actor.getY() + actor.getHeight() / 2f);
+                    com.cardgame.logic.monsters.AbstractMonster hovered = getHoveredMonster(x, y);
+                    if (hovered != null) {
+                        targetingArrow.end.set(hovered.drawX, hovered.drawY + 160f); // snap to center
+                    } else {
+                        targetingArrow.end.set(x, y);
+                    }
+                }
+            }
+
+            @Override
+            public void onDragStop(CardActor actor, float x, float y) {
+                if (paused || !gameState.isPlayerTurn()) {
+                    updateUI();
+                    return;
+                }
+                targetingArrow.setVisible(false);
+                
+                // Play zone threshold
+                if (y > com.cardgame.utils.Constants.VIEWPORT_HEIGHT * 0.35f) {
+                    AbstractCard card = actor.getCard();
+                    if (card.cardType() == com.cardgame.data.CardType.ATTACK) {
+                        com.cardgame.logic.monsters.AbstractMonster hovered = getHoveredMonster(x, y);
+                        if (hovered != null) {
+                            List<GameEvent> events = combatResolver.playCard(gameState, card, hovered);
+                            processEvents(events);
+                        }
+                    } else {
+                        List<GameEvent> events = combatResolver.playCard(gameState, card, null);
+                        processEvents(events);
+                    }
+                }
+                updateUI(); // Snap back or refresh hand
+            }
         });
+        
         stage.addActor(handArea);
+        stage.addActor(targetingArrow);
 
         hud = new HUD(gameState, new ChangeListener() {
             @Override
@@ -191,9 +226,17 @@ public class BattleScreen implements Screen {
         for (GameEvent e : events) {
             if (e instanceof com.cardgame.logic.events.GameOverEvent) {
                 com.cardgame.logic.events.GameOverEvent goe = (com.cardgame.logic.events.GameOverEvent) e;
+                if (goe.winnerIndex() == 0) {
+                    // Player won!
+                    RunManager.getInstance().getRelics().forEach(r -> r.onVictory());
+                }
                 RunManager.getInstance().setCurrentHp(gameState.playerHp);
                 CardActor.setPreviewOverlay(null);
-                game.setScreen(new GameOverScreen(game, goe.winnerIndex()));
+                if (goe.winnerIndex() == 0) {
+                    game.setScreen(new RewardScreen(game));
+                } else {
+                    game.setScreen(new GameOverScreen(game, goe.winnerIndex()));
+                }
                 return;
             }
             if (e instanceof PlayerDamagedEvent) {
@@ -207,7 +250,7 @@ public class BattleScreen implements Screen {
                 com.cardgame.logic.events.DamageDealtEvent dmg =
                     (com.cardgame.logic.events.DamageDealtEvent) e;
                 if ("player".equals(dmg.source()) && "monster".equals(dmg.target()) && dmg.amount() > 0) {
-                    spawnDamageLabel("-" + dmg.amount(), hud.getMonsterX(), hud.getCharY() + 340f, Color.ORANGE);
+                    spawnDamageLabel("-" + dmg.amount(), 1000f, 500f, Color.ORANGE);
                 }
             }
         }
@@ -218,6 +261,23 @@ public class BattleScreen implements Screen {
         DamageLabel label = new DamageLabel(text, color);
         label.setPosition(x - 20f, y);
         stage.addActor(label);
+    }
+
+    private com.cardgame.logic.monsters.AbstractMonster getHoveredMonster(float x, float y) {
+        if (gameState.monsterGroup != null) {
+            for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
+                if (m.currentHp > 0) {
+                    float left = m.drawX - 140f;
+                    float right = m.drawX + 140f;
+                    float bottom = m.drawY;
+                    float top = m.drawY + 320f;
+                    if (x >= left && x <= right && y >= bottom && y <= top) {
+                        return m;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void updateUI() {
@@ -262,13 +322,15 @@ public class BattleScreen implements Screen {
         }
 
         // ── Monster (right side) ─────────────────────────────
-        if (monsterTexture != null) {
-            float mw = 280f, mh = 320f;
-            float mx = hud.getMonsterX() - mw / 2f;
-            float my = hud.getCharY() - 20f;
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(monsterTexture, mx, my, mw, mh);
+        
+        if (gameState.monsterGroup != null) {
+            for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
+                if (m.currentHp > 0) {
+                    batch.draw(m.getTexture(), m.drawX - 140f, m.drawY, 280f, 320f);
+                }
+            }
         }
+
 
         batch.end();
 
@@ -294,10 +356,11 @@ public class BattleScreen implements Screen {
     public void dispose() {
         if (stage != null) stage.dispose();
         if (bgTexture != null) bgTexture.dispose();
-        if (monsterTexture != null) monsterTexture.dispose();
+        if (monsters != null) monsters.disposeAll();
         if (playerTexture != null) playerTexture.dispose();
         if (hud != null) hud.disposeResources();
         if (handArea != null) handArea.disposeAll();
         if (pauseOverlay != null) pauseOverlay.disposeResources();
+        if (targetingArrow != null) targetingArrow.dispose();
     }
 }

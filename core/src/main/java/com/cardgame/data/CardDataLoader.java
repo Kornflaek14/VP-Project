@@ -63,21 +63,5 @@ public final class CardDataLoader {
         return list == null ? Collections.emptyList() : list;
     }
 
-    // ── Relics ─────────────────────────────────────────────────
 
-    public static List<RelicData> loadRelics(InputStream is) {
-        Type listType = new TypeToken<List<RelicData>>() {}.getType();
-        List<RelicData> list = GSON.fromJson(
-                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
-        return list == null ? Collections.emptyList() : list;
-    }
-
-    // ── Potions ────────────────────────────────────────────────
-
-    public static List<PotionData> loadPotions(InputStream is) {
-        Type listType = new TypeToken<List<PotionData>>() {}.getType();
-        List<PotionData> list = GSON.fromJson(
-                new InputStreamReader(is, StandardCharsets.UTF_8), listType);
-        return list == null ? Collections.emptyList() : list;
-    }
 }

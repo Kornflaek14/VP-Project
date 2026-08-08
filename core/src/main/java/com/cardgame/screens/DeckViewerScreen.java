@@ -16,7 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.data.CardData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
 import com.cardgame.utils.Constants;
@@ -69,7 +69,7 @@ public class DeckViewerScreen implements Screen {
 
     private void buildUI() {
         RunManager rm = RunManager.getInstance();
-        List<CardData> deck = rm.getDeck();
+        List<AbstractCard> deck = rm.getDeck();
 
         Table root = new Table();
         root.setFillParent(true);
@@ -89,8 +89,8 @@ public class DeckViewerScreen implements Screen {
         float cardH = Constants.CARD_HEIGHT * 0.85f;
 
         for (int i = 0; i < deck.size(); i++) {
-            CardData cd = deck.get(i);
-            CardActor ca = new CardActor(cd, null);
+            AbstractCard cd = deck.get(i);
+            CardActor ca = new CardActor(cd, (CardActor.OnClickCallback) null);
             ca.setSize(cardW, cardH);
             cardActors.add(ca);
 

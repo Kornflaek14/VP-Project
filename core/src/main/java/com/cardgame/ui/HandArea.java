@@ -1,7 +1,7 @@
 package com.cardgame.ui;
 
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.cardgame.data.CardData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.GameState;
 import com.cardgame.utils.Constants;
 
@@ -20,15 +20,15 @@ public class HandArea extends Group {
     private static final float BASE_Y            = 5f;    // bottom margin
     private static final float ARC_DROP          = 3f;    // px drop per degree of rotation
 
-    private final CardActor.OnClickCallback callback;
+    private final CardActor.OnDragCallback callback;
     private final List<CardActor> cardActors = new ArrayList<>();
 
-    public HandArea(CardActor.OnClickCallback callback) {
+    public HandArea(CardActor.OnDragCallback callback) {
         this.callback = callback;
     }
 
     public void syncWithState(GameState state) {
-        List<CardData> hand = state.hand;
+        List<AbstractCard> hand = state.hand;
 
         // Remove actors for cards no longer in hand
         List<CardActor> toRemove = new ArrayList<>();
@@ -42,11 +42,12 @@ public class HandArea extends Group {
         }
 
         // Add actors for new cards
-        for (CardData cd : hand) {
+        for (AbstractCard cd : hand) {
             boolean exists = cardActors.stream().anyMatch(ca -> ca.getCard() == cd);
             if (!exists) {
                 CardActor ca = new CardActor(cd, callback);
-                ca.setSize(Constants.CARD_WIDTH, Constants.CARD_HEIGHT);
+                // Initial spawn position (bottom right, like a draw pile)
+                ca.setPosition(Constants.VIEWPORT_WIDTH - 100, -200);
                 addActor(ca);
                 cardActors.add(ca);
             }
@@ -55,7 +56,7 @@ public class HandArea extends Group {
         layoutHand(hand);
     }
 
-    private void layoutHand(List<CardData> hand) {
+    private void layoutHand(List<AbstractCard> hand) {
         int n = hand.size();
         if (n == 0) return;
 
@@ -67,7 +68,7 @@ public class HandArea extends Group {
         float startX = (Constants.VIEWPORT_WIDTH - totalWidth) / 2f;
 
         for (int i = 0; i < hand.size(); i++) {
-            CardData cd = hand.get(i);
+            AbstractCard cd = hand.get(i);
             final int index = i;
 
             cardActors.stream()
@@ -84,8 +85,12 @@ public class HandArea extends Group {
                     float yDrop = Math.abs(rotation) * ARC_DROP;
                     float y = BASE_Y - yDrop;
 
-                    ca.setPosition(x, y);
-                    ca.setRotation(rotation);
+                    // Only update targets if not currently being dragged by the user
+                    if (!ca.isDragging()) {
+                        ca.targetPos.set(x, y);
+                        ca.targetRot = rotation;
+                        ca.targetScale = 1f;
+                    }
                     ca.setZIndex(index); // natural z-order left to right
                 });
         }

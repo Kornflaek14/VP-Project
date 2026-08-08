@@ -20,6 +20,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
 import java.util.ArrayList;
 import java.util.List;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 public class MainMenuScreen implements Screen {
 
@@ -51,12 +53,14 @@ public class MainMenuScreen implements Screen {
         }
 
         Array<TextureRegion> frames = new Array<>();
-        for (int i = 0; i < 240; i++) {
+        for (int i = 0; i < 1000; i++) {
             String filename = String.format("IMAGES/menu_frames/frame_%03d.jpg", i);
             if (Gdx.files.internal(filename).exists()) {
                 Texture tex = new Texture(Gdx.files.internal(filename));
                 frameTextures.add(tex);
                 frames.add(new TextureRegion(tex));
+            } else if (i > 0) {
+                break; // Stop loading when we hit a missing frame
             }
         }
         if (frames.size > 0) {
@@ -68,56 +72,66 @@ public class MainMenuScreen implements Screen {
 
     private void buildUI() {
         try {
-            Texture startTex = new Texture(Gdx.files.internal("IMAGES/start_game.png"));
-            Texture loadTex = new Texture(Gdx.files.internal("IMAGES/load_game.png"));
-            Texture optTex = new Texture(Gdx.files.internal("IMAGES/options.png"));
-            Texture exitTex = new Texture(Gdx.files.internal("IMAGES/exit.png"));
-            
-            frameTextures.add(startTex);
-            frameTextures.add(loadTex);
-            frameTextures.add(optTex);
-            frameTextures.add(exitTex);
+            Texture spritesheet = new Texture(Gdx.files.internal("IMAGES/menu_spritesheet_clean.png"));
+            frameTextures.add(spritesheet);
 
-            Image startBtn = new Image(startTex);
-            Image loadBtn = new Image(loadTex);
-            Image optBtn = new Image(optTex);
-            Image exitBtn = new Image(exitTex);
+            int regionWidth = spritesheet.getWidth() / 2;
+            int regionHeight = spritesheet.getHeight() / 4;
+            TextureRegion[][] regions = TextureRegion.split(spritesheet, regionWidth, regionHeight);
 
-            // Left side (Left-aligned block, flanking brain)
-            startBtn.setPosition(300, 220);
-            loadBtn.setPosition(300, 120);
-            
-            // Right side (Left-aligned block, flanking brain)
-            optBtn.setPosition(890, 220);
-            exitBtn.setPosition(890, 120);
+            ImageButton.ImageButtonStyle startStyle = new ImageButton.ImageButtonStyle();
+            startStyle.imageUp = new TextureRegionDrawable(regions[0][0]);
+            startStyle.imageOver = new TextureRegionDrawable(regions[0][1]);
+            ImageButton startBtn = new ImageButton(startStyle);
 
-            Color logoRed = new Color(0.75f, 0.11f, 0.14f, 1f);
+            ImageButton.ImageButtonStyle loadStyle = new ImageButton.ImageButtonStyle();
+            loadStyle.imageUp = new TextureRegionDrawable(regions[1][0]);
+            loadStyle.imageOver = new TextureRegionDrawable(regions[1][1]);
+            ImageButton loadBtn = new ImageButton(loadStyle);
+
+            ImageButton.ImageButtonStyle optStyle = new ImageButton.ImageButtonStyle();
+            optStyle.imageUp = new TextureRegionDrawable(regions[2][0]);
+            optStyle.imageOver = new TextureRegionDrawable(regions[2][1]);
+            ImageButton optBtn = new ImageButton(optStyle);
+
+            ImageButton.ImageButtonStyle exitStyle = new ImageButton.ImageButtonStyle();
+            exitStyle.imageUp = new TextureRegionDrawable(regions[3][0]);
+            exitStyle.imageOver = new TextureRegionDrawable(regions[3][1]);
+            ImageButton exitBtn = new ImageButton(exitStyle);
+
+            // Scale buttons down by half to fit the screen
+            startBtn.setTransform(true);
+            startBtn.setScale(0.5f);
+            loadBtn.setTransform(true);
+            loadBtn.setScale(0.5f);
+            optBtn.setTransform(true);
+            optBtn.setScale(0.5f);
+            exitBtn.setTransform(true);
+            exitBtn.setScale(0.5f);
+
+            // Left-aligned vertical layout with proper spacing
+            startBtn.setPosition(50, 500);
+            loadBtn.setPosition(50, 380);
+            optBtn.setPosition(50, 260);
+            exitBtn.setPosition(50, 140);
 
             startBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (game.getAllCharacters().isEmpty()) return;
                     com.cardgame.data.CharacterData ch = game.getAllCharacters().get(0);
-                    List<com.cardgame.data.CardData> starterDeck = new ArrayList<>();
-                    for (com.cardgame.data.CardData c : game.getAllCards()) {
-                        if (c.name().equalsIgnoreCase("Frantic Strike")) {
-                            for(int i=0; i<5; i++) starterDeck.add(c);
-                        } else if (c.name().equalsIgnoreCase("Deny Reality")) {
-                            for(int i=0; i<4; i++) starterDeck.add(c);
-                        } else if (c.name().equalsIgnoreCase("Skull Crack")) {
-                            starterDeck.add(c);
+                    List<com.cardgame.logic.cards.AbstractCard> starterDeck = new ArrayList<>();
+                    for (com.cardgame.logic.cards.AbstractCard c : game.getAllCards()) {
+                        if (c.name().equalsIgnoreCase("Scalpel")) {
+                            for(int i=0; i<5; i++) starterDeck.add(c.makeCopy());
+                        } else if (c.name().equalsIgnoreCase("Cower")) {
+                            for(int i=0; i<4; i++) starterDeck.add(c.makeCopy());
+                        } else if (c.name().equalsIgnoreCase("Pipe")) {
+                            starterDeck.add(c.makeCopy());
                         }
                     }
                     com.cardgame.logic.RunManager.getInstance().startNewRun(ch, starterDeck);
                     game.setScreen(new MapScreen(game));
-                }
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                    startBtn.setColor(logoRed);
-                }
-                @Override
-                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                    startBtn.setColor(Color.WHITE);
                 }
             });
 
@@ -126,14 +140,6 @@ public class MainMenuScreen implements Screen {
                 public void clicked(InputEvent event, float x, float y) {
                     // game.setScreen(new LoadGameScreen(game));
                 }
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                    loadBtn.setColor(logoRed);
-                }
-                @Override
-                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                    loadBtn.setColor(Color.WHITE);
-                }
             });
 
             optBtn.addListener(new ClickListener() {
@@ -141,28 +147,12 @@ public class MainMenuScreen implements Screen {
                 public void clicked(InputEvent event, float x, float y) {
                     // game.setScreen(new OptionsScreen(game));
                 }
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                    optBtn.setColor(logoRed);
-                }
-                @Override
-                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                    optBtn.setColor(Color.WHITE);
-                }
             });
 
             exitBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     Gdx.app.exit();
-                }
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                    exitBtn.setColor(logoRed);
-                }
-                @Override
-                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                    exitBtn.setColor(Color.WHITE);
                 }
             });
 
@@ -172,7 +162,8 @@ public class MainMenuScreen implements Screen {
             stage.addActor(exitBtn);
 
         } catch (Exception e) {
-            Gdx.app.error("MainMenu", "Missing button images");
+            Gdx.app.error("MainMenu", "Missing menu button textures. " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -6,155 +6,148 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.cardgame.data.CardData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.utils.Constants;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
- * A centered overlay that shows a large card preview with description
- * when the player hovers over a card in their hand.
- *
- * CardActor.setPreviewOverlay() connects this overlay to card hover events.
+ * A tooltip overlay that shows card keywords and descriptions
+ * next to the currently hovered card in the player's hand.
  */
 public class CardPreviewOverlay extends Group {
 
-    private static final float PREVIEW_W = Constants.CARD_WIDTH * 2f;
-    private static final float PREVIEW_H = Constants.CARD_HEIGHT * 2f;
-    private static final float PREVIEW_X = (Constants.VIEWPORT_WIDTH  - PREVIEW_W) / 2f;
-    private static final float PREVIEW_Y = (Constants.VIEWPORT_HEIGHT - PREVIEW_H) / 2f + 50f;
+    private CardActor hoveredActor = null;
 
-    private static final Color ATTACK_COLOR = new Color(0.85f, 0.25f, 0.20f, 0.9f);
-    private static final Color SKILL_COLOR  = new Color(0.20f, 0.50f, 0.85f, 0.9f);
-    private static final Color POWER_COLOR  = new Color(0.85f, 0.75f, 0.20f, 0.9f);
-
-    private CardData hoveredCard = null;
-
-    private final BitmapFont nameFont;
+    private final BitmapFont titleFont;
     private final BitmapFont descFont;
-    private final BitmapFont costFont;
     private final Texture bgTex;
-    private Texture cardImageCache = null;
-    private String cachedImagePath = null;
+    private final Texture borderTex;
+
+    private static final float BOX_WIDTH = 280f;
+    private static final float PADDING = 15f;
+
+    // Hardcoded keyword dictionary
+    private static final Map<String, String> KEYWORDS = new LinkedHashMap<>();
+    static {
+        KEYWORDS.put("Block", "Until next turn, prevents damage.");
+        KEYWORDS.put("Vulnerable", "Target takes 50% more damage from attacks.");
+        KEYWORDS.put("Weak", "Target deals 25% less damage with attacks.");
+        KEYWORDS.put("Exhaust", "Card is removed from combat after being played.");
+        KEYWORDS.put("Strength", "Increases damage dealt by attacks.");
+        KEYWORDS.put("Dexterity", "Increases Block gained from cards.");
+        KEYWORDS.put("Poison", "Target takes damage at the start of its turn. Loses 1 stack per turn.");
+    }
 
     public CardPreviewOverlay() {
-        nameFont = new BitmapFont();
-        nameFont.getData().setScale(1.4f);
-        nameFont.setColor(Color.WHITE);
+        titleFont = new BitmapFont();
+        titleFont.getData().setScale(1.1f);
+        titleFont.setColor(new Color(0.95f, 0.85f, 0.4f, 1f)); // Slay the spire yellow title
 
         descFont = new BitmapFont();
         descFont.getData().setScale(1.0f);
-        descFont.setColor(new Color(0.9f, 0.9f, 0.85f, 1f));
-
-        costFont = new BitmapFont();
-        costFont.getData().setScale(2.0f);
-        costFont.setColor(Color.WHITE);
+        descFont.setColor(Color.WHITE);
 
         Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm.setColor(new Color(0.05f, 0.05f, 0.10f, 0.93f));
+        pm.setColor(new Color(0.12f, 0.15f, 0.18f, 0.95f)); // Dark grey/blue bg
         pm.fill();
         bgTex = new Texture(pm);
+
+        pm.setColor(new Color(0.4f, 0.45f, 0.5f, 1f)); // Grey border
+        pm.fill();
+        borderTex = new Texture(pm);
         pm.dispose();
 
         setVisible(false);
-        // Overlay doesn't block input for other actors
         setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
     }
 
-    /** Show a preview of the given card. */
-    public void show(CardData card) {
-        this.hoveredCard = card;
+    public void show(CardActor actor) {
+        this.hoveredActor = actor;
         setVisible(true);
     }
 
-    /** Hide the preview. */
     public void hide() {
-        this.hoveredCard = null;
+        this.hoveredActor = null;
         setVisible(false);
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        if (!isVisible() || hoveredCard == null) return;
+        if (!isVisible() || hoveredActor == null || hoveredActor.isDragging()) return;
 
-        // Semi-dark backdrop panel
-        batch.setColor(1, 1, 1, 0.92f * parentAlpha);
-        batch.draw(bgTex, PREVIEW_X - 12, PREVIEW_Y - 60, PREVIEW_W + 24, PREVIEW_H + 80);
+        AbstractCard card = hoveredActor.getCard();
+        String desc = card.description();
+        
+        // Find all keywords in the description
+        Map<String, String> foundKeywords = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : KEYWORDS.entrySet()) {
+            // Check if word exists in description (case-insensitive whole word match)
+            if (Pattern.compile("(?i)\\b" + entry.getKey() + "\\b").matcher(desc).find()) {
+                foundKeywords.put(entry.getKey(), entry.getValue());
+            }
+        }
+        
+        // If no keywords found, don't draw any tooltips!
+        if (foundKeywords.isEmpty()) return;
 
-        // Type-coloured border
-        Color typeColor = typeColor();
-        batch.setColor(typeColor.r, typeColor.g, typeColor.b, 0.85f * parentAlpha);
-        float bw = 4f;
-        batch.draw(bgTex, PREVIEW_X - bw - 12, PREVIEW_Y - 60 - bw,
-                PREVIEW_W + 24 + bw * 2, PREVIEW_H + 80 + bw * 2);
+        float scale = hoveredActor.getScaleX();
+        float cardWidth = hoveredActor.getWidth() * scale;
+        float cardX = hoveredActor.getX() - (cardWidth - hoveredActor.getWidth()) / 2f;
+        float cardY = hoveredActor.getY();
 
-        // Redraw background on top of border
-        batch.setColor(1, 1, 1, 0.92f * parentAlpha);
-        batch.draw(bgTex, PREVIEW_X - 12, PREVIEW_Y - 60, PREVIEW_W + 24, PREVIEW_H + 80);
-
-        // Card image (if available)
-        Texture img = getCardTexture();
-        if (img != null) {
-            batch.setColor(1, 1, 1, parentAlpha);
-            batch.draw(img, PREVIEW_X, PREVIEW_Y + 10, PREVIEW_W, PREVIEW_H - 80);
-        } else {
-            // Gradient fallback
-            batch.setColor(typeColor.r, typeColor.g, typeColor.b, 0.3f * parentAlpha);
-            batch.draw(bgTex, PREVIEW_X, PREVIEW_Y + 10, PREVIEW_W, PREVIEW_H - 80);
+        // Calculate total height of all tooltips to adjust starting Y position
+        float totalHeight = 0;
+        for (String keyword : foundKeywords.keySet()) {
+            totalHeight += 95f; // rough height per box
         }
 
-        // Card name
+        float x = cardX + cardWidth + 20f;
+        float startY = cardY + (hoveredActor.getHeight() * scale) / 2f - totalHeight / 2f;
+
+        // If it goes off the right edge, move it to the left side
+        if (x + BOX_WIDTH > Constants.VIEWPORT_WIDTH) {
+            x = cardX - BOX_WIDTH - 20f;
+        }
+        
+        // Clamp to screen top/bottom margins
+        if (startY < 20f) startY = 20f;
+        if (startY + totalHeight > Constants.VIEWPORT_HEIGHT - 20f) startY = Constants.VIEWPORT_HEIGHT - totalHeight - 20f;
+
         batch.setColor(1, 1, 1, parentAlpha);
-        nameFont.setColor(Color.WHITE);
-        String displayName = hoveredCard.name() + (hoveredCard.isUpgraded() ? " ✦" : "");
-        nameFont.draw(batch, displayName, PREVIEW_X + 10, PREVIEW_Y + PREVIEW_H - 60);
+        
+        float currentY = startY + totalHeight;
 
-        // Energy cost badge
-        costFont.setColor(Color.YELLOW);
-        costFont.draw(batch, String.valueOf(hoveredCard.energyCost()),
-                PREVIEW_X + PREVIEW_W - 32, PREVIEW_Y + PREVIEW_H - 60);
+        // Draw a box for each keyword
+        for (Map.Entry<String, String> entry : foundKeywords.entrySet()) {
+            float boxHeight = 90f; // Fixed height for simplicity
+            currentY -= boxHeight;
+            
+            // Draw Slay the Spire style thick border
+            float bw = 4f;
+            batch.draw(borderTex, x - bw, currentY - bw, BOX_WIDTH + bw * 2, boxHeight + bw * 2);
 
-        // Description (word-wrapped manually by inserting newlines)
-        descFont.setColor(new Color(0.9f, 0.9f, 0.85f, parentAlpha));
-        descFont.draw(batch, hoveredCard.description(),
-                PREVIEW_X + 10, PREVIEW_Y - 8, PREVIEW_W - 20,
-                com.badlogic.gdx.utils.Align.left, true);
+            // Draw background
+            batch.draw(bgTex, x, currentY, BOX_WIDTH, boxHeight);
 
-        // Stats line
-        String stats = "";
-        if (hoveredCard.damage() > 0)  stats += "DMG: " + hoveredCard.damage() + "  ";
-        if (hoveredCard.defence() > 0) stats += "BLK: " + hoveredCard.defence() + "  ";
-        if (!stats.isEmpty()) {
-            descFont.setColor(new Color(1f, 0.85f, 0.4f, parentAlpha));
-            descFont.draw(batch, stats.trim(), PREVIEW_X + 10, PREVIEW_Y - 38);
+            // Draw Title (Keyword)
+            titleFont.draw(batch, entry.getKey(), x + PADDING, currentY + boxHeight - PADDING);
+
+            // Draw Description (Definition)
+            descFont.draw(batch, entry.getValue(), x + PADDING, currentY + boxHeight - PADDING - 25f, BOX_WIDTH - PADDING * 2, com.badlogic.gdx.utils.Align.left, true);
+            
+            currentY -= 5f; // gap between boxes
         }
-
+        
         batch.setColor(1, 1, 1, 1);
     }
 
-    private Color typeColor() {
-        if (hoveredCard == null) return ATTACK_COLOR;
-        switch (hoveredCard.cardType()) {
-            case SKILL:  return SKILL_COLOR;
-            case POWER:  return POWER_COLOR;
-            default:     return ATTACK_COLOR;
-        }
-    }
-
-    private Texture getCardTexture() {
-        if (hoveredCard == null) return null;
-        String path = hoveredCard.image();
-        if (path == null || path.isEmpty()) return null;
-        if (!path.equals(cachedImagePath)) {
-            // Load or grab from CardActor's shared cache
-            cachedImagePath = path;
-            cardImageCache = CardActor.getCachedTexture(path);
-        }
-        return cardImageCache;
-    }
-
     public void disposeResources() {
-        nameFont.dispose();
+        titleFont.dispose();
         descFont.dispose();
-        costFont.dispose();
         bgTex.dispose();
+        borderTex.dispose();
     }
 }

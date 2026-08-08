@@ -15,7 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.data.RelicData;
+import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
 import com.cardgame.utils.Constants;
 
@@ -92,17 +92,17 @@ public class TreasureScreen implements Screen {
                     openBtn.setVisible(false);
                     leaveBtn.setVisible(true);
 
-                    List<RelicData> allRelics = game.getAllRelics();
+                    List<AbstractRelic> allRelics = game.getAllRelics();
                     if (!allRelics.isEmpty()) {
-                        RelicData reward = allRelics.get(new Random().nextInt(allRelics.size()));
+                        AbstractRelic reward = allRelics.get(new Random().nextInt(allRelics.size()));
                         RunManager.getInstance().addRelic(reward);
                         RunManager.getInstance().addGold(50);
                         
-                        rewardLabel.setText("You found: " + reward.name() + " and 50 Gold!");
+                        rewardLabel.setText("You found: " + reward.name + " and 50 Gold!");
                         
                         try {
-                            if (reward.image() != null && !reward.image().isEmpty()) {
-                                relicTex = new Texture(Gdx.files.internal(reward.image()));
+                            if (reward.imagePath != null && !reward.imagePath.isEmpty()) {
+                                relicTex = new Texture(Gdx.files.internal(reward.imagePath));
                             }
                         } catch (Exception e) {}
                     }

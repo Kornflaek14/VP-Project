@@ -12,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.cardgame.data.PotionData;
+import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.logic.GameState;
 import com.cardgame.logic.RunManager;
 import com.cardgame.utils.Constants;
@@ -165,13 +165,13 @@ public class HUD extends Group {
         }
         potionTextures.clear();
 
-        List<PotionData> potions = RunManager.getInstance().getPotions();
-        for (PotionData p : potions) {
+        List<AbstractPotion> potions = RunManager.getInstance().getPotions();
+        for (AbstractPotion p : potions) {
             Texture tex = null;
-            if (p.image() != null && !p.image().isEmpty()) {
+            if (p.imagePath != null && !p.imagePath.isEmpty()) {
                 try {
-                    if (Gdx.files.internal(p.image()).exists()) {
-                        tex = new Texture(Gdx.files.internal(p.image()));
+                    if (Gdx.files.internal(p.imagePath).exists()) {
+                        tex = new Texture(Gdx.files.internal(p.imagePath));
                     }
                 } catch (Exception ignored) {}
             }
@@ -229,37 +229,6 @@ public class HUD extends Group {
         drawStatusEffects(batch, snapshot.playerStatus.summaryString(),
             PLAYER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 245f);
 
-        // ── Monster HP bar ────────────────────────────────────
-        drawHpBar(batch, parentAlpha,
-            MONSTER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 280f,
-            HP_BAR_WIDTH, HP_BAR_HEIGHT,
-            snapshot.monsterHp, snapshot.monsterMaxHp,
-            hpBarEnemyFillTex, snapshot.monsterBlock);
-
-        // Monster name
-        smallFont.setColor(Color.WHITE);
-        smallFont.draw(batch, snapshot.monsterName, MONSTER_X - 40, CHAR_Y + 320f);
-
-        // Monster status effects
-        drawStatusEffects(batch, snapshot.monsterStatus.summaryString(),
-            MONSTER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 265f);
-
-        // ── Monster Intent ────────────────────────────────────
-        if (snapshot.isPlayerTurn()) {
-            float intentY = CHAR_Y + 350f;
-            String intentStr;
-            Color intentColor;
-            if ("ATTACK".equals(snapshot.intentType)) {
-                intentStr  = "ATK " + snapshot.intentValue;
-                intentColor = new Color(1f, 0.3f, 0.3f, 1f);
-            } else {
-                intentStr  = "DEF " + snapshot.intentValue;
-                intentColor = new Color(0.3f, 0.6f, 1f, 1f);
-            }
-            font.setColor(intentColor);
-            font.draw(batch, intentStr, MONSTER_X - 30, intentY);
-        }
-
         // ── Potion slots (bottom-left, above energy) ──────────
         drawPotionSlots(batch, parentAlpha);
 
@@ -300,7 +269,7 @@ public class HUD extends Group {
 
     /** Draws 3 potion slots above the energy orb. */
     private void drawPotionSlots(Batch batch, float parentAlpha) {
-        List<PotionData> potions = RunManager.getInstance().getPotions();
+        List<AbstractPotion> potions = RunManager.getInstance().getPotions();
         int maxSlots = 3;
 
         for (int i = 0; i < maxSlots; i++) {
