@@ -14,5 +14,7 @@ public enum StatusEffect {
     /** Gain +N block from block cards. */
     DEXTERITY,
     /** Lose N HP at turn start, then decrement. */
-    POISON
+    POISON,
+    /** Takes 50% more damage for N turns (thematic Vulnerable). */
+    PARANOID
 }

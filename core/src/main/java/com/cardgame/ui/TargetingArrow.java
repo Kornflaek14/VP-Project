@@ -36,8 +36,6 @@ public class TargetingArrow extends Actor {
         if (!isVisible()) return;
 
         // Create a nice arc
-        float dy = end.y - start.y;
-        float dx = end.x - start.x;
         
         Vector2 p1 = new Vector2(start.x, start.y + 200f);
         Vector2 p2 = new Vector2(end.x, end.y - 150f);

@@ -14,8 +14,8 @@ public class SkullCrackCard extends AbstractCard {
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {
         List<GameEvent> events = new ArrayList<>();
         dealDamage(state, target, damage(), events);
-        target.status.apply(StatusEffect.VULNERABLE, 2);
-        events.add(new StatusEffectAppliedEvent("monster", StatusEffect.VULNERABLE, 2));
+        target.status.apply(StatusEffect.PARANOID, 2);
+        events.add(new StatusEffectAppliedEvent("monster", StatusEffect.PARANOID, 2));
         return events;
     }
     

@@ -7,6 +7,7 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -22,11 +23,11 @@ import com.cardgame.logic.TurnManager;
 import com.cardgame.logic.events.GameEvent;
 import com.cardgame.logic.events.PlayerDamagedEvent;
 import com.cardgame.ui.CardActor;
-import com.cardgame.ui.CardPreviewOverlay;
 import com.cardgame.ui.DamageLabel;
 import com.cardgame.ui.HUD;
 import com.cardgame.ui.HandArea;
 import com.cardgame.ui.PauseOverlay;
+import com.cardgame.ui.PileViewerOverlay;
 import com.cardgame.ui.TargetingArrow;
 import com.cardgame.utils.Constants;
 
@@ -47,7 +48,6 @@ public class BattleScreen implements Screen {
     private HandArea handArea;
     private TargetingArrow targetingArrow;
     private HUD hud;
-    private CardPreviewOverlay previewOverlay;
 
     private PauseOverlay pauseOverlay;
     private boolean paused = false;
@@ -58,6 +58,16 @@ public class BattleScreen implements Screen {
     private static final float SHAKE_INTENSITY = 8f;
     private float shakeOffsetX = 0f;
     private float shakeOffsetY = 0f;
+
+    // Enemy HP bar textures
+    private Texture hpBarBgTex;
+    private Texture hpBarFillTex;
+    private Texture solidWhiteTex;
+    private com.badlogic.gdx.graphics.g2d.BitmapFont monsterFont;
+    private com.badlogic.gdx.graphics.g2d.BitmapFont monsterSmallFont;
+
+    // Pile viewer
+    private PileViewerOverlay pileViewer;
 
     private com.cardgame.logic.monsters.MonsterGroup monsters;
     public BattleScreen(CardBattlerGame game, com.cardgame.logic.monsters.MonsterGroup monsters) {
@@ -95,6 +105,24 @@ public class BattleScreen implements Screen {
         // Init random monster for current floor level
         
         gameState.initMonsters(this.monsters);
+
+        // Init monster HP bar rendering resources
+        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm.setColor(new Color(0.2f, 0.05f, 0.05f, 0.9f));
+        pm.fill();
+        hpBarBgTex = new Texture(pm);
+        pm.setColor(new Color(0.85f, 0.15f, 0.15f, 1f));
+        pm.fill();
+        hpBarFillTex = new Texture(pm);
+        pm.setColor(Color.WHITE);
+        pm.fill();
+        solidWhiteTex = new Texture(pm);
+        pm.dispose();
+
+        monsterFont = new com.badlogic.gdx.graphics.g2d.BitmapFont();
+        monsterFont.getData().setScale(1.0f);
+        monsterSmallFont = new com.badlogic.gdx.graphics.g2d.BitmapFont();
+        monsterSmallFont.getData().setScale(0.8f);
 
         buildUI();
         buildPauseOverlay();
@@ -216,10 +244,22 @@ public class BattleScreen implements Screen {
 
         stage.addActor(hud);
 
-        // Card preview overlay (on top)
-        previewOverlay = new CardPreviewOverlay();
-        stage.addActor(previewOverlay);
-        CardActor.setPreviewOverlay(previewOverlay);
+        // Wire pile viewer
+        pileViewer = new PileViewerOverlay();
+        stage.addActor(pileViewer);
+
+        hud.setPileCallback(new HUD.PileClickCallback() {
+            @Override
+            public void onDrawPileClicked() {
+                if (paused) return;
+                pileViewer.show(gameState.drawPile, "Draw Pile");
+            }
+            @Override
+            public void onDiscardPileClicked() {
+                if (paused) return;
+                pileViewer.show(gameState.discardPile, "Discard Pile");
+            }
+        });
     }
 
     private void processEvents(List<GameEvent> events) {
@@ -231,7 +271,6 @@ public class BattleScreen implements Screen {
                     RunManager.getInstance().getRelics().forEach(r -> r.onVictory());
                 }
                 RunManager.getInstance().setCurrentHp(gameState.playerHp);
-                CardActor.setPreviewOverlay(null);
                 if (goe.winnerIndex() == 0) {
                     game.setScreen(new RewardScreen(game));
                 } else {
@@ -326,7 +365,49 @@ public class BattleScreen implements Screen {
         if (gameState.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
                 if (m.currentHp > 0) {
-                    batch.draw(m.getTexture(), m.drawX - 140f, m.drawY, 280f, 320f);
+                    float mx = m.drawX - 140f;
+                    float my = m.drawY;
+                    batch.setColor(1, 1, 1, 1);
+                    batch.draw(m.getTexture(), mx, my, 280f, 320f);
+
+                    // ── Monster name ──
+                    monsterFont.setColor(Color.WHITE);
+                    monsterFont.draw(batch, m.name, m.drawX - 60f, my + 340f);
+
+                    // ── Intent icon ──
+                    Color intentColor = "ATTACK".equals(m.intentType) ? Color.RED : Color.CYAN;
+                    monsterFont.setColor(intentColor);
+                    String intentStr = "ATTACK".equals(m.intentType) 
+                        ? "ATK " + m.intentValue 
+                        : "DEF " + m.intentValue;
+                    monsterFont.draw(batch, intentStr, m.drawX - 40f, my + 360f);
+
+                    // ── HP bar ──
+                    float barW = 180f, barH = 16f;
+                    float barX = m.drawX - barW / 2f;
+                    float barY = my - 25f;
+
+                    batch.setColor(1, 1, 1, 1);
+                    batch.draw(hpBarBgTex, barX - 2, barY - 2, barW + 4, barH + 4);
+
+                    float fillRatio = Math.max(0, Math.min(1, (float) m.currentHp / m.maxHp));
+                    batch.draw(hpBarFillTex, barX, barY, barW * fillRatio, barH);
+
+                    monsterSmallFont.setColor(Color.WHITE);
+                    monsterSmallFont.draw(batch, m.currentHp + "/" + m.maxHp, barX + barW / 2f - 20f, barY + barH - 1f);
+
+                    // ── Block indicator ──
+                    if (m.block > 0) {
+                        monsterSmallFont.setColor(Color.CYAN);
+                        monsterSmallFont.draw(batch, "BLK " + m.block, barX + barW + 8, barY + barH - 1f);
+                    }
+
+                    // ── Status effects ──
+                    String statusStr = m.status.summaryString();
+                    if (!statusStr.isEmpty()) {
+                        monsterSmallFont.setColor(new Color(0.9f, 0.7f, 0.2f, 1f));
+                        monsterSmallFont.draw(batch, statusStr, barX, barY - 14f);
+                    }
                 }
             }
         }
@@ -348,7 +429,6 @@ public class BattleScreen implements Screen {
 
     @Override
     public void hide() {
-        CardActor.setPreviewOverlay(null);
         dispose();
     }
 
@@ -362,5 +442,11 @@ public class BattleScreen implements Screen {
         if (handArea != null) handArea.disposeAll();
         if (pauseOverlay != null) pauseOverlay.disposeResources();
         if (targetingArrow != null) targetingArrow.dispose();
+        if (hpBarBgTex != null) hpBarBgTex.dispose();
+        if (hpBarFillTex != null) hpBarFillTex.dispose();
+        if (solidWhiteTex != null) solidWhiteTex.dispose();
+        if (monsterFont != null) monsterFont.dispose();
+        if (monsterSmallFont != null) monsterSmallFont.dispose();
+        if (pileViewer != null) pileViewer.disposeResources();
     }
 }

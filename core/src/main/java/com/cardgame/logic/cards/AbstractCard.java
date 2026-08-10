@@ -67,6 +67,7 @@ public abstract class AbstractCard {
         rawDamage += state.playerStatus.get(StatusEffect.STRENGTH);
         if (state.playerStatus.has(StatusEffect.WEAK)) rawDamage = (int)(rawDamage * 0.75f);
         if (target.status.has(StatusEffect.VULNERABLE)) rawDamage = (int)(rawDamage * 1.5f);
+        if (target.status.has(StatusEffect.PARANOID)) rawDamage = (int)(rawDamage * 1.5f);
 
         int damageDealt = 0;
         if (target.block > 0) {

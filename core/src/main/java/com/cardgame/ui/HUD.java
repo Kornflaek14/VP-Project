@@ -37,6 +37,11 @@ public class HUD extends Group {
         void onPotionClicked(int slotIndex);
     }
 
+    public interface PileClickCallback {
+        void onDrawPileClicked();
+        void onDiscardPileClicked();
+    }
+
     private final BitmapFont font;
     private final BitmapFont largeFont;
     private final BitmapFont smallFont;
@@ -63,6 +68,7 @@ public class HUD extends Group {
     private GameState snapshot;
     private final TextButton endTurnBtn;
     private PotionClickCallback potionCallback;
+    private PileClickCallback pileCallback;
 
     // Layout constants
     private static final float PLAYER_X  = 300f;
@@ -123,6 +129,34 @@ public class HUD extends Group {
         endTurnBtn.setPosition(Constants.VIEWPORT_WIDTH - 200, 210);
         endTurnBtn.addListener(endTurnListener);
         addActor(endTurnBtn);
+
+        // Draw pile click area
+        Actor drawPileHit = new Actor();
+        drawPileHit.setPosition(20, 15);
+        drawPileHit.setSize(100, 50);
+        drawPileHit.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) { return true; }
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (pileCallback != null) pileCallback.onDrawPileClicked();
+            }
+        });
+        addActor(drawPileHit);
+
+        // Discard pile click area
+        Actor discardPileHit = new Actor();
+        discardPileHit.setPosition(Constants.VIEWPORT_WIDTH - 100, 15);
+        discardPileHit.setSize(100, 50);
+        discardPileHit.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) { return true; }
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (pileCallback != null) pileCallback.onDiscardPileClicked();
+            }
+        });
+        addActor(discardPileHit);
     }
 
     // ── Potion slots ──────────────────────────────────────────
@@ -155,6 +189,10 @@ public class HUD extends Group {
     /** Set the callback that fires when the player clicks a potion slot. */
     public void setPotionCallback(PotionClickCallback callback) {
         this.potionCallback = callback;
+    }
+
+    public void setPileCallback(PileClickCallback callback) {
+        this.pileCallback = callback;
     }
 
     /** Reload the potion image cache from current RunManager state. */

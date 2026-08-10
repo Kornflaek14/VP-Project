@@ -35,7 +35,7 @@ public final class StatusEffectState {
      */
     public void tickDurationEffects() {
         for (StatusEffect e : new StatusEffect[]{
-                StatusEffect.VULNERABLE, StatusEffect.WEAK}) {
+                StatusEffect.VULNERABLE, StatusEffect.WEAK, StatusEffect.PARANOID}) {
             int current = get(e);
             if (current > 0) {
                 if (current == 1) stacks.remove(e);
@@ -80,6 +80,7 @@ public final class StatusEffectState {
             case STRENGTH:   return "STR";
             case DEXTERITY:  return "DEX";
             case POISON:     return "PSN";
+            case PARANOID:   return "PAR";
             default:         return e.name();
         }
     }

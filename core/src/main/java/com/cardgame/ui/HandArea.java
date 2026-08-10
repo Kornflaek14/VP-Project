@@ -90,6 +90,13 @@ public class HandArea extends Group {
                         ca.targetPos.set(x, y);
                         ca.targetRot = rotation;
                         ca.targetScale = 1f;
+                        if (ca.isHovered()) {
+                            ca.targetPos.y += 40f;
+                            ca.targetScale = 1.2f;
+                            ca.targetRot = 0f;
+                            ca.setHoverLifted(true);
+                            ca.toFront();
+                        }
                     }
                     ca.setZIndex(index); // natural z-order left to right
                 });

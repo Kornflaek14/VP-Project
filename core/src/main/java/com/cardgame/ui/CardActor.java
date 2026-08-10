@@ -37,12 +37,15 @@ public class CardActor extends Actor {
     private final AbstractCard card;
     private boolean hovered = false;
     private boolean dragging = false;
+    private boolean hoverLifted = false;
 
     public final Vector2 targetPos = new Vector2();
     public float targetScale = 1f;
     public float targetRot = 0f;
     
     public boolean isDragging() { return dragging; }
+    public boolean isHovered() { return hovered; }
+    public void setHoverLifted(boolean lifted) { this.hoverLifted = lifted; }
 
     // Textures
     private Texture cardImage;
@@ -61,12 +64,7 @@ public class CardActor extends Actor {
     /** Shared texture cache across all card actors. */
     private static final Map<String, Texture> imageCache = new HashMap<>();
 
-    /** The active preview overlay — set by BattleScreen. */
-    private static CardPreviewOverlay previewOverlay = null;
 
-    public static void setPreviewOverlay(CardPreviewOverlay overlay) {
-        previewOverlay = overlay;
-    }
 
     /** Returns a cached texture for the given path (used by CardPreviewOverlay). */
     public static Texture getCachedTexture(String path) {
@@ -93,7 +91,7 @@ public class CardActor extends Actor {
             @Override
             public void dragStart(InputEvent event, float x, float y, int pointer) {
                 dragging = true;
-                if (previewOverlay != null) previewOverlay.hide();
+                hoverLifted = false;
                 toFront();
                 if (dragCallback != null) dragCallback.onDragStart(CardActor.this);
             }
@@ -136,21 +134,23 @@ public class CardActor extends Actor {
         addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (dragging) return;
+                if (dragging || hovered) return;
                 hovered = true;
+                hoverLifted = true;
                 targetScale = 1.2f;
                 targetRot = 0f;
                 targetPos.y += 40f;
                 toFront();
-                if (previewOverlay != null) previewOverlay.show(CardActor.this);
             }
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                 if (dragging) return;
                 hovered = false;
                 targetScale = 1f;
-                targetPos.y -= 40f;
-                if (previewOverlay != null) previewOverlay.hide();
+                if (hoverLifted) {
+                    targetPos.y -= 40f;
+                    hoverLifted = false;
+                }
             }
         });
     }
@@ -239,16 +239,6 @@ public class CardActor extends Actor {
             batch.setColor(0.15f, 0.15f, 0.25f, alpha);
             batch.draw(costBg, x, y, originX, originY, w, h, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
         }
-
-        // Energy cost badge (top-left) - we won't rotate the badge separately, but we could if needed.
-        // Actually, just drawing it on top without rotation is hard with batch.draw, so we can ignore rotation for the badge for now
-        // or just apply it. For simplicity, we just draw the image if it's full-art!
-        // The user re-enabled the badge earlier, but let's just draw it with basic offsets without rotation to keep it simple.
-        float badgeR = 18f;
-        batch.draw(costBg, x + 4f, y + h - badgeR * 2 - 4f, badgeR * 2, badgeR * 2);
-        font.setColor(1f, 1f, 1f, alpha);
-        font.draw(batch, String.valueOf(card.energyCost()),
-                x + 4f + badgeR * 0.55f, y + h - 4f - badgeR * 0.55f);
 
         batch.setColor(1f, 1f, 1f, 1f);
     }
