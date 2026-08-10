@@ -1,4 +1,8 @@
 package com.cardgame.logic;
+import com.cardgame.logic.rooms.*;
+import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.logic.relics.*;
+import com.cardgame.logic.potions.*;
 
 import com.cardgame.data.*;
 
@@ -18,9 +22,9 @@ public class RunManager {
     private int maxHp = 80;
     private int currentHp = 80;
     private int gold = 99;
-    private final List<CardData> deck = new ArrayList<>();
-    private final List<RelicData> relics = new ArrayList<>();
-    private final List<PotionData> potions = new ArrayList<>();
+    private final List<AbstractCard> deck = new ArrayList<>();
+    private final List<AbstractRelic> relics = new ArrayList<>();
+    private final List<AbstractPotion> potions = new ArrayList<>();
 
     // Map tracking
     private int currentNodeIndex = 0;
@@ -28,6 +32,7 @@ public class RunManager {
 
     // ── Persistent map data ───────────────────────────────────
     private final List<MapNodeData> mapNodes = new ArrayList<>();
+    private final List<Integer> pathTaken = new ArrayList<>();
     private int lastVisitedNodeId = -1;  // -1 means no node visited yet (start of run)
 
     /**
@@ -37,6 +42,7 @@ public class RunManager {
         public final int id;
         public final int level;
         public final String type;  // "COMBAT", "ELITE", "REST", "TREASURE", "SHOP", "BOSS"
+        public AbstractRoom room;
         public final float x;
         public final float y;
         public final List<Integer> nextNodeIds = new ArrayList<>();
@@ -58,8 +64,10 @@ public class RunManager {
         }
         return instance;
     }
+    
+    public List<Integer> getPathTaken() { return pathTaken; }
 
-    public void startNewRun(CharacterData character, List<CardData> characterCards) {
+    public void startNewRun(CharacterData character, List<AbstractCard> characterCards) {
         this.selectedCharacter = character;
         this.maxHp = character.hp();
         this.currentHp = character.hp();
@@ -67,9 +75,11 @@ public class RunManager {
         this.deck.clear();
         this.deck.addAll(characterCards);
         this.relics.clear();
+        addRelic(new TaintedIVBag());
         this.potions.clear();
         this.currentNodeIndex = 0;
         this.lastVisitedNodeId = -1;
+        this.pathTaken.clear();
         this.mapNodes.clear();
         generateMap();
     }
@@ -81,7 +91,7 @@ public class RunManager {
         Random rand = new Random();
         int nodeIdCounter = 0;
         float startY = 100f;
-        float endY = 900f - 100f; // Constants.VIEWPORT_HEIGHT - 100
+        float endY = 4000f; // Increased for scrolling
         float spacingY = (endY - startY) / (maxNodes - 1);
         float viewportWidth = 1440f; // Constants.VIEWPORT_WIDTH
 
@@ -98,6 +108,15 @@ public class RunManager {
 
                 String type = determineNodeType(l, maxNodes, rand);
                 MapNodeData node = new MapNodeData(nodeIdCounter++, l, type, x, y);
+                switch(type) {
+                    case "COMBAT": node.room = new MonsterRoom(); break;
+                    case "ELITE": node.room = new EliteRoom(); break;
+                    case "BOSS": node.room = new BossRoom(); break;
+                    case "REST": node.room = new RestRoom(); break;
+                    case "SHOP": node.room = new ShopRoom(); break;
+                    case "TREASURE": node.room = new TreasureRoom(); break;
+                    default: node.room = new MonsterRoom();
+                }
                 mapNodes.add(node);
                 currentLevelNodes.add(node);
             }
@@ -205,71 +224,42 @@ public class RunManager {
     }
 
     // ── Deck ──────────────────────────────────────────────────
-    public List<CardData> getDeck() { return deck; }
-    public void addCardToDeck(CardData card) { deck.add(card); }
-    public void removeCardFromDeck(CardData card) { deck.remove(card); }
+    public List<AbstractCard> getDeck() { return deck; }
+    public void addCardToDeck(AbstractCard card) { deck.add(card); }
+    public void removeCardFromDeck(AbstractCard card) { deck.remove(card); }
 
     // ── Relics ────────────────────────────────────────────────
-    public List<RelicData> getRelics() { return relics; }
-    public void addRelic(RelicData relic) { relics.add(relic); }
+    public List<AbstractRelic> getRelics() { return relics; }
+    public void addRelic(AbstractRelic relic) { relics.add(relic); relic.onEquip(); }
 
     /** Sum of all relic attack boosts. */
-    public int getTotalAttackBoost() {
-        int total = 0;
-        for (RelicData r : relics) total += r.attackBoost();
-        return total;
-    }
+    public int getTotalAttackBoost() { return 0; }
 
     /** Sum of all relic defence boosts. */
-    public int getTotalDefenceBoost() {
-        int total = 0;
-        for (RelicData r : relics) total += r.defenceBoost();
-        return total;
-    }
+    public int getTotalDefenceBoost() { return 0; }
 
     /** Sum of all relic energy boosts. */
-    public int getTotalEnergyBoost() {
-        int total = 0;
-        for (RelicData r : relics) total += r.energyBoost();
-        return total;
-    }
+    public int getTotalEnergyBoost() { return 0; }
 
     // ── Potions ───────────────────────────────────────────────
-    public List<PotionData> getPotions() { return potions; }
-    public boolean addPotion(PotionData potion) {
+    public List<AbstractPotion> getPotions() { return potions; }
+    public boolean addPotion(AbstractPotion potion) {
         if (potions.size() < 3) { potions.add(potion); return true; }
         return false;
     }
-    public void usePotion(int index) {
+        public void usePotion(int index, GameState state) {
         if (index >= 0 && index < potions.size()) {
-            PotionData p = potions.remove(index);
-            currentHp = Math.min(currentHp + p.hpBoost(), maxHp);
+            AbstractPotion p = potions.remove(index);
+            com.cardgame.logic.monsters.AbstractMonster target = null;
+            if (p.isTargeted() && state != null && state.monsterGroup != null) {
+                for(com.cardgame.logic.monsters.AbstractMonster m : state.monsterGroup.monsters) {
+                    if (m.currentHp > 0) { target = m; break; }
+                }
+            }
+            p.use(state, target);
         }
     }
 
-    /**
-     * Use a potion during combat: applies HP boost to persistent state
-     * and attack/defend boosts to the active GameState for this combat.
-     */
-    public void usePotion(int index, GameState state) {
-        if (index >= 0 && index < potions.size()) {
-            PotionData p = potions.remove(index);
-            // HP boost: apply to persistent HP
-            if (p.hpBoost() > 0) {
-                currentHp = Math.min(currentHp + p.hpBoost(), maxHp);
-                if (state != null) state.playerHp = Math.min(state.playerHp + p.hpBoost(), state.playerMaxHp);
-            }
-            // Attack boost: temporarily boost this combat's player block/damage
-            if (p.attackBoost() > 0 && state != null) {
-                // Apply as Strength for this combat
-                state.playerStatus.apply(com.cardgame.data.StatusEffect.STRENGTH, p.attackBoost());
-            }
-            // Defend boost: give immediate block
-            if (p.defendBoost() > 0 && state != null) {
-                state.playerBlock += p.defendBoost();
-            }
-        }
-    }
 
     // ── Map progress ──────────────────────────────────────────
     public int getCurrentNodeIndex() { return currentNodeIndex; }

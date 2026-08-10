@@ -1,12 +1,10 @@
 package com.cardgame.logic;
 
-import com.cardgame.data.CardData;
-import com.cardgame.data.MonsterData;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.events.GameEvent;
 import com.cardgame.logic.events.GameOverEvent;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Authoritative snapshot of a single combat encounter (STS-style).
@@ -23,28 +21,26 @@ public final class GameState {
     public int playerEnergy;
     public int playerMaxEnergy;
 
-    public final List<CardData> hand        = new ArrayList<>();
-    public final List<CardData> drawPile    = new ArrayList<>();
-    public final List<CardData> discardPile = new ArrayList<>();
+    public final List<AbstractCard> hand        = new ArrayList<>();
+    public final List<AbstractCard> drawPile    = new ArrayList<>();
+    public final List<AbstractCard> discardPile = new ArrayList<>();
 
     // ── Monster state ─────────────────────────────────────────
-    public String monsterName = "";
-    public int    monsterHp;
-    public int    monsterMaxHp;
-    public int    monsterBlock;
-    public String monsterImage = "";
+    public com.cardgame.logic.monsters.MonsterGroup monsterGroup;
+    
+    
 
     // Monster intent for current turn
-    public String intentType = "ATTACK"; // "ATTACK" or "DEFEND"
-    public int    intentValue = 0;
+     // "ATTACK" or "DEFEND"
+    
 
     // Monster stat ranges (used to randomize intent)
-    private int monsterAtkMin, monsterAtkMax;
-    private int monsterDefMin, monsterDefMax;
+    
+    
 
     // ── Status effects ────────────────────────────────────────
     public final StatusEffectState playerStatus  = new StatusEffectState();
-    public final StatusEffectState monsterStatus = new StatusEffectState();
+    
 
     // ── Turn tracking ─────────────────────────────────────────
     private int turnNumber = 0;
@@ -55,7 +51,7 @@ public final class GameState {
 
     // ── Setup ─────────────────────────────────────────────────
 
-    public void initPlayer(int hp, int maxHp, int energy, List<CardData> deck) {
+    public void initPlayer(int hp, int maxHp, int energy, List<AbstractCard> deck) {
         this.playerHp = hp;
         this.playerMaxHp = maxHp;
         this.playerBlock = 0;
@@ -69,18 +65,11 @@ public final class GameState {
         this.playerStatus.clear();
     }
 
-    public void initMonster(MonsterData data) {
-        this.monsterName  = data.name();
-        this.monsterHp    = data.hp();
-        this.monsterMaxHp = data.hp();
-        this.monsterBlock = 0;
-        this.monsterImage = data.image();
-        this.monsterAtkMin = data.attackMin();
-        this.monsterAtkMax = data.attackMax();
-        this.monsterDefMin = data.defenceMin();
-        this.monsterDefMax = data.defenceMax();
-        this.monsterStatus.clear();
-        rollMonsterIntent();
+    public void initMonsters(com.cardgame.logic.monsters.MonsterGroup group) {
+        this.monsterGroup = group;
+        for(com.cardgame.logic.monsters.AbstractMonster m : monsterGroup.monsters) {
+            m.rollMove();
+        }
     }
 
     // ── Accessors ─────────────────────────────────────────────
@@ -92,20 +81,10 @@ public final class GameState {
 
     // ── Monster intent ────────────────────────────────────────
 
-    public void rollMonsterIntent() {
-        if (ThreadLocalRandom.current().nextFloat() < 0.6f) {
-            intentType = "ATTACK";
-            intentValue = ThreadLocalRandom.current().nextInt(monsterAtkMin, monsterAtkMax + 1);
-        } else {
-            intentType = "DEFEND";
-            intentValue = ThreadLocalRandom.current().nextInt(monsterDefMin, monsterDefMax + 1);
-        }
-    }
-
     // ── Win condition ─────────────────────────────────────────
 
     public Optional<GameOverEvent> checkWinCondition() {
-        if (monsterHp <= 0) return Optional.of(new GameOverEvent(0));
+        if (monsterGroup != null && monsterGroup.areMonstersBasicallyDead()) return Optional.of(new GameOverEvent(0));
         if (playerHp  <= 0) return Optional.of(new GameOverEvent(1));
         return Optional.empty();
     }
