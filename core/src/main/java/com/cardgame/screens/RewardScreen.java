@@ -211,7 +211,6 @@ public class RewardScreen implements Screen {
                     cardsTable.clearChildren();
                 }
             });
-            ca.isUiElement = true;
             // We need to set a reasonable size since CardActor relies on layout
             ca.setSize(180f, 250f);
             cardsTable.add(ca).size(180f, 250f).pad(20);

@@ -1,35 +1,13 @@
 [
-  {
-    "name": "Ironclad",
-    "image": "IMAGES/play/Ironclad.png",
-    "portrait": "IMAGES/play/ironcladPortrait.png",
-    "buttonImage": "IMAGES/play/ironcladButton.png",
-    "energy": 3,
-    "hp": 80,
-    "gold": 99,
-    "description": "The remaining soldier of the Ironclads.\nSold his soul to harness demonic energies.",
-    "startingRelicName": "Burning Blood"
-  },
-  {
-    "name": "Defect",
-    "image": "IMAGES/play/Defect.png",
-    "portrait": "IMAGES/play/defectPortrait.png",
-    "buttonImage": "IMAGES/play/defectButton.png",
-    "energy": 3,
-    "hp": 75,
-    "gold": 99,
-    "description": "A combat automaton which has gained sentience.\nChannels Orbs to power its attacks.",
-    "startingRelicName": "Cracked Core"
-  },
-  {
-    "name": "Watcher",
-    "image": "IMAGES/play/Watcher.png",
-    "portrait": "IMAGES/play/watcherPortrait.png",
-    "buttonImage": "IMAGES/play/watcherButton.png",
-    "energy": 3,
-    "hp": 72,
-    "gold": 99,
-    "description": "A blind ascetic who has come to evaluate the Spire.\nWields a powerful, divine stance system.",
-    "startingRelicName": "Pure Water"
-  }
+    {
+        "name": "The Patient",
+        "image": "IMAGES/play/Ironclad.png",
+        "portrait": "IMAGES/play/ironcladPortrait.png",
+        "buttonImage": "IMAGES/play/ironcladButton.png",
+        "energy": 3,
+        "hp": 80,
+        "gold": 99,
+        "description": "A lost soul wandering the halls of their own fractured mind.",
+        "startingRelicName": "Burning Blood"
+    }
 ]

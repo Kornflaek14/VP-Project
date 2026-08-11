@@ -4,8 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -15,9 +13,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.data.CardData;
-import com.cardgame.data.PotionData;
-import com.cardgame.data.RelicData;
+import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.logic.potions.AbstractPotion;
+import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
 import com.cardgame.utils.Constants;
@@ -70,9 +68,9 @@ public class ShopScreen implements Screen {
         Table cardsTable = new Table();
         RunManager rm = RunManager.getInstance();
         String charName = rm.getSelectedCharacter().name();
-        List<CardData> pool = game.getCardsForCharacter(charName);
+        List<AbstractCard> pool = game.getCardsForCharacter(charName);
         if (pool.isEmpty()) pool = game.getAllCards();
-        List<CardData> shuffled = new ArrayList<>(pool);
+        List<AbstractCard> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled);
 
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
@@ -81,11 +79,11 @@ public class ShopScreen implements Screen {
         btnStyle.overFontColor = Color.YELLOW;
 
         for (int i = 0; i < 5 && i < shuffled.size(); i++) {
-            CardData card = shuffled.get(i);
+            AbstractCard card = shuffled.get(i);
             int price = 45 + new Random().nextInt(20);
             
             Table itemTable = new Table();
-            CardActor ca = new CardActor(card, null); // no click on actor itself
+            CardActor ca = new CardActor(card, (CardActor.OnClickCallback) null); // no click on actor itself
             ca.setSize(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f);
             ca.isUiElement = true;
             cardActors.add(ca);
@@ -112,12 +110,12 @@ public class ShopScreen implements Screen {
         Table itemsTable = new Table();
         
         // Relic
-        List<RelicData> relics = new ArrayList<>(game.getAllRelics());
+        List<AbstractRelic> relics = new ArrayList<>(game.getAllRelics());
         Collections.shuffle(relics);
         if (!relics.isEmpty()) {
-            RelicData relic = relics.get(0);
+            AbstractRelic relic = relics.get(0);
             int price = 150 + new Random().nextInt(50);
-            TextButton buyRelicBtn = new TextButton("Relic: " + relic.name() + "\n" + price + " Gold", btnStyle);
+            TextButton buyRelicBtn = new TextButton("Relic: " + relic.name + "\n" + price + " Gold", btnStyle);
             buyRelicBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
@@ -133,12 +131,12 @@ public class ShopScreen implements Screen {
         }
 
         // Potion
-        List<PotionData> potions = new ArrayList<>(game.getAllPotions());
+        List<AbstractPotion> potions = new ArrayList<>(game.getAllPotions());
         Collections.shuffle(potions);
         if (!potions.isEmpty()) {
-            PotionData potion = potions.get(0);
+            AbstractPotion potion = potions.get(0);
             int price = 50 + new Random().nextInt(20);
-            TextButton buyPotionBtn = new TextButton("Potion: " + potion.name() + "\n" + price + " Gold", btnStyle);
+            TextButton buyPotionBtn = new TextButton("Potion: " + potion.name + "\n" + price + " Gold", btnStyle);
             buyPotionBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
