@@ -14,9 +14,11 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -62,12 +64,13 @@ public class MapScreen implements Screen {
         uiStage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/mapBg.jpg"));
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/seamless_parchment.png"));
         } catch (Exception e) {
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pm.setColor(new Color(0.1f, 0.1f, 0.15f, 1f));
             pm.fill();
             bgTexture = new Texture(pm);
+            bgTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
             pm.dispose();
         }
         
@@ -86,7 +89,6 @@ public class MapScreen implements Screen {
         tinyFont = new BitmapFont();
         tinyFont.getData().setScale(0.8f);
 
-        buildMap();
         buildHUD();
         buildPauseOverlay();
 
@@ -163,8 +165,10 @@ public class MapScreen implements Screen {
         RunManager rm = RunManager.getInstance();
 
         Table topBar = new Table();
-        topBar.setFillParent(true);
-        topBar.top().left().pad(20);
+        if (barTex != null) {
+            topBar.setBackground(new TextureRegionDrawable(new TextureRegion(barTex)));
+        }
+        topBar.pad(20);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
         Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));

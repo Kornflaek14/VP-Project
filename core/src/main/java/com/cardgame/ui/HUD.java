@@ -82,6 +82,13 @@ public class HUD extends Group {
     private static final float POTION_SLOT_X    = 20f;
     private static final float POTION_BASE_Y    = 285f; // above energy orb
 
+    // Layout constants matching the reference image
+    private static final float PLAYER_X = 300f;     // player center X
+    private static final float MONSTER_X = 1050f;    // monster center X
+    private static final float CHAR_Y = 280f;        // character base Y
+    private static final float HP_BAR_WIDTH = 180f;
+    private static final float HP_BAR_HEIGHT = 18f;
+
     public HUD(GameState initialState, ChangeListener endTurnListener) {
         this.snapshot = initialState;
 
@@ -289,6 +296,15 @@ public class HUD extends Group {
             batch.setColor(1, 1, 1, parentAlpha);
             batch.draw(endTurnImage, Constants.VIEWPORT_WIDTH - 210, 200, 180, 75);
         }
+        font.setColor(Color.WHITE);
+        font.draw(batch, "" + snapshot.drawPile.size(), 75, pileY + 35);
+
+        // ── Discard pile (bottom-right corner) ────────────────
+        if (discardImage != null) {
+            batch.draw(discardImage, w - 100, pileY, 50, 50);
+        }
+        font.setColor(Color.WHITE);
+        font.draw(batch, "" + snapshot.discardPile.size(), w - 45, pileY + 35);
 
         // ── Draw pile (bottom-left corner) ───────────────────
         float pileY = 15;

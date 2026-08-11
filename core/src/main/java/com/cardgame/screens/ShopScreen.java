@@ -85,6 +85,7 @@ public class ShopScreen implements Screen {
             Table itemTable = new Table();
             CardActor ca = new CardActor(card, (CardActor.OnClickCallback) null); // no click on actor itself
             ca.setSize(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f);
+            ca.isUiElement = true;
             cardActors.add(ca);
             itemTable.add(ca).size(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f).padBottom(5).row();
             

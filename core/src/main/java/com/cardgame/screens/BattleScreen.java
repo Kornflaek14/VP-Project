@@ -102,6 +102,19 @@ public class BattleScreen implements Screen {
             try { playerTexture = new Texture(Gdx.files.internal("IMAGES/play/character.png")); } catch (Exception e2) {}
         }
 
+        // Load player character texture
+        try {
+            String charImage = rm.getSelectedCharacter().image();
+            if (charImage != null && !charImage.isEmpty()) {
+                playerTexture = new Texture(Gdx.files.internal(charImage));
+            }
+        } catch (Exception e) {
+            // Try a fallback
+            try {
+                playerTexture = new Texture(Gdx.files.internal("IMAGES/play/character.png"));
+            } catch (Exception e2) {}
+        }
+
         // Init random monster for current floor level
         
         gameState.initMonsters(this.monsters);
