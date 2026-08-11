@@ -15,7 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.data.CardData;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
 import com.cardgame.utils.Constants;
@@ -83,7 +83,7 @@ public class GameOverScreen implements Screen {
                 menuBtn.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, Actor actor) {
-                        game.setScreen(new MainMenuScreen(game));
+                        game.startNewGame();
                     }
                 });
                 root.add(menuBtn).size(200, 50).row();
@@ -93,15 +93,15 @@ public class GameOverScreen implements Screen {
 
                 // Generate 3 random cards for the character
                 String charName = rm.getSelectedCharacter().name();
-                List<AbstractCard> pool = game.getCardsForCharacter(charName);
+                List<CardData> pool = game.getCardsForCharacter(charName);
                 if (pool.isEmpty()) pool = game.getAllCards(); // fallback
                 
-                List<AbstractCard> shuffled = new ArrayList<>(pool);
+                List<CardData> shuffled = new ArrayList<>(pool);
                 Collections.shuffle(shuffled);
 
                 Table cardTable = new Table();
                 for (int i = 0; i < 3 && i < shuffled.size(); i++) {
-                    AbstractCard rewardCard = shuffled.get(i);
+                    CardData rewardCard = shuffled.get(i);
                     CardActor ca = new CardActor(rewardCard, new CardActor.OnClickCallback() {
                         @Override
                         public void onClick(CardActor actor) {
@@ -137,7 +137,7 @@ public class GameOverScreen implements Screen {
             menuBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    game.setScreen(new MainMenuScreen(game));
+                    game.startNewGame();
                 }
             });
             root.add(menuBtn).size(200, 50).row();

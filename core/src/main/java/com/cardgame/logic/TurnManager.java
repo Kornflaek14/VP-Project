@@ -1,8 +1,7 @@
 package com.cardgame.logic;
 
-import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.data.CardData;
 import com.cardgame.logic.events.*;
-import com.cardgame.logic.monsters.AbstractMonster;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,14 +29,11 @@ public final class TurnManager {
         turnNumber = 1;
         state.setTurnNumber(turnNumber);
         state.setPlayerTurn(true);
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
-        // Relic hook
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
 
         // Draw initial hand
         events.addAll(drawCards(state, CARDS_PER_TURN));
         events.add(new TurnChangedEvent(turnNumber, true));
-        
+        events.add(new MonsterIntentEvent(state.intentType, state.intentValue));
         return events;
     }
 
@@ -60,7 +56,7 @@ public final class TurnManager {
         events.addAll(resolver.executeMonsterTurn(state));
 
         // Check if game is over
-        if (state.playerHp <= 0 || state.monsterGroup.areMonstersBasicallyDead()) {
+        if (state.playerHp <= 0 || state.monsterHp <= 0) {
             return events;
         }
 
@@ -68,38 +64,12 @@ public final class TurnManager {
         turnNumber++;
         state.setTurnNumber(turnNumber);
         state.setPlayerTurn(true);
-        RunManager.getInstance().getRelics().forEach(r -> r.atTurnStart(state));
-        // Relic hook
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
-
-        // Tick poison on both combatants at turn start
-        int playerPoison = state.playerStatus.tickPoison();
-        if (playerPoison > 0) {
-            state.playerHp -= playerPoison;
-            events.add(new DamageDealtEvent("poison", "player", playerPoison));
-            events.add(new PlayerDamagedEvent(playerPoison));
-        }
-        for(AbstractMonster m : state.monsterGroup.monsters) {
-            int p = m.status.tickPoison();
-            if (p > 0) m.damage(p);
-            m.status.tickDurationEffects();
-        }
-
-        // Decrement duration-based status effects (Vulnerable, Weak)
-        state.playerStatus.tickDurationEffects();
-        
-
-        // Check if game ended due to poison
-        state.checkWinCondition().ifPresent(events::add);
-        if (state.playerHp <= 0 || state.monsterGroup.areMonstersBasicallyDead()) {
-            return events;
-        }
 
         // Reset player block at start of turn
         state.playerBlock = 0;
 
         // Reset monster block at start of player turn
-        if (state.monsterGroup != null) { for(AbstractMonster m : state.monsterGroup.monsters) m.block = 0; }
+        state.monsterBlock = 0;
 
         // Refill energy
         state.playerEnergy = state.playerMaxEnergy;
@@ -124,7 +94,7 @@ public final class TurnManager {
                 state.discardPile.clear();
                 Collections.shuffle(state.drawPile);
             }
-            AbstractCard card = state.drawPile.remove(0);
+            CardData card = state.drawPile.remove(0);
             state.hand.add(card);
             events.add(new CardDrawnEvent(card));
         }

@@ -1,7 +1,9 @@
 package com.cardgame.lwjgl3;
 
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3NativesLoader;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;

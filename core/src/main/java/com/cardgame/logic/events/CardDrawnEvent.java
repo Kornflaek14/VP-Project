@@ -1,5 +1,5 @@
 package com.cardgame.logic.events;
 
-import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.data.CardData;
 
-public record CardDrawnEvent(AbstractCard card) implements GameEvent {}
+public record CardDrawnEvent(CardData card) implements GameEvent {}
