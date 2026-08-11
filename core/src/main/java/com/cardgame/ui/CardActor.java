@@ -38,6 +38,7 @@ public class CardActor extends Actor {
     private boolean hovered = false;
     private boolean dragging = false;
     private boolean hoverLifted = false;
+    public boolean isUiElement = false;
 
     public final Vector2 targetPos = new Vector2();
     public float targetScale = 1f;
@@ -158,10 +159,14 @@ public class CardActor extends Actor {
     @Override
     public void act(float delta) {
         super.act(delta);
-        setX(MathUtils.lerp(getX(), targetPos.x, 15f * delta));
-        setY(MathUtils.lerp(getY(), targetPos.y, 15f * delta));
-        setScale(MathUtils.lerp(getScaleX(), targetScale, 15f * delta));
-        setRotation(MathUtils.lerp(getRotation(), targetRot, 15f * delta));
+        if (isUiElement) {
+            setScale(MathUtils.lerp(getScaleX(), targetScale, 15f * delta));
+        } else {
+            setX(MathUtils.lerp(getX(), targetPos.x, 15f * delta));
+            setY(MathUtils.lerp(getY(), targetPos.y, 15f * delta));
+            setScale(MathUtils.lerp(getScaleX(), targetScale, 15f * delta));
+            setRotation(MathUtils.lerp(getRotation(), targetRot, 15f * delta));
+        }
     }
 
     private void buildTextures() {
@@ -218,18 +223,12 @@ public class CardActor extends Actor {
         float originX = getOriginX();
         float originY = getOriginY();
 
-        // Glow/border (brighter and cyan on hover)
+        // Glow/border
         float bw = hovered || dragging ? 6f : 3f;
         
-        if (hovered && !dragging) {
-            // Slay the spire style bright blue/cyan glow
-            batch.setColor(0.2f, 0.8f, 1f, 0.9f * alpha);
-            batch.draw(statBg, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
-        } else {
-            // Normal type-colored border
-            batch.setColor(1f, 1f, 1f, (dragging ? 1f : 0.7f) * alpha);
-            batch.draw(borderTex, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
-        }
+        // Normal type-colored border
+        batch.setColor(1f, 1f, 1f, (hovered || dragging ? 1f : 0.7f) * alpha);
+        batch.draw(borderTex, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
 
         // Card image or fallback
         if (cardImage != null) {
