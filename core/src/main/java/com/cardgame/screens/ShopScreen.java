@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -83,8 +85,9 @@ public class ShopScreen implements Screen {
             int price = 45 + new Random().nextInt(20);
             
             Table itemTable = new Table();
-            CardActor ca = new CardActor(card, (CardActor.OnClickCallback) null); // no click on actor itself
+            CardActor ca = new CardActor(card, (CardActor.OnClickCallback)null); // no click on actor itself
             ca.setSize(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f);
+            ca.isUiElement = true;
             cardActors.add(ca);
             itemTable.add(ca).size(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f).padBottom(5).row();
             

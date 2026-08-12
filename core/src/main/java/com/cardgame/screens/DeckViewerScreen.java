@@ -91,6 +91,7 @@ public class DeckViewerScreen implements Screen {
         for (int i = 0; i < deck.size(); i++) {
             AbstractCard cd = deck.get(i);
             CardActor ca = new CardActor(cd, (CardActor.OnClickCallback) null);
+            ca.isUiElement = true;
             ca.setSize(cardW, cardH);
             cardActors.add(ca);
 

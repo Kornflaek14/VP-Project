@@ -80,7 +80,7 @@ public class BattleScreen implements Screen {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/playBackground.jpg"));
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png"));
         } catch (Exception e) {}
 
         gameState = new GameState();

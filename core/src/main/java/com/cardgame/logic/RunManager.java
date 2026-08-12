@@ -41,7 +41,7 @@ public class RunManager {
     public static class MapNodeData {
         public final int id;
         public final int level;
-        public final String type;  // "COMBAT", "ELITE", "REST", "TREASURE", "SHOP", "BOSS"
+        public String type;  // "COMBAT", "ELITE", "REST", "TREASURE", "SHOP", "BOSS"
         public AbstractRoom room;
         public final float x;
         public final float y;
@@ -86,88 +86,196 @@ public class RunManager {
 
     // ── Map generation ────────────────────────────────────────
 
+    private class Edge {
+        int srcCol, destCol;
+        Edge(int s, int d) { srcCol = s; destCol = d; }
+    }
+
     private void generateMap() {
         mapNodes.clear();
         Random rand = new Random();
-        int nodeIdCounter = 0;
-        float startY = 100f;
-        float endY = 4000f; // Increased for scrolling
-        float spacingY = (endY - startY) / (maxNodes - 1);
-        float viewportWidth = 1440f; // Constants.VIEWPORT_WIDTH
+        int maxLevels = 15;
+        this.maxNodes = maxLevels;
+        int maxCols = 7;
+        float startY = 200f;
+        float endY = 3800f;
+        float spacingY = (endY - startY) / (maxLevels - 1);
+        float viewportWidth = 1440f; 
+        float spacingX = viewportWidth / (maxCols + 1f);
 
-        List<MapNodeData> prevLevelNodes = new ArrayList<>();
-
-        for (int l = 0; l < maxNodes; l++) {
-            int nodesInLevel = (l == 0 || l == maxNodes - 1) ? 1 : 2 + rand.nextInt(3);
-            float spacingX = viewportWidth / (nodesInLevel + 1f);
-
-            List<MapNodeData> currentLevelNodes = new ArrayList<>();
-            for (int i = 0; i < nodesInLevel; i++) {
-                float x = spacingX * (i + 1);
-                float y = startY + l * spacingY;
-
-                String type = determineNodeType(l, maxNodes, rand);
-                MapNodeData node = new MapNodeData(nodeIdCounter++, l, type, x, y);
-                switch(type) {
-                    case "COMBAT": node.room = new MonsterRoom(); break;
-                    case "ELITE": node.room = new EliteRoom(); break;
-                    case "BOSS": node.room = new BossRoom(); break;
-                    case "REST": node.room = new RestRoom(); break;
-                    case "SHOP": node.room = new ShopRoom(); break;
-                    case "TREASURE": node.room = new TreasureRoom(); break;
-                    default: node.room = new MonsterRoom();
+        List<List<Edge>> levelEdges = new ArrayList<>();
+        for (int i = 0; i < maxLevels - 1; i++) levelEdges.add(new ArrayList<>());
+        
+        // Generate 6 paths from floor 1 (level 1) up to the floor before the boss (level maxLevels - 2)
+        for (int p = 0; p < 6; p++) {
+            int currentCol = rand.nextInt(maxCols);
+            for (int l = 1; l < maxLevels - 2; l++) {
+                int nextCol = currentCol;
+                int move = rand.nextInt(3) - 1; // -1, 0, or 1
+                
+                boolean valid = false;
+                int attempts = 0;
+                while (!valid && attempts < 10) {
+                    nextCol = currentCol + move;
+                    valid = true;
+                    if (nextCol < 0 || nextCol >= maxCols) {
+                        valid = false;
+                    } else {
+                        // Check crossing
+                        for (Edge e : levelEdges.get(l)) {
+                            if ((currentCol < e.srcCol && nextCol > e.destCol) || 
+                                (currentCol > e.srcCol && nextCol < e.destCol)) {
+                                valid = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!valid) move = rand.nextInt(3) - 1;
+                    attempts++;
                 }
-                mapNodes.add(node);
-                currentLevelNodes.add(node);
+                
+                if (!valid) nextCol = currentCol; // straight line fallback
+                
+                boolean exists = false;
+                for (Edge e : levelEdges.get(l)) {
+                    if (e.srcCol == currentCol && e.destCol == nextCol) { exists = true; break; }
+                }
+                if (!exists) {
+                    levelEdges.get(l).add(new Edge(currentCol, nextCol));
+                }
+                
+                currentCol = nextCol;
             }
+        }
+        
+        MapNodeData[][] grid = new MapNodeData[maxLevels][maxCols];
+        int idCounter = 0;
+        
+        // 1) Create the Single Start Node (Level 0)
+        grid[0][3] = new MapNodeData(idCounter++, 0, "COMBAT", spacingX * 4, startY);
+        mapNodes.add(grid[0][3]);
 
-            // Connect previous level to current level
-            if (!prevLevelNodes.isEmpty()) {
-                for (int i = 0; i < prevLevelNodes.size(); i++) {
-                    MapNodeData prev = prevLevelNodes.get(i);
-                    int targetIndex = (i * currentLevelNodes.size()) / prevLevelNodes.size();
-                    if (!prev.nextNodeIds.contains(currentLevelNodes.get(targetIndex).id)) {
-                        prev.nextNodeIds.add(currentLevelNodes.get(targetIndex).id);
-                    }
+        // 2) Create the Single Boss Node (Level maxLevels - 1)
+        grid[maxLevels-1][3] = new MapNodeData(idCounter++, maxLevels-1, "BOSS", spacingX * 4, startY + (maxLevels-1) * spacingY);
+        mapNodes.add(grid[maxLevels-1][3]);
 
-                    if (rand.nextBoolean() && targetIndex + 1 < currentLevelNodes.size()) {
-                        if (!prev.nextNodeIds.contains(currentLevelNodes.get(targetIndex + 1).id)) {
-                            prev.nextNodeIds.add(currentLevelNodes.get(targetIndex + 1).id);
-                        }
-                    }
+        // 3) Create all intermediary nodes based on generated paths
+        for (int l = 1; l < maxLevels - 2; l++) {
+            for (Edge e : levelEdges.get(l)) {
+                if (grid[l][e.srcCol] == null) {
+                    float jx = (rand.nextFloat() - 0.5f) * (spacingX * 0.4f);
+                    float jy = (rand.nextFloat() - 0.5f) * (spacingY * 0.4f);
+                    grid[l][e.srcCol] = new MapNodeData(idCounter++, l, "UNKNOWN", spacingX * (e.srcCol + 1) + jx, startY + l * spacingY + jy);
+                    mapNodes.add(grid[l][e.srcCol]);
                 }
-                // Ensure every node in current level has at least one incoming edge
-                for (int i = 0; i < currentLevelNodes.size(); i++) {
-                    MapNodeData curr = currentLevelNodes.get(i);
-                    boolean hasIncoming = false;
-                    for (MapNodeData prev : prevLevelNodes) {
-                        if (prev.nextNodeIds.contains(curr.id)) {
-                            hasIncoming = true;
-                            break;
-                        }
-                    }
-                    if (!hasIncoming) {
-                        MapNodeData randomPrev = prevLevelNodes.get(rand.nextInt(prevLevelNodes.size()));
-                        if (!randomPrev.nextNodeIds.contains(curr.id)) {
-                            randomPrev.nextNodeIds.add(curr.id);
+                if (grid[l+1][e.destCol] == null) {
+                    float jx = (rand.nextFloat() - 0.5f) * (spacingX * 0.4f);
+                    float jy = (rand.nextFloat() - 0.5f) * (spacingY * 0.4f);
+                    grid[l+1][e.destCol] = new MapNodeData(idCounter++, l+1, "UNKNOWN", spacingX * (e.destCol + 1) + jx, startY + (l+1) * spacingY + jy);
+                    mapNodes.add(grid[l+1][e.destCol]);
+                }
+                if (!grid[l][e.srcCol].nextNodeIds.contains(grid[l+1][e.destCol].id)) {
+                    grid[l][e.srcCol].nextNodeIds.add(grid[l+1][e.destCol].id);
+                }
+            }
+        }
+        
+        // 4) Hook up the Start Node to all generated nodes on Level 1
+        for (int c = 0; c < maxCols; c++) {
+            if (grid[1][c] != null) {
+                grid[0][3].nextNodeIds.add(grid[1][c].id);
+            }
+        }
+
+        // 5) Hook up all generated nodes on Level maxLevels - 2 to the Boss Node
+        for (int c = 0; c < maxCols; c++) {
+            if (grid[maxLevels-2][c] != null) {
+                grid[maxLevels-2][c].nextNodeIds.add(grid[maxLevels-1][3].id);
+            }
+        }
+        
+        for (MapNodeData node : mapNodes) {
+            assignNodeType(node, maxLevels, grid, rand);
+        }
+        
+        // Fix duplicate outgoing types
+        for (MapNodeData node : mapNodes) {
+            List<Integer> outIds = node.nextNodeIds;
+            if (outIds.size() > 1) {
+                for (int i = 0; i < outIds.size(); i++) {
+                    for (int j = i + 1; j < outIds.size(); j++) {
+                        MapNodeData d1 = getNodeById(outIds.get(i));
+                        MapNodeData d2 = getNodeById(outIds.get(j));
+                        if (d1 != null && d2 != null && d1.type.equals(d2.type)) {
+                            int tries = 0;
+                            while(d2.type.equals(d1.type) && tries < 10) {
+                                mutateTypeSafely(d2, maxLevels, grid, rand);
+                                tries++;
+                            }
                         }
                     }
                 }
             }
-            prevLevelNodes = currentLevelNodes;
+        }
+        
+        // Finalize rooms
+        for (MapNodeData node : mapNodes) {
+             switch(node.type) {
+                case "COMBAT": node.room = new MonsterRoom(); break;
+                case "ELITE": node.room = new EliteRoom(); break;
+                case "BOSS": node.room = new BossRoom(); break;
+                case "REST": node.room = new RestRoom(); break;
+                case "SHOP": node.room = new ShopRoom(); break;
+                case "TREASURE": node.room = new TreasureRoom(); break;
+                default: node.room = new MonsterRoom();
+            }
         }
     }
 
-    private String determineNodeType(int level, int maxLevels, Random rand) {
-        if (level == maxLevels - 1) return "BOSS";
-        if (level == 0) return "COMBAT";
-
-        int roll = rand.nextInt(100);
-        if (roll < 40) return "COMBAT";
-        if (roll < 60) return "ELITE";
-        if (roll < 75) return "REST";
-        if (roll < 90) return "SHOP";
-        return "TREASURE";
+    private void assignNodeType(MapNodeData node, int maxLevels, MapNodeData[][] grid, Random rand) {
+        int l = node.level;
+        if (l == 0) { node.type = "COMBAT"; return; }
+        if (l == 8) { node.type = "TREASURE"; return; }
+        if (l == maxLevels - 1) { node.type = "BOSS"; return; } 
+        if (l == maxLevels - 2) { node.type = "REST"; return; }
+        
+        List<String> pool = new ArrayList<>();
+        pool.add("COMBAT");
+        pool.add("COMBAT");
+        pool.add("COMBAT");
+        
+        boolean parentIsElite = false;
+        boolean parentIsShop = false;
+        boolean parentIsRest = false;
+        
+        for (MapNodeData[] row : grid) {
+            for (MapNodeData parent : row) {
+                if (parent != null && parent.nextNodeIds.contains(node.id)) {
+                    if ("ELITE".equals(parent.type)) parentIsElite = true;
+                    if ("SHOP".equals(parent.type)) parentIsShop = true;
+                    if ("REST".equals(parent.type)) parentIsRest = true;
+                }
+            }
+        }
+        
+        if (l >= 5 && !parentIsElite) {
+            pool.add("ELITE");
+            pool.add("ELITE");
+        }
+        if (l != maxLevels - 3 && !parentIsRest) { 
+            pool.add("REST");
+        }
+        if (!parentIsShop) {
+            pool.add("SHOP");
+        }
+        
+        node.type = pool.get(rand.nextInt(pool.size()));
+    }
+    
+    private void mutateTypeSafely(MapNodeData node, int maxLevels, MapNodeData[][] grid, Random rand) {
+        int l = node.level;
+        if (l == 0 || l == 8 || l == maxLevels - 2 || l == maxLevels - 1) return; 
+        assignNodeType(node, maxLevels, grid, rand); 
     }
 
     // ── Map accessors ─────────────────────────────────────────

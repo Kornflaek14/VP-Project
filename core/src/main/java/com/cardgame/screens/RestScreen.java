@@ -200,6 +200,7 @@ public class RestScreen implements Screen {
                     game.setScreen(new MapScreen(game));
                 }
             });
+            ca.isUiElement = true;
             ca.setSize(cardW, cardH);
             overlayCardActors.add(ca);
             cardGrid.add(ca).size(cardW, cardH).pad(8);

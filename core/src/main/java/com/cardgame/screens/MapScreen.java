@@ -14,9 +14,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -39,7 +42,10 @@ public class MapScreen implements Screen {
     private Stage uiStage;
     private Texture bgTexture;
     
-    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex;
+    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex, barTex;
+    
+    private Group mapContainer;
+    private ScrollPane mapScroller;
     
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
@@ -62,21 +68,23 @@ public class MapScreen implements Screen {
         uiStage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/mapBg.jpg"));
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/seamless_parchment.png"));
         } catch (Exception e) {
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pm.setColor(new Color(0.1f, 0.1f, 0.15f, 1f));
             pm.fill();
             bgTexture = new Texture(pm);
+            bgTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
             pm.dispose();
         }
         
         try { combatTex = new Texture(Gdx.files.internal("IMAGES/play/combatIcon.png")); } catch(Exception e) {}
-        try { eliteTex = new Texture(Gdx.files.internal("IMAGES/play/monster1.png")); } catch(Exception e) { eliteTex = combatTex; }
+        try { eliteTex = new Texture(Gdx.files.internal("IMAGES/play/eliteIcon.png")); } catch(Exception e) { eliteTex = combatTex; }
         try { treasureTex = new Texture(Gdx.files.internal("IMAGES/play/treasureIcon.png")); } catch(Exception e) { treasureTex = combatTex; }
         try { shopTex = new Texture(Gdx.files.internal("IMAGES/play/shopIcon.png")); } catch(Exception e) { shopTex = combatTex; }
         try { restTex = new Texture(Gdx.files.internal("IMAGES/play/restIcon.png")); } catch(Exception e) { restTex = combatTex; }
         try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/monster.png")); } catch(Exception e) { bossTex = combatTex; }
+        try { barTex = new Texture(Gdx.files.internal("IMAGES/play/bar.png")); } catch(Exception e) {}
 
         shapeRenderer = new ShapeRenderer();
         font = new BitmapFont();
@@ -86,36 +94,78 @@ public class MapScreen implements Screen {
         tinyFont = new BitmapFont();
         tinyFont.getData().setScale(0.8f);
 
-        buildMap();
         buildHUD();
         buildPauseOverlay();
 
-        // Set up input: ESC key + stage
+        int mapWidth = (int) Constants.VIEWPORT_WIDTH;
+        int mapHeight = 4000;
+        
+        mapContainer = new Group() {
+            @Override
+            public void draw(Batch batch, float parentAlpha) {
+                super.draw(batch, parentAlpha);
+                
+                batch.end();
+                
+                shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+                shapeRenderer.setTransformMatrix(batch.getTransformMatrix());
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                
+                RunManager rm = RunManager.getInstance();
+                List<MapNodeData> allNodes = rm.getMapNodes();
+                List<Integer> reachableIds = rm.getReachableNodeIds();
+                int lastVisitedId = rm.getLastVisitedNodeId();
+                List<Integer> pathTaken = rm.getPathTaken();
+
+                float offsetX = getX();
+                float offsetY = getY();
+                
+                for (MapNodeData node : allNodes) {
+                    for (int nextId : node.nextNodeIds) {
+                        float[] from = nodePositions.get(node.id);
+                        float[] to = nodePositions.get(nextId);
+                        if (from != null && to != null) {
+                            if (pathTaken.contains(node.id) && pathTaken.contains(nextId)) {
+                                shapeRenderer.setColor(Color.GOLD);
+                                Gdx.gl.glLineWidth(4f);
+                            } else if (node.id == lastVisitedId && reachableIds.contains(nextId)) {
+                                shapeRenderer.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
+                                Gdx.gl.glLineWidth(2f);
+                            } else if (node.level <= (rm.getNodeById(lastVisitedId) != null ? rm.getNodeById(lastVisitedId).level : -1)) {
+                                shapeRenderer.setColor(new Color(0.2f, 0.2f, 0.25f, 0.5f));
+                                Gdx.gl.glLineWidth(2f);
+                            } else {
+                                shapeRenderer.setColor(new Color(0.3f, 0.3f, 0.4f, 0.6f));
+                                Gdx.gl.glLineWidth(2f);
+                            }
+                            shapeRenderer.line(from[0] + offsetX, from[1] + offsetY, to[0] + offsetX, to[1] + offsetY);
+                        }
+                    }
+                }
+                shapeRenderer.end();
+                Gdx.gl.glDisable(GL20.GL_BLEND);
+                
+                batch.begin();
+            }
+        };
+        mapContainer.setSize(mapWidth, mapHeight);
+        
+        Image mapBackground = new Image(bgTexture);
+        mapBackground.setSize(mapWidth, mapHeight);
+        mapContainer.addActor(mapBackground);
+        
+        buildMap(); // Add nodes to mapContainer
+        
+        ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle();
+        mapScroller = new ScrollPane(mapContainer, scrollStyle);
+        mapScroller.setScrollingDisabled(true, false);
+        mapScroller.setFillParent(true);
+        stage.addActor(mapScroller);
+
         InputMultiplexer multiplexer = new InputMultiplexer();
-        InputAdapter inputAdapter = new InputAdapter() {
-            private float dragStartY;
-            private float camStartY;
-            @Override
-            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                dragStartY = screenY;
-                camStartY = stage.getCamera().position.y;
-                return false;
-            }
-            @Override
-            public boolean touchDragged(int screenX, int screenY, int pointer) {
-                float deltaY = screenY - dragStartY; // positive when dragging down
-                float newY = camStartY + deltaY;
-                newY = Math.max(Constants.VIEWPORT_HEIGHT / 2f, Math.min(4000f - Constants.VIEWPORT_HEIGHT / 2f, newY));
-                stage.getCamera().position.y = newY;
-                return true;
-            }
-            @Override
-            public boolean scrolled(float amountX, float amountY) {
-                float newY = stage.getCamera().position.y - amountY * 200f;
-                newY = Math.max(Constants.VIEWPORT_HEIGHT / 2f, Math.min(4000f - Constants.VIEWPORT_HEIGHT / 2f, newY));
-                stage.getCamera().position.y = newY;
-                return true;
-            }
+        InputAdapter escapeAdapter = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ESCAPE) {
@@ -128,11 +178,12 @@ public class MapScreen implements Screen {
         
         multiplexer.addProcessor(uiStage);
         multiplexer.addProcessor(stage);
-        multiplexer.addProcessor(inputAdapter);
+        multiplexer.addProcessor(escapeAdapter);
         Gdx.input.setInputProcessor(multiplexer);
         
-        // Start camera at the bottom (first nodes)
-        stage.getCamera().position.y = Constants.VIEWPORT_HEIGHT / 2f;
+        // Start camera at the bottom
+        mapScroller.layout();
+        mapScroller.setScrollPercentY(1.0f);
     }
 
     private void togglePause() {
@@ -162,9 +213,15 @@ public class MapScreen implements Screen {
     private void buildHUD() {
         RunManager rm = RunManager.getInstance();
 
+        Table topBarContainer = new Table();
+        topBarContainer.setFillParent(true);
+        topBarContainer.top().left();
+
         Table topBar = new Table();
-        topBar.setFillParent(true);
-        topBar.top().left().pad(20);
+        if (barTex != null) {
+            topBar.setBackground(new TextureRegionDrawable(new TextureRegion(barTex)));
+        }
+        topBar.pad(20);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
         Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));
@@ -190,7 +247,8 @@ public class MapScreen implements Screen {
         topBar.add(floorLabel).padRight(60);
         topBar.add(deckBtn);
 
-        uiStage.addActor(topBar);
+        topBarContainer.add(topBar).expandX().fillX();
+        uiStage.addActor(topBarContainer);
     }
 
     private void buildMap() {
@@ -252,7 +310,7 @@ public class MapScreen implements Screen {
                 btn.setDisabled(true);
             }
 
-            stage.addActor(btn);
+            mapContainer.addActor(btn);
         }
     }
 
@@ -273,51 +331,6 @@ public class MapScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        if (bgTexture != null) {
-            Batch batch = stage.getBatch();
-            batch.setProjectionMatrix(stage.getCamera().combined);
-            batch.begin();
-            
-            // Tile the background vertically to avoid stretching
-            float bgHeight = (Constants.VIEWPORT_WIDTH / (float) bgTexture.getWidth()) * bgTexture.getHeight();
-            for (float y = 0; y < 4500f; y += bgHeight) {
-                batch.draw(bgTexture, 0, y, Constants.VIEWPORT_WIDTH, bgHeight);
-            }
-            batch.end();
-        }
-
-        RunManager rm = RunManager.getInstance();
-        List<MapNodeData> allNodes = rm.getMapNodes();
-        List<Integer> reachableIds = rm.getReachableNodeIds();
-        int lastVisitedId = rm.getLastVisitedNodeId();
-        List<Integer> pathTaken = rm.getPathTaken();
-
-        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        for (MapNodeData node : allNodes) {
-            for (int nextId : node.nextNodeIds) {
-                float[] from = nodePositions.get(node.id);
-                float[] to = nodePositions.get(nextId);
-                if (from != null && to != null) {
-                    if (pathTaken.contains(node.id) && pathTaken.contains(nextId)) {
-                        shapeRenderer.setColor(Color.GOLD);
-                        Gdx.gl.glLineWidth(4f);
-                    } else if (node.id == lastVisitedId && reachableIds.contains(nextId)) {
-                        shapeRenderer.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
-                        Gdx.gl.glLineWidth(2f);
-                    } else if (node.level <= (rm.getNodeById(lastVisitedId) != null ? rm.getNodeById(lastVisitedId).level : -1)) {
-                        shapeRenderer.setColor(new Color(0.2f, 0.2f, 0.25f, 0.5f));
-                        Gdx.gl.glLineWidth(2f);
-                    } else {
-                        shapeRenderer.setColor(new Color(0.3f, 0.3f, 0.4f, 0.6f));
-                        Gdx.gl.glLineWidth(2f);
-                    }
-                    shapeRenderer.line(from[0], from[1], to[0], to[1]);
-                }
-            }
-        }
-        shapeRenderer.end();
 
         stage.act(delta);
         uiStage.act(delta);
@@ -347,6 +360,7 @@ public class MapScreen implements Screen {
         if (shopTex != null) shopTex.dispose();
         if (restTex != null) restTex.dispose();
         if (bossTex != null) bossTex.dispose();
+        if (barTex != null) barTex.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
         if (font != null) font.dispose();
         if (smallFont != null) smallFont.dispose();
