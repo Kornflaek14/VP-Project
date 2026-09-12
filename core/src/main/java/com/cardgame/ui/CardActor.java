@@ -227,13 +227,13 @@ public class CardActor extends Actor {
         float bw = hovered || dragging ? 6f : 3f;
         
         if (hovered && !dragging) {
-            // Slay the spire style bright blue/cyan glow
-            batch.setColor(0.2f, 0.8f, 1f, 0.9f * alpha);
-            batch.draw(statBg, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
+            // Slay the spire style bright blue/cyan glow (only for glow effect, not full background block if possible, but let's just remove it or keep the glow)
+            // batch.setColor(0.2f, 0.8f, 1f, 0.9f * alpha);
+            // batch.draw(statBg, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
         } else {
             // Normal type-colored border
-            batch.setColor(1f, 1f, 1f, (dragging ? 1f : 0.7f) * alpha);
-            batch.draw(borderTex, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
+            // batch.setColor(1f, 1f, 1f, (dragging ? 1f : 0.7f) * alpha);
+            // batch.draw(borderTex, x - bw, y - bw, originX + bw, originY + bw, w + bw * 2, h + bw * 2, scaleX, scaleY, rotation, 0, 0, 1, 1, false, false);
         }
 
         // Card image or fallback

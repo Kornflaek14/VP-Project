@@ -7,7 +7,7 @@ import java.util.List;
 
 public class LashOutCard extends AbstractCard {
     public LashOutCard() {
-        super("LashOutCard", "Lash Out", 1, "The Patient", 8, 0, "Deal 8 damage to all enemies.", "IMAGES/cards/Ironclad/Cleave.png", CardType.ATTACK);
+        super("LashOutCard", "Thrash", 1, "The Patient", 8, 0, "Deal 8 damage to all enemies.", "cards/Thrash.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

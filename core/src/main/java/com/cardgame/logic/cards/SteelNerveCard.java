@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SteelNerveCard extends AbstractCard {
     public SteelNerveCard() {
-        super("SteelNerveCard", "Steel Nerve", 1, "The Patient", 5, 5, "Gain 5 Sanity and deal 5 damage.", "IMAGES/cards/Ironclad/IronWave.png", CardType.ATTACK);
+        super("SteelNerveCard", "Crutch", 1, "The Patient", 5, 5, "Gain 5 Sanity and deal 5 damage.", "cards/Crutch.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ManicBurstCard extends AbstractCard {
     public ManicBurstCard() {
-        super("ManicBurstCard", "Manic Burst", 0, "The Patient", 0, 0, "Gain 2 Mania; lose 2 Mania at the end of the turn.", "IMAGES/cards/Ironclad/Flex.png", CardType.SKILL);
+        super("ManicBurstCard", "Syringe", 0, "The Patient", 0, 0, "Gain 2 Mania; lose 2 Mania at the end of the turn.", "cards/Syringe.png", CardType.SKILL);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

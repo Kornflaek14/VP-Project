@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ObsessiveStrikeCard extends AbstractCard {
     public ObsessiveStrikeCard() {
-        super("ObsessiveStrikeCard", "Obsessive Strike", 2, "The Patient", 14, 0, "Deal 14 damage. Mania affects this card 3 times instead of once.", "IMAGES/cards/Ironclad/HeavyBlade.png", CardType.ATTACK);
+        super("ObsessiveStrikeCard", "Nail", 2, "The Patient", 14, 0, "Deal 14 damage. Mania affects this card 3 times instead of once.", "cards/Nail.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

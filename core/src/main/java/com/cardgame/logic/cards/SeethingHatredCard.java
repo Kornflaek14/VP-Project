@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SeethingHatredCard extends AbstractCard {
     public SeethingHatredCard() {
-        super("SeethingHatredCard", "Seething Hatred", 0, "The Patient", 6, 0, "Deal 6 damage. Add a copy of this card to your discard pile.", "IMAGES/cards/Ironclad/Anger.png", CardType.ATTACK);
+        super("SeethingHatredCard", "Glare", 0, "The Patient", 6, 0, "Deal 6 damage. Add a copy of this card to your discard pile.", "cards/Glare.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

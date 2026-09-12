@@ -7,7 +7,7 @@ import java.util.List;
 
 public class HysteriaCard extends AbstractCard {
     public HysteriaCard() {
-        super("HysteriaCard", "Hysteria", 0, "The Patient", 0, 0, "Draw 1 card, then place a card from your hand on top of your draw pile. Exhaust.", "IMAGES/cards/Ironclad/Warcry.png", CardType.SKILL);
+        super("HysteriaCard", "Scream", 0, "The Patient", 0, 0, "Draw 1 card, then place a card from your hand on top of your draw pile. Exhaust.", "cards/Scream.png", CardType.SKILL);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

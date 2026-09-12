@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SharpenMindCard extends AbstractCard {
     public SharpenMindCard() {
-        super("SharpenMindCard", "Sharpen Mind", 1, "The Patient", 0, 5, "Gain 5 Sanity. Upgrade a card in your hand for the rest of combat.", "IMAGES/cards/Ironclad/Armaments.png", CardType.SKILL);
+        super("SharpenMindCard", "Focus", 1, "The Patient", 0, 5, "Gain 5 Sanity. Upgrade a card in your hand for the rest of combat.", "cards/Focus.png", CardType.SKILL);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

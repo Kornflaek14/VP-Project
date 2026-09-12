@@ -7,7 +7,7 @@ import java.util.List;
 
 public class RepressCard extends AbstractCard {
     public RepressCard() {
-        super("RepressCard", "Repress", 1, "The Patient", 0, 8, "Gain 8 Sanity and draw 1 card.", "IMAGES/cards/Ironclad/ShrugItOff.png", CardType.SKILL);
+        super("RepressCard", "Pills", 1, "The Patient", 0, 8, "Gain 8 Sanity and draw 1 card.", "cards/Pills.png", CardType.SKILL);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

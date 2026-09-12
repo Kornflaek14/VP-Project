@@ -7,7 +7,7 @@ import java.util.List;
 
 public class WildFlailingCard extends AbstractCard {
     public WildFlailingCard() {
-        super("WildFlailingCard", "Wild Flailing", 1, "The Patient", 3, 0, "Deal 3 damage to a random enemy 3 times.", "IMAGES/cards/Ironclad/SwordBoomerang.png", CardType.ATTACK);
+        super("WildFlailingCard", "Flail", 1, "The Patient", 3, 0, "Deal 3 damage to a random enemy 3 times.", "cards/Flail.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

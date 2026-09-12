@@ -7,7 +7,7 @@ import java.util.List;
 
 public class SplitPersonalityCard extends AbstractCard {
     public SplitPersonalityCard() {
-        super("SplitPersonalityCard", "Split Personality", 1, "The Patient", 5, 0, "Deal 5 damage twice.", "IMAGES/cards/Ironclad/TwinStrike.png", CardType.ATTACK);
+        super("SplitPersonalityCard", "Mirror", 1, "The Patient", 5, 0, "Deal 5 damage twice.", "cards/Mirror.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

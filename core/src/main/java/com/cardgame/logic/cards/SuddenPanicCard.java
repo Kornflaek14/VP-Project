@@ -8,7 +8,7 @@ import java.util.List;
 
 public class SuddenPanicCard extends AbstractCard {
     public SuddenPanicCard() {
-        super("SuddenPanicCard", "Sudden Panic", 1, "The Patient", 4, 0, "Deal 4 damage to all enemies; apply 1 Paranoid.", "IMAGES/cards/Ironclad/Thunderclap.png", CardType.ATTACK);
+        super("SuddenPanicCard", "Spike", 1, "The Patient", 4, 0, "Deal 4 damage to all enemies; apply 1 Paranoid.", "cards/Spike.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

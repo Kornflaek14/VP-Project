@@ -7,7 +7,7 @@ import java.util.List;
 
 public class PsychoticBreakCard extends AbstractCard {
     public PsychoticBreakCard() {
-        super("PsychoticBreakCard", "Psychotic Break", 0, "The Patient", 14, 0, "Playable only if every card in your hand is an Attack. Deal 14 damage.", "IMAGES/cards/Ironclad/Clash.png", CardType.ATTACK);
+        super("PsychoticBreakCard", "Shatter", 0, "The Patient", 14, 0, "Playable only if every card in your hand is an Attack. Deal 14 damage.", "cards/Shatter.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

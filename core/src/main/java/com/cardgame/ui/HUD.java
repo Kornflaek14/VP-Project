@@ -239,13 +239,13 @@ public class HUD extends Group {
         batch.draw(barTexture, 0, h - 50, w, 50);
 
         // Top-left: Heart icon + HP
-        float topY = h - 15;
-        if (heartImage != null) batch.draw(heartImage, 15, h - 42, 28, 28);
+        float topY = h - 18; // Adjusted text baseline
+        if (heartImage != null) batch.draw(heartImage, 15, h - 39, 28, 28);
         font.setColor(Color.RED);
         font.draw(batch, snapshot.playerHp + "/" + snapshot.playerMaxHp, 50, topY);
 
         // Top: Gold icon + count
-        if (goldImage != null) batch.draw(goldImage, 180, h - 42, 28, 28);
+        if (goldImage != null) batch.draw(goldImage, 180, h - 39, 28, 28);
         font.setColor(Color.GOLD);
         font.draw(batch, "" + RunManager.getInstance().getGold(), 215, topY);
 

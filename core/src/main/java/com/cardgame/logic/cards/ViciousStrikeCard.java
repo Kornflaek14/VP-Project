@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ViciousStrikeCard extends AbstractCard {
     public ViciousStrikeCard() {
-        super("ViciousStrikeCard", "Vicious Strike", 1, "The Patient", 9, 0, "Deal 9 damage and draw 1 card.", "IMAGES/cards/Ironclad/PommelStrike.png", CardType.ATTACK);
+        super("ViciousStrikeCard", "Shard", 1, "The Patient", 9, 0, "Deal 9 damage and draw 1 card.", "cards/Shard.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

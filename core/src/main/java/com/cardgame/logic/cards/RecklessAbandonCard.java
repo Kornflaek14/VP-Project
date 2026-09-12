@@ -7,7 +7,7 @@ import java.util.List;
 
 public class RecklessAbandonCard extends AbstractCard {
     public RecklessAbandonCard() {
-        super("RecklessAbandonCard", "Reckless Abandon", 1, "The Patient", 12, 0, "Deal 12 damage; shuffle a Trauma into your draw pile.", "IMAGES/cards/Ironclad/WildStrike.png", CardType.ATTACK);
+        super("RecklessAbandonCard", "Leap", 1, "The Patient", 12, 0, "Deal 12 damage; shuffle a Trauma into your draw pile.", "cards/Leap.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

@@ -7,7 +7,7 @@ import java.util.List;
 
 public class IntrusiveThoughtCard extends AbstractCard {
     public IntrusiveThoughtCard() {
-        super("IntrusiveThoughtCard", "Intrusive Thought", 1, "The Patient", 9, 0, "Deal 9 damage. Put a card from your discard pile on top of your draw pile.", "IMAGES/cards/Ironclad/Headbutt.png", CardType.ATTACK);
+        super("IntrusiveThoughtCard", "Parasite", 1, "The Patient", 9, 0, "Deal 9 damage. Put a card from your discard pile on top of your draw pile.", "cards/Parasite.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

@@ -52,6 +52,8 @@ public class MapScreen implements Screen {
     private BitmapFont smallFont;
     private BitmapFont tinyFont;
 
+    public static float savedScrollPercentY = 1.0f;
+
     private PauseOverlay pauseOverlay;
     private boolean paused = false;
 
@@ -176,14 +178,14 @@ public class MapScreen implements Screen {
             }
         };
         
+        multiplexer.addProcessor(escapeAdapter);
         multiplexer.addProcessor(uiStage);
         multiplexer.addProcessor(stage);
-        multiplexer.addProcessor(escapeAdapter);
         Gdx.input.setInputProcessor(multiplexer);
         
-        // Start camera at the bottom
+        // Restore camera position
         mapScroller.layout();
-        mapScroller.setScrollPercentY(1.0f);
+        mapScroller.setScrollPercentY(savedScrollPercentY);
     }
 
     private void togglePause() {
@@ -221,7 +223,7 @@ public class MapScreen implements Screen {
         if (barTex != null) {
             topBar.setBackground(new TextureRegionDrawable(new TextureRegion(barTex)));
         }
-        topBar.pad(20);
+        topBar.padTop(10).padBottom(50).padLeft(20).padRight(20);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
         Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));
@@ -347,7 +349,10 @@ public class MapScreen implements Screen {
 
     @Override public void pause() {}
     @Override public void resume() {}
-    @Override public void hide() { dispose(); }
+    @Override public void hide() { 
+        savedScrollPercentY = mapScroller.getScrollPercentY();
+        dispose(); 
+    }
 
     @Override
     public void dispose() {

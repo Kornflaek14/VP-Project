@@ -7,7 +7,7 @@ import java.util.List;
 
 public class StubbornDenialCard extends AbstractCard {
     public StubbornDenialCard() {
-        super("StubbornDenialCard", "Stubborn Denial", 1, "The Patient", 0, 7, "Gain 7 Sanity; Exhaust a random card in your hand.", "IMAGES/cards/Ironclad/TrueGrit.png", CardType.SKILL);
+        super("StubbornDenialCard", "Brick", 1, "The Patient", 0, 7, "Gain 7 Sanity; Exhaust a random card in your hand.", "cards/Brick.png", CardType.SKILL);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {

@@ -8,7 +8,7 @@ import java.util.List;
 
 public class TraumatizeCard extends AbstractCard {
     public TraumatizeCard() {
-        super("TraumatizeCard", "Traumatize", 2, "The Patient", 12, 0, "Deal 12 damage; apply 2 Despair.", "IMAGES/cards/Ironclad/Clothesline.png", CardType.ATTACK);
+        super("TraumatizeCard", "Inkblot", 2, "The Patient", 12, 0, "Deal 12 damage; apply 2 Despair.", "cards/Inkblot.png", CardType.ATTACK);
     }
     @Override
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {
