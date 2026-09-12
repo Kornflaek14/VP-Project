@@ -50,7 +50,12 @@ public final class CombatResolver {
         if (state.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : state.monsterGroup.monsters) {
                 if (m.currentHp > 0) {
+                    int hpBefore = state.playerHp;
                     m.takeTurn(state);
+                    int damageTaken = hpBefore - state.playerHp;
+                    if (damageTaken > 0) {
+                        events.add(new PlayerDamagedEvent(damageTaken));
+                    }
                 }
             }
         }
