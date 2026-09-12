@@ -9,7 +9,9 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -21,7 +23,12 @@ import com.cardgame.logic.GameState;
 import com.cardgame.logic.RunManager;
 import com.cardgame.logic.TurnManager;
 import com.cardgame.logic.events.GameEvent;
+import com.cardgame.logic.events.BlockGainedEvent;
+import com.cardgame.logic.events.CardPlayedEvent;
+import com.cardgame.logic.events.DamageDealtEvent;
 import com.cardgame.logic.events.PlayerDamagedEvent;
+import com.cardgame.logic.monsters.AbstractMonster;
+import com.cardgame.logic.monsters.FrenziedPatient;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.DamageLabel;
 import com.cardgame.ui.HUD;
@@ -31,6 +38,7 @@ import com.cardgame.ui.PileViewerOverlay;
 import com.cardgame.ui.TargetingArrow;
 import com.cardgame.utils.Constants;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BattleScreen implements Screen {
@@ -40,6 +48,34 @@ public class BattleScreen implements Screen {
     private Texture bgTexture;
     
     private Texture playerTexture;
+    private static final String[] PLAYER_IDLE_FRAME_FILES = {
+        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png",
+        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_08.png",
+        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_10.png",
+        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_12.png"
+    };
+    private final List<Texture> playerAnimationTextures = new ArrayList<>();
+    private final List<Texture> enemyAnimationTextures = new ArrayList<>();
+    private Animation<TextureRegion> playerIdleAnim;
+    private Animation<TextureRegion> playerAttackAnim;
+    private Animation<TextureRegion> playerHurtAnim;
+    private Animation<TextureRegion> playerDefendAnim;
+    private Animation<TextureRegion> enemyIdleAnim;
+    private Animation<TextureRegion> enemyAttackAnim;
+    private Animation<TextureRegion> enemyHurtAnim;
+
+    private enum PlayerAnimState { IDLE, ATTACK, HURT, DEFEND }
+    private enum EnemyAnimState { IDLE, ATTACK, HURT }
+
+    private PlayerAnimState playerState = PlayerAnimState.IDLE;
+    private EnemyAnimState enemyState = EnemyAnimState.IDLE;
+    private float playerStateTime = 0f;
+    private float enemyStateTime = 0f;
+    private AbstractMonster animatedMonster;
+    // Unified scale: computed once across ALL animation states so every pose
+    // displays at the same size regardless of individual frame dimensions.
+    private float playerUnifiedScale = 1f;
+    private float enemyUnifiedScale = 1f;
 
     private GameState gameState;
     private TurnManager turnManager;
@@ -102,9 +138,12 @@ public class BattleScreen implements Screen {
             try { playerTexture = new Texture(Gdx.files.internal("IMAGES/play/character.png")); } catch (Exception e2) {}
         }
 
+        loadPlayerAnimation();
+
         // Init random monster for current floor level
         
         gameState.initMonsters(this.monsters);
+        loadEnemyAnimation();
 
         // Init monster HP bar rendering resources
         Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -142,6 +181,159 @@ public class BattleScreen implements Screen {
         // Start combat
         turnManager.startCombat(gameState);
         updateUI();
+    }
+
+    private void loadPlayerAnimation() {
+        disposePlayerAnimation();
+        setPlayerState(PlayerAnimState.IDLE);
+        playerIdleAnim = loadAnimation(PLAYER_IDLE_FRAME_FILES, 0.4f, true, playerAnimationTextures);
+        playerAttackAnim = loadAnimation(playerFramePaths("attack", new String[] {
+                "frame 1.png", "frame 2.png", "frame 3.png", "frame 4.png"
+        }), 0.12f, false, playerAnimationTextures);
+        playerHurtAnim = loadAnimation(playerFramePaths("hurt", new String[] {
+                "ChatGPT Image Sep 12, 2026, 11_12_03 PM_02.png",
+                "ChatGPT Image Sep 12, 2026, 11_12_03 PM_03.png",
+                "ChatGPT Image Sep 12, 2026, 11_12_03 PM_04.png",
+                "ChatGPT Image Sep 12, 2026, 11_12_03 PM_06.png"
+        }), 0.15f, false, playerAnimationTextures);
+        playerDefendAnim = loadAnimation(playerFramePaths("defend", new String[] {
+                "1.png", "2.png", "3.png", "4.png"
+        }), 0.35f, false, playerAnimationTextures);
+        // One scale for ALL states so no pose shrinks or grows relative to the others.
+        playerUnifiedScale = unifiedScale(250f, 300f,
+                playerIdleAnim, playerAttackAnim, playerHurtAnim, playerDefendAnim);
+    }
+
+    private String[] playerFramePaths(String action, String[] existingNames) {
+        String folder = "Character sprite/" + action + "/";
+        String[] paths = numberedFramePaths(folder, action);
+        // Prefer the requested names; also support the frames already in the project.
+        if (!Gdx.files.internal(paths[0]).exists()) {
+            for (int i = 0; i < paths.length; i++) paths[i] = folder + existingNames[i];
+        }
+        return paths;
+    }
+
+    private static String[] numberedFramePaths(String folder, String action) {
+        String[] paths = new String[4];
+        for (int i = 0; i < paths.length; i++) paths[i] = folder + action + "_" + i + ".png";
+        return paths;
+    }
+
+    private void loadEnemyAnimation() {
+        disposeEnemyAnimation();
+        setEnemyState(EnemyAnimState.IDLE);
+        animatedMonster = null;
+        for (AbstractMonster monster : monsters.monsters) {
+            if (monster instanceof FrenziedPatient) {
+                animatedMonster = monster;
+                break;
+            }
+        }
+        if (animatedMonster == null) return;
+        enemyIdleAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/idle/", "idle"),
+                0.4f, true, enemyAnimationTextures);
+        enemyAttackAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/attack/", "attack"),
+                0.12f, false, enemyAnimationTextures);
+        enemyHurtAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/hurt/", "hurt"),
+                0.15f, false, enemyAnimationTextures);
+        // One scale for ALL enemy states.
+        enemyUnifiedScale = unifiedScale(280f, 320f,
+                enemyIdleAnim, enemyAttackAnim, enemyHurtAnim);
+    }
+
+    private Animation<TextureRegion> loadAnimation(String[] paths, float frameDuration,
+            boolean looping, List<Texture> ownedTextures) {
+        List<Texture> loaded = new ArrayList<>();
+        try {
+            TextureRegion[] frames = new TextureRegion[paths.length];
+            // Each file is one complete frame; do not split individual poses again.
+            for (int i = 0; i < paths.length; i++) {
+                Texture texture = new Texture(Gdx.files.internal(paths[i]));
+                loaded.add(texture);
+                texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                frames[i] = new TextureRegion(texture);
+            }
+            Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
+            animation.setPlayMode(looping ? Animation.PlayMode.LOOP : Animation.PlayMode.NORMAL);
+            ownedTextures.addAll(loaded);
+            return animation;
+        } catch (Exception e) {
+            for (Texture texture : loaded) texture.dispose();
+            Gdx.app.error("BattleScreen", "Could not load animation " + paths[0]
+                    + "; using idle animation or static texture.", e);
+            return null;
+        }
+    }
+
+    private void disposePlayerAnimation() {
+        playerIdleAnim = playerAttackAnim = playerHurtAnim = playerDefendAnim = null;
+        for (Texture texture : playerAnimationTextures) texture.dispose();
+        playerAnimationTextures.clear();
+    }
+
+    private void disposeEnemyAnimation() {
+        enemyIdleAnim = enemyAttackAnim = enemyHurtAnim = null;
+        for (Texture texture : enemyAnimationTextures) texture.dispose();
+        enemyAnimationTextures.clear();
+    }
+
+    private void setPlayerState(PlayerAnimState state) {
+        playerState = state;
+        playerStateTime = 0f;
+    }
+
+    private void setEnemyState(EnemyAnimState state) {
+        enemyState = state;
+        enemyStateTime = 0f;
+    }
+
+    private Animation<TextureRegion> currentPlayerAnimation() {
+        return switch (playerState) {
+            case IDLE -> playerIdleAnim;
+            case ATTACK -> playerAttackAnim;
+            case HURT -> playerHurtAnim;
+            case DEFEND -> playerDefendAnim;
+        };
+    }
+
+    private Animation<TextureRegion> currentEnemyAnimation() {
+        return switch (enemyState) {
+            case IDLE -> enemyIdleAnim;
+            case ATTACK -> enemyAttackAnim;
+            case HURT -> enemyHurtAnim;
+        };
+    }
+
+    private void updateAnimations(float delta) {
+        if (paused) return;
+        playerStateTime += delta;
+        enemyStateTime += delta;
+        Animation<TextureRegion> playerAnimation = currentPlayerAnimation();
+        if (playerState != PlayerAnimState.IDLE
+                && (playerAnimation == null || playerAnimation.isAnimationFinished(playerStateTime))) {
+            setPlayerState(PlayerAnimState.IDLE);
+        }
+        Animation<TextureRegion> enemyAnimation = currentEnemyAnimation();
+        if (enemyState != EnemyAnimState.IDLE
+                && (enemyAnimation == null || enemyAnimation.isAnimationFinished(enemyStateTime))) {
+            setEnemyState(EnemyAnimState.IDLE);
+        }
+    }
+
+    /** Computes a unified scale across multiple animations so they all render at the same size. */
+    @SafeVarargs
+    private static float unifiedScale(float targetW, float targetH, Animation<TextureRegion>... anims) {
+        int maxWidth = 1;
+        int maxHeight = 1;
+        for (Animation<TextureRegion> anim : anims) {
+            if (anim == null) continue;
+            for (TextureRegion frame : anim.getKeyFrames()) {
+                maxWidth = Math.max(maxWidth, frame.getRegionWidth());
+                maxHeight = Math.max(maxHeight, frame.getRegionHeight());
+            }
+        }
+        return Math.min(targetW / maxWidth, targetH / maxHeight);
     }
 
     private void togglePause() {
@@ -202,7 +394,7 @@ public class BattleScreen implements Screen {
                         com.cardgame.logic.monsters.AbstractMonster hovered = getHoveredMonster(x, y);
                         if (hovered != null) {
                             List<GameEvent> events = combatResolver.playCard(gameState, card, hovered);
-                            processEvents(events);
+                            processEvents(events, hovered);
                         }
                     } else {
                         List<GameEvent> events = combatResolver.playCard(gameState, card, null);
@@ -221,6 +413,10 @@ public class BattleScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 if (paused) return;
                 if (gameState.isPlayerTurn()) {
+                    if (animatedMonster != null && animatedMonster.currentHp > 0
+                            && animatedMonster.intentType.startsWith("ATTACK")) {
+                        setEnemyState(EnemyAnimState.ATTACK);
+                    }
                     List<GameEvent> events = turnManager.endPlayerTurn(gameState);
                     processEvents(events);
                     updateUI();
@@ -263,7 +459,12 @@ public class BattleScreen implements Screen {
     }
 
     private void processEvents(List<GameEvent> events) {
+        processEvents(events, null);
+    }
+
+    private void processEvents(List<GameEvent> events, AbstractMonster target) {
         for (GameEvent e : events) {
+            processAnimationEvent(e, target);
             if (e instanceof com.cardgame.logic.events.GameOverEvent) {
                 com.cardgame.logic.events.GameOverEvent goe = (com.cardgame.logic.events.GameOverEvent) e;
                 if (goe.winnerIndex() == 0) {
@@ -285,13 +486,28 @@ public class BattleScreen implements Screen {
                 PlayerDamagedEvent dmgEvt = (PlayerDamagedEvent) e;
                 spawnDamageLabel("-" + dmgEvt.amount(), hud.getPlayerX(), hud.getCharY() + 340f, Color.RED);
             }
-            if (e instanceof com.cardgame.logic.events.DamageDealtEvent) {
-                com.cardgame.logic.events.DamageDealtEvent dmg =
-                    (com.cardgame.logic.events.DamageDealtEvent) e;
+            if (e instanceof DamageDealtEvent dmg) {
                 if ("player".equals(dmg.source()) && "monster".equals(dmg.target()) && dmg.amount() > 0) {
-                    spawnDamageLabel("-" + dmg.amount(), 1000f, 500f, Color.ORANGE);
+                    float x = target != null ? target.drawX : 1000f;
+                    float y = target != null ? target.drawY + 250f : 500f;
+                    spawnDamageLabel("-" + dmg.amount(), x, y, Color.ORANGE);
                 }
             }
+        }
+    }
+
+    private void processAnimationEvent(GameEvent event, AbstractMonster target) {
+        if (event instanceof CardPlayedEvent) {
+            setPlayerState(PlayerAnimState.ATTACK);
+        } else if (event instanceof BlockGainedEvent block
+                && "player".equals(block.target()) && block.amount() > 0) {
+            setPlayerState(PlayerAnimState.DEFEND);
+        } else if (event instanceof PlayerDamagedEvent damage && damage.amount() > 0) {
+            setPlayerState(PlayerAnimState.HURT);
+        } else if (event instanceof DamageDealtEvent damage && damage.amount() > 0
+                && "monster".equals(damage.target()) && animatedMonster != null
+                && (target == null || target == animatedMonster)) {
+            setEnemyState(EnemyAnimState.HURT);
         }
     }
 
@@ -326,6 +542,7 @@ public class BattleScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        updateAnimations(delta);
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -352,12 +569,26 @@ public class BattleScreen implements Screen {
         }
 
         // ── Player character (left side) ──────────────────────
-        if (playerTexture != null) {
-            float pw = 250f, ph = 300f;
+        Animation<TextureRegion> playerAnimation = currentPlayerAnimation();
+        if (playerAnimation == null) playerAnimation = playerIdleAnim;
+        if (playerAnimation != null || playerTexture != null) {
+            TextureRegion playerFrame = playerAnimation != null
+                    ? playerAnimation.getKeyFrame(playerStateTime, playerAnimation == playerIdleAnim) : null;
+            float frameWidth = playerFrame != null ? playerFrame.getRegionWidth() : playerTexture.getWidth();
+            float frameHeight = playerFrame != null ? playerFrame.getRegionHeight() : playerTexture.getHeight();
+            // Always use the unified scale so all states draw at the same size.
+            float scale = playerFrame != null
+                    ? playerUnifiedScale : Math.min(250f / frameWidth, 300f / frameHeight);
+            float pw = frameWidth * scale;
+            float ph = frameHeight * scale;
             float px = hud.getPlayerX() - pw / 2f + shakeOffsetX;
             float py = hud.getCharY() + shakeOffsetY;
             batch.setColor(1, 1, 1, 1);
-            batch.draw(playerTexture, px, py, pw, ph);
+            if (playerFrame != null) {
+                batch.draw(playerFrame, px, py, pw, ph);
+            } else {
+                batch.draw(playerTexture, px, py, pw, ph);
+            }
         }
 
         // ── Monster (right side) ─────────────────────────────
@@ -365,10 +596,18 @@ public class BattleScreen implements Screen {
         if (gameState.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
                 if (m.currentHp > 0) {
-                    float mx = m.drawX - 140f;
                     float my = m.drawY;
                     batch.setColor(1, 1, 1, 1);
-                    batch.draw(m.getTexture(), mx, my, 280f, 320f);
+                    Animation<TextureRegion> enemyAnimation = m == animatedMonster ? currentEnemyAnimation() : null;
+                    if (m == animatedMonster && enemyAnimation == null) enemyAnimation = enemyIdleAnim;
+                    if (enemyAnimation != null) {
+                        TextureRegion enemyFrame = enemyAnimation.getKeyFrame(enemyStateTime, enemyAnimation == enemyIdleAnim);
+                        float width = enemyFrame.getRegionWidth() * enemyUnifiedScale;
+                        float height = enemyFrame.getRegionHeight() * enemyUnifiedScale;
+                        batch.draw(enemyFrame, m.drawX - width / 2f, my, width, height);
+                    } else {
+                        batch.draw(m.getTexture(), m.drawX - 140f, my, 280f, 320f);
+                    }
 
                     // ── Monster name ──
                     monsterFont.setColor(Color.WHITE);
@@ -438,6 +677,8 @@ public class BattleScreen implements Screen {
         if (bgTexture != null) bgTexture.dispose();
         if (monsters != null) monsters.disposeAll();
         if (playerTexture != null) playerTexture.dispose();
+        disposePlayerAnimation();
+        disposeEnemyAnimation();
         if (hud != null) hud.disposeResources();
         if (handArea != null) handArea.disposeAll();
         if (pauseOverlay != null) pauseOverlay.disposeResources();
