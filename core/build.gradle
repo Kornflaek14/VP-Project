@@ -21,11 +21,3 @@ test {
     }
 }
 
-// Expose assets/ folder as a test resource so CardDataLoaderTest can read cards.json
-sourceSets {
-    test {
-        resources {
-            srcDirs += [rootProject.file('assets')]
-        }
-    }
-}

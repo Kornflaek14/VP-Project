@@ -1,5 +1,6 @@
 // Root build — applies common config to every subproject
 allprojects {
+    apply plugin: 'eclipse'
     repositories {
         mavenCentral()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
