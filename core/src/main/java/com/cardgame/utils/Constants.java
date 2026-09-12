@@ -12,8 +12,8 @@ public final class Constants {
     public static final int VIEWPORT_HEIGHT = 900;
 
     // ── Card actor size (pixels) ───────────────────────────────
-    public static final float CARD_WIDTH  = 130f;
-    public static final float CARD_HEIGHT = 180f;
+    public static final float CARD_WIDTH  = 160f;
+    public static final float CARD_HEIGHT = 220f;
     public static final float CARD_GAP    = 10f;
 
     // ── Hand ───────────────────────────────────────────────────

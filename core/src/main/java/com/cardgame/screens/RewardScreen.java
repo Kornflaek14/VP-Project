@@ -99,7 +99,7 @@ public class RewardScreen implements Screen {
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
-        try { bgTexture = new Texture(Gdx.files.internal("IMAGES/play/playBackground.jpg")); } catch (Exception e) {}
+        try { bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png")); } catch (Exception e) {}
         
         font = new BitmapFont();
         font.getData().setScale(1.5f);
@@ -193,15 +193,17 @@ public class RewardScreen implements Screen {
             cardBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    showCardChoices();
+                    showCardChoices(btnStyle);
                 }
             });
             rewardsTable.add(cardBtn).pad(10).row();
         }
     }
     
-    private void showCardChoices() {
+    private void showCardChoices(TextButton.TextButtonStyle btnStyle) {
         cardsTable.clearChildren();
+        rewardsTable.clearChildren(); // Hide other rewards while choosing
+        
         for (AbstractCard c : cardRewards) {
             CardActor ca = new CardActor(c, new CardActor.OnClickCallback() {
                 @Override
@@ -209,6 +211,7 @@ public class RewardScreen implements Screen {
                     RunManager.getInstance().addCardToDeck(c);
                     cardClaimed = true;
                     cardsTable.clearChildren();
+                    refreshRewardsTable(btnStyle);
                 }
             });
             ca.isUiElement = true;
@@ -216,6 +219,18 @@ public class RewardScreen implements Screen {
             ca.setSize(180f, 250f);
             cardsTable.add(ca).size(180f, 250f).pad(20);
         }
+        
+        cardsTable.row();
+        TextButton skipBtn = new TextButton("Skip", btnStyle);
+        skipBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                cardClaimed = true;
+                cardsTable.clearChildren();
+                refreshRewardsTable(btnStyle);
+            }
+        });
+        cardsTable.add(skipBtn).colspan(cardRewards.size()).padTop(20);
     }
 
     @Override

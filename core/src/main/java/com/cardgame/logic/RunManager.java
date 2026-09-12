@@ -68,6 +68,7 @@ public class RunManager {
     public List<Integer> getPathTaken() { return pathTaken; }
 
     public void startNewRun(CharacterData character, List<AbstractCard> characterCards) {
+        com.cardgame.screens.MapScreen.savedScrollPercentY = 1.0f;
         this.selectedCharacter = character;
         this.maxHp = character.hp();
         this.currentHp = character.hp();
