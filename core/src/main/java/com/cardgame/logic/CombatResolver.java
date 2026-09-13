@@ -45,16 +45,24 @@ public final class CombatResolver {
     /**
      * Execute the monster's turn based on its rolled intent.
      */
-        public List<GameEvent> executeMonsterTurn(GameState state) {
+    public List<GameEvent> executeMonsterTurn(GameState state) {
         List<GameEvent> events = new ArrayList<>();
         if (state.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : state.monsterGroup.monsters) {
                 if (m.currentHp > 0) {
+                    boolean wasAttack = "ATTACK".equals(m.intentType);
                     int hpBefore = state.playerHp;
+                    int blockBefore = state.playerBlock;
+                    
                     m.takeTurn(state);
+                    
                     int damageTaken = hpBefore - state.playerHp;
+                    int blockLost = blockBefore - state.playerBlock;
+                    
                     if (damageTaken > 0) {
                         events.add(new PlayerDamagedEvent(damageTaken));
+                    } else if (wasAttack && blockLost > 0 && damageTaken == 0) {
+                        events.add(new com.cardgame.logic.events.PlayerDefendedEvent(blockLost));
                     }
                 }
             }
