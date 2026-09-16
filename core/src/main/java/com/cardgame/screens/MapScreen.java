@@ -11,12 +11,19 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
+import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -24,16 +31,21 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
 import com.cardgame.logic.RunManager.MapNodeData;
 import com.cardgame.ui.PauseOverlay;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MapScreen implements Screen {
 
@@ -42,12 +54,16 @@ public class MapScreen implements Screen {
     private Stage uiStage;
     private Texture bgTexture;
     
-    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex, barTex;
+    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex;
     
     private Group mapContainer;
     private ScrollPane mapScroller;
     
-    private ShapeRenderer shapeRenderer;
+    private Texture glowTexture;
+    private TextureRegion dotRegion;
+    private float stateTime;
+    private static final float DOT_SPACING = 16f;
+    private static final float DOT_SPEED = 25f;
     private BitmapFont font;
     private BitmapFont smallFont;
     private BitmapFont tinyFont;
@@ -57,8 +73,28 @@ public class MapScreen implements Screen {
     private PauseOverlay pauseOverlay;
     private boolean paused = false;
 
-    // Map from node ID to its position for drawing connections
-    private final Map<Integer, float[]> nodePositions = new HashMap<>();
+    // Visual coordinates are separate from persistent map anchors.
+    private final Map<Integer, NodeVisual> nodeVisuals = new HashMap<>();
+    private final List<PathVisual> paths = new ArrayList<>();
+
+    private static final class NodeVisual {
+        final MapNodeData node;
+        final ImageButton button;
+        final ParticleEffect particles;
+        float x, y;
+        boolean hovered;
+
+        NodeVisual(MapNodeData node, ImageButton button, ParticleEffect particles) {
+            this.node = node;
+            this.button = button;
+            this.particles = particles;
+            x = node.x;
+            y = node.y;
+        }
+    }
+
+    private record PathVisual(NodeVisual from, NodeVisual to, boolean available,
+                              boolean traversed, boolean past) {}
 
     public MapScreen(CardBattlerGame game) {
         this.game = game;
@@ -66,6 +102,8 @@ public class MapScreen implements Screen {
 
     @Override
     public void show() {
+        stateTime = 0f;
+        paused = false;
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
         uiStage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
 
@@ -79,6 +117,8 @@ public class MapScreen implements Screen {
             bgTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
             pm.dispose();
         }
+        bgTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         
         try { combatTex = new Texture(Gdx.files.internal("IMAGES/play/combatIcon.png")); } catch(Exception e) {}
         try { eliteTex = new Texture(Gdx.files.internal("IMAGES/play/eliteIcon.png")); } catch(Exception e) { eliteTex = combatTex; }
@@ -86,15 +126,11 @@ public class MapScreen implements Screen {
         try { shopTex = new Texture(Gdx.files.internal("IMAGES/play/shopIcon.png")); } catch(Exception e) { shopTex = combatTex; }
         try { restTex = new Texture(Gdx.files.internal("IMAGES/play/restIcon.png")); } catch(Exception e) { restTex = combatTex; }
         try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/monster.png")); } catch(Exception e) { bossTex = combatTex; }
-        try { barTex = new Texture(Gdx.files.internal("IMAGES/play/bar.png")); } catch(Exception e) {}
 
-        shapeRenderer = new ShapeRenderer();
-        font = new BitmapFont();
-        font.getData().setScale(1.5f);
-        smallFont = new BitmapFont();
-        smallFont.getData().setScale(1.0f);
-        tinyFont = new BitmapFont();
-        tinyFont.getData().setScale(0.8f);
+        createGlowTexture();
+        font = UiTheme.font(20f);
+        smallFont = UiTheme.font(14f);
+        tinyFont = UiTheme.font(13f);
 
         buildHUD();
         buildPauseOverlay();
@@ -105,58 +141,37 @@ public class MapScreen implements Screen {
         mapContainer = new Group() {
             @Override
             public void draw(Batch batch, float parentAlpha) {
-                super.draw(batch, parentAlpha);
-                
-                batch.end();
-                
-                shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
-                shapeRenderer.setTransformMatrix(batch.getTransformMatrix());
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                
-                RunManager rm = RunManager.getInstance();
-                List<MapNodeData> allNodes = rm.getMapNodes();
-                List<Integer> reachableIds = rm.getReachableNodeIds();
-                int lastVisitedId = rm.getLastVisitedNodeId();
-                List<Integer> pathTaken = rm.getPathTaken();
-
-                float offsetX = getX();
-                float offsetY = getY();
-                
-                for (MapNodeData node : allNodes) {
-                    for (int nextId : node.nextNodeIds) {
-                        float[] from = nodePositions.get(node.id);
-                        float[] to = nodePositions.get(nextId);
-                        if (from != null && to != null) {
-                            if (pathTaken.contains(node.id) && pathTaken.contains(nextId)) {
-                                shapeRenderer.setColor(Color.GOLD);
-                                Gdx.gl.glLineWidth(4f);
-                            } else if (node.id == lastVisitedId && reachableIds.contains(nextId)) {
-                                shapeRenderer.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
-                                Gdx.gl.glLineWidth(2f);
-                            } else if (node.level <= (rm.getNodeById(lastVisitedId) != null ? rm.getNodeById(lastVisitedId).level : -1)) {
-                                shapeRenderer.setColor(new Color(0.2f, 0.2f, 0.25f, 0.5f));
-                                Gdx.gl.glLineWidth(2f);
-                            } else {
-                                shapeRenderer.setColor(new Color(0.3f, 0.3f, 0.4f, 0.6f));
-                                Gdx.gl.glLineWidth(2f);
-                            }
-                            shapeRenderer.line(from[0] + offsetX, from[1] + offsetY, to[0] + offsetX, to[1] + offsetY);
-                        }
-                    }
+                float packedColor = batch.getPackedColor();
+                applyTransform(batch, computeTransform());
+                try {
+                    drawPaths(batch, parentAlpha * getColor().a);
+                    drawNodeParticles(batch);
+                    drawChildren(batch, parentAlpha);
+                } finally {
+                    resetTransform(batch);
+                    batch.setPackedColor(packedColor);
                 }
-                shapeRenderer.end();
-                Gdx.gl.glDisable(GL20.GL_BLEND);
-                
-                batch.begin();
             }
         };
         mapContainer.setSize(mapWidth, mapHeight);
-        
-        Image mapBackground = new Image(bgTexture);
-        mapBackground.setSize(mapWidth, mapHeight);
-        mapContainer.addActor(mapBackground);
+        mapContainer.setTouchable(Touchable.childrenOnly);
+
+        // Parchment stays in screen space; only its UVs track a fraction of scrolling.
+        Actor mapBackground = new Actor() {
+            @Override
+            public void draw(Batch batch, float parentAlpha) {
+                float packedColor = batch.getPackedColor();
+                float u = MathUtils.sin(stateTime * 0.08f) * 0.008f;
+                float v = mapScroller.getVisualScrollY() * 0.18f / 768f
+                        + MathUtils.cos(stateTime * 0.06f) * 0.006f;
+                batch.setColor(0.65f, 0.61f, 0.57f, parentAlpha);
+                batch.draw(bgTexture, 0f, 0f, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT,
+                        u, v, u + Constants.VIEWPORT_WIDTH / 768f, v + Constants.VIEWPORT_HEIGHT / 768f);
+                batch.setPackedColor(packedColor);
+            }
+        };
+        mapBackground.setTouchable(Touchable.disabled);
+        stage.addActor(mapBackground);
         
         buildMap(); // Add nodes to mapContainer
         
@@ -186,6 +201,7 @@ public class MapScreen implements Screen {
         // Restore camera position
         mapScroller.layout();
         mapScroller.setScrollPercentY(savedScrollPercentY);
+        mapScroller.updateVisualScroll();
     }
 
     private void togglePause() {
@@ -220,18 +236,16 @@ public class MapScreen implements Screen {
         topBarContainer.top().left();
 
         Table topBar = new Table();
-        if (barTex != null) {
-            topBar.setBackground(new TextureRegionDrawable(new TextureRegion(barTex)));
-        }
-        topBar.padTop(10).padBottom(50).padLeft(20).padRight(20);
+        topBar.setBackground(UiTheme.panel(new Color(0.055f, 0.06f, 0.075f, 0.97f),
+                new Color(0.34f, 0.29f, 0.28f, 1f)));
+        topBar.pad(14f, 28f, 14f, 28f);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
-        Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, Color.GREEN));
+        Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, new Color(0.65f, 0.88f, 0.70f, 1f)));
         Label goldLabel  = new Label("Gold: " + rm.getGold(), new Label.LabelStyle(font, Color.GOLD));
         Label floorLabel = new Label("Floor: " + (rm.getCurrentNodeIndex() + 1), new Label.LabelStyle(font, Color.WHITE));
 
-        TextButton.TextButtonStyle deckBtnStyle = new TextButton.TextButtonStyle();
-        deckBtnStyle.font = smallFont;
+        TextButton.TextButtonStyle deckBtnStyle = UiTheme.button(smallFont);
         deckBtnStyle.fontColor = new Color(0.7f, 0.85f, 1f, 1f);
         deckBtnStyle.overFontColor = Color.WHITE;
 
@@ -246,11 +260,134 @@ public class MapScreen implements Screen {
 
         topBar.add(hpLabel).padRight(40);
         topBar.add(goldLabel).padRight(40);
-        topBar.add(floorLabel).padRight(60);
-        topBar.add(deckBtn);
+        topBar.add(floorLabel).expandX().left();
+        topBar.add(deckBtn).height(44f);
 
         topBarContainer.add(topBar).expandX().fillX();
         uiStage.addActor(topBarContainer);
+    }
+
+    private void createGlowTexture() {
+        Pixmap glow = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+        glow.setBlending(Pixmap.Blending.None);
+        for (int y = 0; y < 32; y++) {
+            for (int x = 0; x < 32; x++) {
+                float radius = (float) Math.hypot(x - 15.5f, y - 15.5f) / 16f;
+                float alpha = Math.max(0f, 1f - radius);
+                glow.setColor(1f, 1f, 1f, alpha * alpha);
+                glow.drawPixel(x, y);
+            }
+        }
+        glowTexture = new Texture(glow);
+        glowTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        glow.dispose();
+        dotRegion = new TextureRegion(glowTexture);
+    }
+
+    private ParticleEffect createNodeParticles(float x, float y) {
+        ParticleEmitter emitter = new ParticleEmitter();
+        emitter.setName("Available room embers");
+        emitter.setMaxParticleCount(40);
+        emitter.setSprites(Array.with(new Sprite(glowTexture)));
+        emitter.setContinuous(true);
+        emitter.setAttached(false);
+        emitter.setAdditive(true);
+        emitter.getDuration().setLow(1000f);
+        emitter.getEmission().setHigh(7f);
+        emitter.getLife().setHigh(1200f, 2200f);
+        emitter.getXOffsetValue().setActive(true);
+        emitter.getXOffsetValue().setLow(-30f, 30f);
+        emitter.getYOffsetValue().setActive(true);
+        emitter.getYOffsetValue().setLow(-24f, 12f);
+        emitter.getXScale().setHigh(6f, 14f);
+        emitter.getXScale().setTimeline(new float[] {0f, 1f});
+        emitter.getXScale().setScaling(new float[] {1f, 0.3f});
+        emitter.getVelocity().setActive(true);
+        emitter.getVelocity().setHigh(12f, 24f);
+        emitter.getAngle().setActive(true);
+        emitter.getAngle().setHigh(70f, 110f);
+        emitter.getTint().setColors(new float[] {0.75f, 1f, 0.65f});
+        emitter.getTransparency().setHigh(0.65f);
+        emitter.getTransparency().setTimeline(new float[] {0f, 0.2f, 0.7f, 1f});
+        emitter.getTransparency().setScaling(new float[] {0f, 1f, 0.6f, 0f});
+        ParticleEffect effect = new ParticleEffect();
+        effect.getEmitters().add(emitter);
+        effect.setPosition(x, y);
+        effect.start();
+        // Prewarm once so newly available rooms already have a faint ambient glow.
+        for (int i = 0; i < 20; i++) effect.update(0.05f);
+        return effect;
+    }
+
+    private void updateMapEffects(float delta) {
+        stateTime += delta;
+        for (NodeVisual visual : nodeVisuals.values()) {
+            float phase = visual.node.id * 0.5f;
+            visual.x = visual.node.x + MathUtils.sin(stateTime * 1.5f + phase) * 4f;
+            visual.y = visual.node.y + MathUtils.cos(stateTime * 1.2f + phase) * 3f;
+            visual.button.setPosition(visual.x - visual.button.getWidth() / 2f,
+                    visual.y - visual.button.getHeight() / 2f);
+            if (visual.particles != null) {
+                visual.particles.setPosition(visual.x, visual.y);
+                visual.particles.update(delta);
+            }
+        }
+    }
+
+    private void setNodeHovered(NodeVisual visual, boolean hovered) {
+        if (visual.hovered == hovered) return;
+        visual.hovered = hovered;
+        visual.button.clearActions();
+        float scale = hovered ? 1.2f : 1f;
+        visual.button.addAction(Actions.scaleTo(scale, scale, 0.1f, Interpolation.pow2Out));
+        // Scaling is sampled each frame, so the rate changes without restarting live particles.
+        visual.particles.getEmitters().first().getEmission().setScaling(new float[] {hovered ? 2.5f : 1f});
+    }
+
+    private void drawPaths(Batch batch, float parentAlpha) {
+        float movement = (stateTime * DOT_SPEED) % DOT_SPACING;
+        for (PathVisual path : paths) {
+            float dx = path.to.x - path.from.x;
+            float dy = path.to.y - path.from.y;
+            float distance = (float) Math.hypot(dx, dy);
+            float start = 32f * path.from.button.getScaleX() + 8f;
+            float end = distance - 32f * path.to.button.getScaleX() - 8f;
+            if (end <= start) continue;
+            float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
+            float alpha = path.available ? 0.7f + 0.3f * MathUtils.sin(stateTime * 4f)
+                    : path.traversed ? 0.85f : path.past ? 0.2f : 0.35f;
+            float r = path.available || path.traversed ? 1f : 0.24f;
+            float g = path.available || path.traversed ? 0.8f : 0.25f;
+            float b = path.available || path.traversed ? 0.35f : 0.3f;
+            // Dots move from the source toward the next floor; trim beneath both icons.
+            float first = movement + (float) Math.ceil((start - movement) / DOT_SPACING) * DOT_SPACING;
+            for (float d = first; d < end; d += DOT_SPACING) {
+                float x = path.from.x + dx * d / distance;
+                float y = path.from.y + dy * d / distance;
+                float edgeAlpha = MathUtils.clamp(Math.min(d - start, end - d) / 8f, 0f, 1f);
+                if (path.available) {
+                    batch.setColor(r, g, b, alpha * edgeAlpha * parentAlpha * 0.3f);
+                    batch.draw(dotRegion, x - 6f, y - 6f, 12f, 12f);
+                }
+                batch.setColor(r, g, b, alpha * edgeAlpha * parentAlpha);
+                batch.draw(dotRegion, x - 3f, y - 2f, 3f, 2f, 6f, 4f, 1f, 1f, angle);
+            }
+        }
+    }
+
+    private void drawNodeParticles(Batch batch) {
+        int source = batch.getBlendSrcFunc(), destination = batch.getBlendDstFunc();
+        int sourceAlpha = batch.getBlendSrcFuncAlpha(), destinationAlpha = batch.getBlendDstFuncAlpha();
+        float packedColor = batch.getPackedColor();
+        try {
+            batch.setColor(Color.WHITE);
+            for (NodeVisual visual : nodeVisuals.values()) {
+                if (visual.particles != null) visual.particles.draw(batch);
+            }
+        } finally {
+            batch.setBlendFunctionSeparate(source, destination, sourceAlpha, destinationAlpha);
+            batch.setPackedColor(packedColor);
+        }
     }
 
     private void buildMap() {
@@ -267,8 +404,6 @@ public class MapScreen implements Screen {
         int visitedLevel = (lastVisited != null) ? lastVisited.level : -1;
 
         for (MapNodeData node : allNodes) {
-            nodePositions.put(node.id, new float[]{node.x, node.y});
-
             boolean isReachable = reachableIds.contains(Integer.valueOf(node.id));
             boolean isDone = node.level <= visitedLevel;
             boolean isLastVisited = (node.id == lastVisitedId);
@@ -298,8 +433,26 @@ public class MapScreen implements Screen {
 
             btn.setPosition(node.x - 32f, node.y - 32f);
             btn.setSize(64f, 64f);
+            btn.setOrigin(32f, 32f);
+            btn.setTransform(true);
+            NodeVisual visual = new NodeVisual(node, btn,
+                    isReachable && !isDone ? createNodeParticles(node.x, node.y) : null);
+            nodeVisuals.put(node.id, visual);
 
             if (isReachable && !isDone) {
+                btn.addListener(new InputListener() {
+                    @Override
+                    public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                        if (pointer == -1 && !paused) setNodeHovered(visual, true);
+                    }
+
+                    @Override
+                    public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                        if (pointer == -1 && (toActor == null || !toActor.isDescendantOf(btn))) {
+                            setNodeHovered(visual, false);
+                        }
+                    }
+                });
                 final MapNodeData clickedNode = node;
                 btn.addListener(new ChangeListener() {
                     @Override
@@ -314,6 +467,19 @@ public class MapScreen implements Screen {
 
             mapContainer.addActor(btn);
         }
+        for (MapNodeData node : allNodes) {
+            for (int nextId : node.nextNodeIds) {
+                NodeVisual from = nodeVisuals.get(node.id);
+                NodeVisual to = nodeVisuals.get(nextId);
+                if (to != null) {
+                    paths.add(new PathVisual(from, to,
+                            node.id == lastVisitedId && to.particles != null,
+                            rm.getPathTaken().contains(node.id) && rm.getPathTaken().contains(nextId),
+                            node.level <= visitedLevel));
+                }
+            }
+        }
+        updateMapEffects(0f);
     }
 
     private void handleNodeClick(MapNodeData node) {
@@ -334,10 +500,17 @@ public class MapScreen implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        stage.act(delta);
-        uiStage.act(delta);
-        
+        if (!paused) {
+            stage.act(delta);
+            updateMapEffects(delta);
+            uiStage.act(delta);
+        } else {
+            pauseOverlay.act(delta);
+        }
+
+        stage.getViewport().apply();
         stage.draw();
+        uiStage.getViewport().apply();
         uiStage.draw();
     }
 
@@ -359,14 +532,23 @@ public class MapScreen implements Screen {
         if (stage != null) stage.dispose();
         if (uiStage != null) uiStage.dispose();
         if (bgTexture != null) bgTexture.dispose();
-        if (combatTex != null) combatTex.dispose();
-        if (eliteTex != null) eliteTex.dispose();
-        if (treasureTex != null) treasureTex.dispose();
-        if (shopTex != null) shopTex.dispose();
-        if (restTex != null) restTex.dispose();
-        if (bossTex != null) bossTex.dispose();
-        if (barTex != null) barTex.dispose();
-        if (shapeRenderer != null) shapeRenderer.dispose();
+        for (NodeVisual visual : nodeVisuals.values()) {
+            if (visual.particles != null) visual.particles.dispose();
+        }
+        nodeVisuals.clear();
+        paths.clear();
+        if (glowTexture != null) glowTexture.dispose();
+        // Missing room icons can share the combat texture fallback.
+        Set<Texture> icons = new HashSet<>();
+        icons.add(combatTex);
+        icons.add(eliteTex);
+        icons.add(treasureTex);
+        icons.add(shopTex);
+        icons.add(restTex);
+        icons.add(bossTex);
+        for (Texture icon : icons) {
+            if (icon != null) icon.dispose();
+        }
         if (font != null) font.dispose();
         if (smallFont != null) smallFont.dispose();
         if (tinyFont != null) tinyFont.dispose();

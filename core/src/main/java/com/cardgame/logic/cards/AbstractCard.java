@@ -85,7 +85,7 @@ public abstract class AbstractCard {
             damageDealt = rawDamage;
         }
         if (damageDealt > 0) {
-            events.add(new DamageDealtEvent("player", "monster", damageDealt));
+            events.add(new DamageDealtEvent("player", "monster", damageDealt, target));
         }
     }
 

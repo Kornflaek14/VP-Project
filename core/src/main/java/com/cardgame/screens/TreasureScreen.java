@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.List;
@@ -49,10 +50,8 @@ public class TreasureScreen implements Screen {
             chestOpenTex = new Texture(Gdx.files.internal("IMAGES/play/chestOpened.png"));
         } catch (Exception e) {}
 
-        font = new BitmapFont();
-        font.getData().setScale(1.2f);
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(2.5f);
+        font = UiTheme.font(16f);
+        titleFont = UiTheme.font(34f);
         titleFont.setColor(Color.GOLD);
 
         buildUI();
@@ -65,11 +64,11 @@ public class TreasureScreen implements Screen {
 
         Label title = new Label("TREASURE", new Label.LabelStyle(titleFont, titleFont.getColor()));
         root.add(title).padBottom(40).row();
+        // Reserve room for the chest artwork so it cannot overlap the heading.
+        root.add().height(270f).row();
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
         btnStyle.fontColor = Color.WHITE;
-        btnStyle.overFontColor = Color.YELLOW;
 
         TextButton openBtn = new TextButton("OPEN CHEST", btnStyle);
         
@@ -121,6 +120,8 @@ public class TreasureScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0.05f, 0.05f, 0.1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getViewport().apply();
+        stage.getBatch().setProjectionMatrix(stage.getCamera().combined);
 
         Batch batch = stage.getBatch();
         batch.begin();
@@ -128,10 +129,10 @@ public class TreasureScreen implements Screen {
         if (tex != null) {
             float w = 256;
             float h = 256;
-            batch.draw(tex, Constants.VIEWPORT_WIDTH / 2f - w/2f, Constants.VIEWPORT_HEIGHT / 2f + 50, w, h);
+            batch.draw(tex, Constants.VIEWPORT_WIDTH / 2f - w/2f, Constants.VIEWPORT_HEIGHT / 2f - 60, w, h);
         }
         if (opened && relicTex != null) {
-            batch.draw(relicTex, Constants.VIEWPORT_WIDTH / 2f - 32, Constants.VIEWPORT_HEIGHT / 2f + 180, 64, 64);
+            batch.draw(relicTex, Constants.VIEWPORT_WIDTH / 2f - 32, Constants.VIEWPORT_HEIGHT / 2f + 40, 64, 64);
         }
         batch.end();
 

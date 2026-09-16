@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -54,8 +53,6 @@ public class CardActor extends Actor {
     private Texture costBg;
     private Texture statBg;
 
-    private final BitmapFont font;
-    private final BitmapFont smallFont;
 
     // Color coding by card type
     private static final Color ATTACK_COLOR = new Color(0.85f, 0.25f, 0.20f, 1f);
@@ -121,10 +118,6 @@ public class CardActor extends Actor {
 
     public CardActor(AbstractCard card) {
         this.card = card;
-        this.font = new BitmapFont();
-        this.font.getData().setScale(0.9f);
-        this.smallFont = new BitmapFont();
-        this.smallFont.getData().setScale(0.7f);
         
         // Default size and origin
         setSize(Constants.CARD_WIDTH, Constants.CARD_HEIGHT);
@@ -188,8 +181,8 @@ public class CardActor extends Actor {
             } else {
                 try {
                     if (Gdx.files.internal(imagePath).exists()) {
-                        cardImage = new Texture(Gdx.files.internal(imagePath));
-                        cardImage.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                        cardImage = new Texture(Gdx.files.internal(imagePath), true);
+                        cardImage.setFilter(Texture.TextureFilter.MipMapLinearLinear, Texture.TextureFilter.Linear);
                         imageCache.put(imagePath, cardImage);
                     }
                 } catch (Exception e) {
@@ -242,8 +235,6 @@ public class CardActor extends Actor {
         borderTex.dispose();
         costBg.dispose();
         statBg.dispose();
-        font.dispose();
-        smallFont.dispose();
         // Don't dispose cardImage — it's in the shared cache
     }
 }

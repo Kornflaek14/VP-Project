@@ -18,6 +18,7 @@ import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -50,11 +51,9 @@ public class GameOverScreen implements Screen {
             bgTexture = new Texture(Gdx.files.internal("IMAGES/MainMenuBackground.jpg"));
         } catch (Exception e) {}
 
-        font = new BitmapFont();
-        font.getData().setScale(1.2f);
+        font = UiTheme.font(16f);
         
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(3.0f);
+        titleFont = UiTheme.font(40f);
 
         buildUI();
     }
@@ -64,10 +63,8 @@ public class GameOverScreen implements Screen {
         root.setFillParent(true);
         root.center();
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
         btnStyle.fontColor = Color.WHITE;
-        btnStyle.overFontColor = Color.YELLOW;
 
         if (playerWon) {
             titleFont.setColor(Color.GREEN);
@@ -150,11 +147,15 @@ public class GameOverScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getViewport().apply();
+        stage.getBatch().setProjectionMatrix(stage.getCamera().combined);
 
         if (bgTexture != null) {
             Batch batch = stage.getBatch();
             batch.begin();
+            batch.setColor(0.20f, 0.20f, 0.24f, 1f);
             batch.draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+            batch.setColor(Color.WHITE);
             batch.end();
         }
 

@@ -19,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 public class SettingsScreen implements Screen {
@@ -47,12 +48,10 @@ public class SettingsScreen implements Screen {
             Gdx.app.error("Settings", "Missing background");
         }
 
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(3f);
+        titleFont = UiTheme.font(40f);
         titleFont.setColor(new Color(0.88f, 0.87f, 0.85f, 1f));
 
-        font = new BitmapFont();
-        font.getData().setScale(1.8f);
+        font = UiTheme.font(24f);
 
         buildUI();
     }
@@ -64,11 +63,8 @@ public class SettingsScreen implements Screen {
         Label.LabelStyle infoStyle = new Label.LabelStyle(font, Color.LIGHT_GRAY);
         Label info = new Label("Display changes apply immediately.", infoStyle);
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font          = font;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
         btnStyle.fontColor     = Color.WHITE;
-        btnStyle.overFontColor = new Color(0.85f, 0.25f, 0.28f, 1f);
-        btnStyle.downFontColor = Color.GRAY;
 
         Preferences preferences = Gdx.app.getPreferences("Locura");
         TextButton vsyncBtn = new TextButton("VSYNC: "

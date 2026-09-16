@@ -25,3 +25,6 @@ Thumbs.db
 
 # Local run script (machine-specific launcher)
 run.sh
+
+# Generated screenshots and classes from the hidden combat UI preview
+/tmp/combat-ui-preview/

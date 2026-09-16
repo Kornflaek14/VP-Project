@@ -28,6 +28,7 @@ import com.cardgame.CardBattlerGame;
 import com.cardgame.data.CharacterData;
 import com.cardgame.logic.RunManager;
 import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -72,10 +73,8 @@ public class MainMenuScreen implements Screen {
         pixel.fill();
         whiteTexture = new Texture(pixel);
         pixel.dispose();
-        buttonFont = new BitmapFont();
-        buttonFont.getData().setScale(1.6f);
-        messageFont = new BitmapFont();
-        messageFont.getData().setScale(1.2f);
+        buttonFont = UiTheme.font(22f);
+        messageFont = UiTheme.font(16f);
         buildUI();
     }
 
@@ -127,10 +126,11 @@ public class MainMenuScreen implements Screen {
         options.setBounds(610f, 4f, 220f, 40f);
         exit.setBounds(860f, 4f, 220f, 40f);
 
-        message = new Label("ENTER / SPACE to start   |   TAB / ARROWS to select",
+        message = new Label("",
                 new Label.LabelStyle(messageFont, Color.LIGHT_GRAY));
         message.setAlignment(Align.center);
-        message.setBounds(80f, Constants.VIEWPORT_HEIGHT - 34f, Constants.VIEWPORT_WIDTH - 160f, 30f);
+        message.setWrap(true);
+        message.setBounds(180f, 120f, Constants.VIEWPORT_WIDTH - 360f, 54f);
         message.setTouchable(Touchable.disabled);
         stage.addActor(message);
         stage.addListener(new InputListener() {

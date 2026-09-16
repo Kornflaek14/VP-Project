@@ -77,7 +77,7 @@ public final class TurnManager {
         if (playerPoison > 0) {
             state.playerHp -= playerPoison;
             events.add(new DamageDealtEvent("poison", "player", playerPoison));
-            events.add(new PlayerDamagedEvent(playerPoison));
+            events.add(new PlayerDamagedEvent(playerPoison, "poison"));
         }
         for(AbstractMonster m : state.monsterGroup.monsters) {
             int p = m.status.tickPoison();

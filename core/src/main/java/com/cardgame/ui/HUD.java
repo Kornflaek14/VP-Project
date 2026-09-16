@@ -6,15 +6,23 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextTooltip;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.utils.Align;
 import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.logic.GameState;
 import com.cardgame.logic.RunManager;
+import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -23,9 +31,10 @@ import java.util.List;
 /**
  * Combat HUD:
  * - Top bar: HP, Gold, Floor info
- * - Bottom-left: Energy orb, Potion slots (3 slots above energy)
+ * - Bottom-left: Energy orb
+ * - Header: Potion holsters, relic shelf, deck and map navigation
  * - Bottom-right: End Turn button
- * - HP bars above player and monster
+ * - Player HP bar and status effects below the character
  * - Monster intent display
  * - Status effect labels beside HP bars
  * - Draw/Discard pile counters
@@ -42,25 +51,20 @@ public class HUD extends Group {
         void onDiscardPileClicked();
     }
 
+    public interface NavigationCallback {
+        void onDeckClicked();
+        void onMapClicked();
+    }
+
     private final BitmapFont font;
     private final BitmapFont largeFont;
     private final BitmapFont smallFont;
     private final BitmapFont tinyFont;
+    private final CombatUiAssets art;
     private final Texture barTexture;
-    private final Texture hpBarBgTex;
-    private final Texture hpBarFillTex;
-    private final Texture hpBarEnemyFillTex;
-    private final Texture blockBarTex;
-    private final Texture potionSlotTex;
-    private final Texture potionSlotEmptyTex;
-
-    // Icon textures
-    private Texture energyImage;
-    private Texture endTurnImage;
-    private Texture heartImage;
-    private Texture goldImage;
-    private Texture drawImage;
-    private Texture discardImage;
+    private final CombatHealthBar healthBar;
+    private final TextTooltip.TextTooltipStyle tooltipStyle;
+    private final List<TextTooltip> potionTooltips = new ArrayList<>();
 
     // Potion images per slot (null if no potion loaded)
     private final List<Texture> potionTextures = new ArrayList<>();
@@ -69,71 +73,63 @@ public class HUD extends Group {
     private final TextButton endTurnBtn;
     private PotionClickCallback potionCallback;
     private PileClickCallback pileCallback;
+    private NavigationCallback navigationCallback;
 
     // Layout constants
     private static final float PLAYER_X  = 300f;
     private static final float MONSTER_X = 1050f;
     private static final float CHAR_Y    = 280f;
-    private static final float HP_BAR_WIDTH  = 180f;
-    private static final float HP_BAR_HEIGHT = 18f;
+    private static final float HP_BAR_WIDTH = CombatHealthBar.WIDTH;
 
     // Potion slots layout
-    private static final float POTION_SLOT_SIZE = 52f;
-    private static final float POTION_SLOT_X    = 20f;
-    private static final float POTION_BASE_Y    = 285f; // above energy orb
+    private static final float POTION_SLOT_SIZE = 44f;
+    private static final float POTION_SLOT_X = 560f;
+    private static final float POTION_BASE_Y = Constants.VIEWPORT_HEIGHT - 53f;
 
-    public HUD(GameState initialState, ChangeListener endTurnListener) {
+    public HUD(GameState initialState, ChangeListener endTurnListener, CombatUiAssets art) {
         this.snapshot = initialState;
+        this.art = art;
+        Pixmap headerPixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        headerPixel.setColor(0.1f, 0.1f, 0.15f, 0.85f);
+        headerPixel.fill();
+        barTexture = new Texture(headerPixel);
+        headerPixel.dispose();
 
-        font = new BitmapFont();
-        font.getData().setScale(1.2f);
+        font = UiTheme.font(16f);
 
-        largeFont = new BitmapFont();
-        largeFont.getData().setScale(2.5f);
+        largeFont = UiTheme.font(30f);
         largeFont.setColor(Color.WHITE);
 
-        smallFont = new BitmapFont();
-        smallFont.getData().setScale(0.9f);
+        smallFont = UiTheme.font(13f);
 
-        tinyFont = new BitmapFont();
-        tinyFont.getData().setScale(0.75f);
+        tinyFont = UiTheme.font(13f);
 
-        // Solid-colour background textures
-        barTexture        = solidPixel(new Color(0.1f, 0.1f, 0.15f, 0.85f));
-        hpBarBgTex        = solidPixel(new Color(0.2f, 0.05f, 0.05f, 0.9f));
-        hpBarFillTex      = solidPixel(new Color(0.15f, 0.75f, 0.15f, 1f));
-        hpBarEnemyFillTex = solidPixel(new Color(0.85f, 0.15f, 0.15f, 1f));
-        blockBarTex       = solidPixel(new Color(0.2f, 0.5f, 0.9f, 0.9f));
-        potionSlotTex     = solidPixel(new Color(0.15f, 0.30f, 0.15f, 0.85f));
-        potionSlotEmptyTex= solidPixel(new Color(0.1f, 0.1f, 0.12f, 0.60f));
-
-        // Load icon textures
-        try { energyImage  = new Texture(Gdx.files.internal("IMAGES/play/energyImage.png")); } catch (Exception e) {}
-        try { endTurnImage = new Texture(Gdx.files.internal("IMAGES/play/endTurnImage.png")); } catch (Exception e) {}
-        try { heartImage   = new Texture(Gdx.files.internal("IMAGES/play/heart.png")); } catch (Exception e) {}
-        try { goldImage    = new Texture(Gdx.files.internal("IMAGES/play/gold.png")); } catch (Exception e) {}
-        try { drawImage    = new Texture(Gdx.files.internal("IMAGES/play/drawImage.png")); } catch (Exception e) {}
-        try { discardImage = new Texture(Gdx.files.internal("IMAGES/play/discardImage.png")); } catch (Exception e) {}
+        healthBar = new CombatHealthBar();
+        tooltipStyle = new TextTooltip.TextTooltipStyle(new Label.LabelStyle(font, Color.WHITE), null);
+        tooltipStyle.background = UiTheme.panel(new Color(0.04f, 0.05f, 0.07f, 0.98f),
+                new Color(0.45f, 0.39f, 0.25f, 1f));
+        tooltipStyle.wrapWidth = 260f;
 
         // Build potion slot buttons (3 slots)
         buildPotionSlots();
 
         // End Turn button
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
-        btnStyle.fontColor = Color.WHITE;
-        btnStyle.overFontColor = Color.YELLOW;
-
-        endTurnBtn = new TextButton("", btnStyle);
-        endTurnBtn.setSize(160, 55);
-        endTurnBtn.setPosition(Constants.VIEWPORT_WIDTH - 200, 210);
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
+        btnStyle.up = buttonFace(new Color(0.8f, 0.86f, 0.9f, 1f));
+        btnStyle.over = buttonFace(Color.WHITE);
+        btnStyle.focused = btnStyle.over;
+        btnStyle.down = buttonFace(new Color(0.55f, 0.8f, 0.82f, 1f));
+        btnStyle.disabled = buttonFace(Color.DARK_GRAY);
+        endTurnBtn = new TextButton("END TURN", btnStyle);
+        endTurnBtn.setSize(180, 60);
+        endTurnBtn.setPosition(Constants.VIEWPORT_WIDTH - 210, 180);
         endTurnBtn.addListener(endTurnListener);
         addActor(endTurnBtn);
 
         // Draw pile click area
         Actor drawPileHit = new Actor();
         drawPileHit.setPosition(20, 15);
-        drawPileHit.setSize(100, 50);
+        drawPileHit.setSize(100, 90);
         drawPileHit.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) { return true; }
@@ -146,8 +142,8 @@ public class HUD extends Group {
 
         // Discard pile click area
         Actor discardPileHit = new Actor();
-        discardPileHit.setPosition(Constants.VIEWPORT_WIDTH - 100, 15);
-        discardPileHit.setSize(100, 50);
+        discardPileHit.setPosition(Constants.VIEWPORT_WIDTH - 120, 15);
+        discardPileHit.setSize(100, 90);
         discardPileHit.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) { return true; }
@@ -157,7 +153,46 @@ public class HUD extends Group {
             }
         });
         addActor(discardPileHit);
+        addNavigation(art.deck, Constants.VIEWPORT_WIDTH - 208f, "View deck", () -> {
+            if (navigationCallback != null) navigationCallback.onDeckClicked();
+        });
+        addNavigation(art.map, Constants.VIEWPORT_WIDTH - 108f, "View map", () -> {
+            if (navigationCallback != null) navigationCallback.onMapClicked();
+        });
+        List<AbstractRelic> relics = RunManager.getInstance().getRelics();
+        for (int i = 0; i < Math.min(relics.size(), 26); i++) {
+            Actor relicHit = new Actor();
+            relicHit.setBounds(24f + i * 50f, Constants.VIEWPORT_HEIGHT - 107f, 42f, 42f);
+            relicHit.addListener(new TextTooltip(relics.get(i).name + "\n" + relics.get(i).description, tooltipStyle));
+            addActor(relicHit);
+        }
+        refreshPotionTextures();
     }
+
+    private Drawable buttonFace(Color tint) {
+        TextureRegionDrawable face = new TextureRegionDrawable(art.endTurn);
+        face.setMinWidth(0f);
+        face.setMinHeight(0f);
+        face.setLeftWidth(20f);
+        face.setRightWidth(20f);
+        return face.tint(tint);
+    }
+
+    private void addNavigation(TextureRegion icon, float x, String label, Runnable onClick) {
+        ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+        style.imageUp = new TextureRegionDrawable(icon);
+        style.imageOver = new TextureRegionDrawable(icon).tint(new Color(0.7f, 1f, 1f, 1f));
+        ImageButton button = new ImageButton(style);
+        button.getImageCell().size(38f, 38f);
+        button.setBounds(x, Constants.VIEWPORT_HEIGHT - 53f, 80f, 44f);
+        button.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent event, Actor actor) { onClick.run(); }
+        });
+        button.addListener(new TextTooltip(label, tooltipStyle));
+        addActor(button);
+    }
+
+    public void setNavigationCallback(NavigationCallback callback) { navigationCallback = callback; }
 
     // ── Potion slots ──────────────────────────────────────────
 
@@ -165,8 +200,8 @@ public class HUD extends Group {
         // We use invisible actors as hit-areas for the three potion slots
         for (int i = 0; i < 3; i++) {
             final int slotIndex = i;
-            float sx = POTION_SLOT_X;
-            float sy = POTION_BASE_Y + i * (POTION_SLOT_SIZE + 6f);
+            float sx = POTION_SLOT_X + i * 62f;
+            float sy = POTION_BASE_Y;
             Actor hitArea = new Actor();
             hitArea.setPosition(sx, sy);
             hitArea.setSize(POTION_SLOT_SIZE, POTION_SLOT_SIZE);
@@ -177,11 +212,14 @@ public class HUD extends Group {
                 }
                 @Override
                 public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                    if (potionCallback != null) {
+                    if (potionCallback != null && slotIndex < RunManager.getInstance().getPotions().size()) {
                         potionCallback.onPotionClicked(slotIndex);
                     }
                 }
             });
+            TextTooltip tooltip = new TextTooltip("Empty potion slot", tooltipStyle);
+            potionTooltips.add(tooltip);
+            hitArea.addListener(tooltip);
             addActor(hitArea);
         }
     }
@@ -206,14 +244,28 @@ public class HUD extends Group {
         List<AbstractPotion> potions = RunManager.getInstance().getPotions();
         for (AbstractPotion p : potions) {
             Texture tex = null;
-            if (p.imagePath != null && !p.imagePath.isEmpty()) {
+            String imagePath = p.imagePath;
+            if (imagePath == null || imagePath.isEmpty() || !Gdx.files.internal(imagePath).exists()) {
+                imagePath = "IMAGES/PotionImages/" + switch (p.id) {
+                    case "adrenaline_syringe" -> "BlockPotion.png";
+                    case "vial_of_acid" -> "PoisonPotion.png";
+                    case "steroid_ampoule" -> "StrengthPotion.png";
+                    default -> "EnergyPotion.png";
+                };
+            }
+            if (!imagePath.isEmpty()) {
                 try {
-                    if (Gdx.files.internal(p.imagePath).exists()) {
-                        tex = new Texture(Gdx.files.internal(p.imagePath));
+                    if (Gdx.files.internal(imagePath).exists()) {
+                        tex = new Texture(Gdx.files.internal(imagePath));
+                        tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                     }
                 } catch (Exception ignored) {}
             }
             potionTextures.add(tex);
+        }
+        for (int i = 0; i < potionTooltips.size(); i++) {
+            potionTooltips.get(i).getActor().setText(i < potions.size()
+                    ? potions.get(i).name + "\n" + potions.get(i).description : "Empty potion slot");
         }
     }
 
@@ -221,7 +273,7 @@ public class HUD extends Group {
 
     public void update(GameState state) {
         this.snapshot = state;
-        endTurnBtn.setVisible(state.isPlayerTurn());
+        endTurnBtn.setDisabled(!state.isPlayerTurn());
         refreshPotionTextures();
     }
 
@@ -236,111 +288,126 @@ public class HUD extends Group {
 
         // ── Top bar background ────────────────────────────────
         batch.setColor(1, 1, 1, parentAlpha);
-        batch.draw(barTexture, 0, h - 50, w, 50);
+        batch.draw(barTexture, 0f, h - 50f, w, 50f);
 
         // Top-left: Heart icon + HP
-        float topY = h - 18; // Adjusted text baseline
-        if (heartImage != null) batch.draw(heartImage, 15, h - 39, 28, 28);
-        font.setColor(Color.RED);
-        font.draw(batch, snapshot.playerHp + "/" + snapshot.playerMaxHp, 50, topY);
+        float topY = h - 23f;
+        CombatUiAssets.drawFitted(batch, art.heart, 24f, h - 48f, 32f, 36f);
+        font.setColor(1f, 0.55f, 0.55f, 1f);
+        font.draw(batch, snapshot.playerHp + "/" + snapshot.playerMaxHp, 66f, topY);
 
         // Top: Gold icon + count
-        if (goldImage != null) batch.draw(goldImage, 180, h - 39, 28, 28);
+        CombatUiAssets.drawFitted(batch, art.gold, 188f, h - 48f, 36f, 36f);
         font.setColor(Color.GOLD);
-        font.draw(batch, "" + RunManager.getInstance().getGold(), 215, topY);
+        font.draw(batch, "" + RunManager.getInstance().getGold(), 234f, topY);
+        font.setColor(0.92f, 0.88f, 0.8f, parentAlpha);
+        font.draw(batch, "FLOOR " + (RunManager.getInstance().getCurrentNodeIndex() + 1), 355f, topY);
+        drawRelics(batch, parentAlpha);
 
         // ── Player HP bar ─────────────────────────────────────
-        drawHpBar(batch, parentAlpha,
-            PLAYER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 260f,
-            HP_BAR_WIDTH, HP_BAR_HEIGHT,
-            snapshot.playerHp, snapshot.playerMaxHp,
-            hpBarFillTex, snapshot.playerBlock);
+        float playerBarY = CHAR_Y - CombatHealthBar.OFFSET_BELOW_FEET;
+        healthBar.draw(batch, smallFont, PLAYER_X - HP_BAR_WIDTH / 2f, playerBarY,
+                snapshot.playerHp, snapshot.playerMaxHp, snapshot.playerBlock, parentAlpha);
 
         // Player name
         smallFont.setColor(Color.WHITE);
         smallFont.draw(batch,
             RunManager.getInstance().getSelectedCharacter() != null
                 ? RunManager.getInstance().getSelectedCharacter().name() : "Player",
-            PLAYER_X - 30, CHAR_Y + 300f);
+            PLAYER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 300f, HP_BAR_WIDTH, Align.center, false);
 
         // Player status effects
         drawStatusEffects(batch, snapshot.playerStatus.summaryString(),
-            PLAYER_X - HP_BAR_WIDTH / 2f, CHAR_Y + 245f);
+            PLAYER_X - HP_BAR_WIDTH / 2f, playerBarY - 14f);
 
         // ── Potion slots (bottom-left, above energy) ──────────
         drawPotionSlots(batch, parentAlpha);
 
         // ── Energy orb ───────────────────────────────────────
         float energyX = 30f;
-        float energyY = 200f;
-        float energySize = 70f;
-        if (energyImage != null) {
-            batch.draw(energyImage, energyX, energyY, energySize, energySize);
-        } else {
-            batch.setColor(new Color(0.8f, 0.2f, 0.2f, 0.9f));
-            batch.draw(barTexture, energyX, energyY, energySize, energySize);
-        }
-        largeFont.setColor(Color.WHITE);
+        float energyY = 180f;
+        float energySize = 112f;
+        batch.setColor(1f, 1f, 1f, parentAlpha);
+        CombatUiAssets.drawFitted(batch, art.energy, energyX, energyY, energySize, energySize);
         String energyStr = snapshot.playerEnergy + "/" + snapshot.playerMaxEnergy;
-        largeFont.draw(batch, energyStr, energyX + 8, energyY + energySize / 2f + 12);
+        float baseline = energyY + (energySize + largeFont.getCapHeight()) / 2f;
+        largeFont.setColor(0.01f, 0.05f, 0.06f, parentAlpha);
+        largeFont.draw(batch, energyStr, energyX + 2f, baseline - 2f, energySize, Align.center, false);
+        largeFont.setColor(1f, 1f, 1f, parentAlpha);
+        largeFont.draw(batch, energyStr, energyX, baseline, energySize, Align.center, false);
 
         // ── End Turn button background ────────────────────────
-        if (endTurnImage != null && snapshot.isPlayerTurn()) {
-            batch.setColor(1, 1, 1, parentAlpha);
-            batch.draw(endTurnImage, Constants.VIEWPORT_WIDTH - 210, 200, 180, 75);
-        }
 
         // ── Draw pile (bottom-left corner) ───────────────────
-        float pileY = 15;
-        if (drawImage != null) batch.draw(drawImage, 20, pileY, 50, 50);
-        font.setColor(Color.WHITE);
-        font.draw(batch, "" + snapshot.drawPile.size(), 75, pileY + 35);
+        drawPile(batch, art.drawPile, 20f, snapshot.drawPile.size(), "DRAW", parentAlpha);
 
         // ── Discard pile (bottom-right corner) ───────────────
-        if (discardImage != null) batch.draw(discardImage, w - 100, pileY, 50, 50);
-        font.setColor(Color.WHITE);
-        font.draw(batch, "" + snapshot.discardPile.size(), w - 45, pileY + 35);
+        drawPile(batch, art.discardPile, w - 110f, snapshot.discardPile.size(), "DISCARD", parentAlpha);
 
         batch.setColor(1, 1, 1, 1);
         super.draw(batch, parentAlpha);
     }
 
-    /** Draws 3 potion slots above the energy orb. */
+    /** Draws the three potion holsters within the header. */
     private void drawPotionSlots(Batch batch, float parentAlpha) {
         List<AbstractPotion> potions = RunManager.getInstance().getPotions();
         int maxSlots = 3;
 
         for (int i = 0; i < maxSlots; i++) {
-            float sx = POTION_SLOT_X;
-            float sy = POTION_BASE_Y + i * (POTION_SLOT_SIZE + 6f);
+            float sx = POTION_SLOT_X + i * 62f;
+            float sy = POTION_BASE_Y;
+            batch.setColor(1f, 1f, 1f, parentAlpha);
+            CombatUiAssets.drawFitted(batch, art.potionSlot, sx, sy, POTION_SLOT_SIZE, POTION_SLOT_SIZE);
 
             if (i < potions.size()) {
                 // Filled slot
                 batch.setColor(1, 1, 1, parentAlpha);
-                batch.draw(potionSlotTex, sx, sy, POTION_SLOT_SIZE, POTION_SLOT_SIZE);
 
                 // Potion image or label
                 if (i < potionTextures.size() && potionTextures.get(i) != null) {
-                    float pad = 4f;
-                    batch.draw(potionTextures.get(i),
-                        sx + pad, sy + pad,
-                        POTION_SLOT_SIZE - pad * 2, POTION_SLOT_SIZE - pad * 2);
+                    CombatUiAssets.drawFitted(batch, new TextureRegion(potionTextures.get(i)),
+                            sx + 8f, sy + 5f, POTION_SLOT_SIZE - 16f, POTION_SLOT_SIZE - 10f);
                 }
 
                 // Show name on hover / always
-                tinyFont.setColor(Color.WHITE);
-                tinyFont.draw(batch, "" + (i + 1), sx + POTION_SLOT_SIZE + 4, sy + POTION_SLOT_SIZE - 6);
-            } else {
-                // Empty slot
-                batch.setColor(1, 1, 1, 0.4f);
-                batch.draw(potionSlotEmptyTex, sx, sy, POTION_SLOT_SIZE, POTION_SLOT_SIZE);
             }
         }
+    }
 
-        // Label above potion slots
-        tinyFont.setColor(new Color(0.8f, 0.8f, 0.5f, 0.9f));
-        tinyFont.draw(batch, "POTIONS", POTION_SLOT_X - 2,
-            POTION_BASE_Y + maxSlots * (POTION_SLOT_SIZE + 6f) + 12);
+    private void drawRelics(Batch batch, float alpha) {
+        List<AbstractRelic> relics = RunManager.getInstance().getRelics();
+        batch.setColor(1f, 1f, 1f, alpha);
+        for (int i = 0; i < Math.min(relics.size(), 26); i++) {
+            CombatUiAssets.drawFitted(batch, relicIcon(relics.get(i)),
+                    24f + i * 50f, Constants.VIEWPORT_HEIGHT - 107f, 42f, 42f);
+        }
+        tinyFont.setColor(0.7f, 0.67f, 0.58f, alpha);
+        if (relics.isEmpty()) tinyFont.draw(batch, "RELICS", 30f, Constants.VIEWPORT_HEIGHT - 82f);
+        else if (relics.size() > 26) tinyFont.draw(batch, "+" + (relics.size() - 26), 1340f, Constants.VIEWPORT_HEIGHT - 82f);
+    }
+
+    private TextureRegion relicIcon(AbstractRelic relic) {
+        if (relic.imagePath != null && Gdx.files.internal(relic.imagePath).exists()) {
+            return new TextureRegion(relic.getTexture());
+        }
+        // Several existing relic definitions reference missing files, including their fallback.
+        return switch (relic.id) {
+            case "tainted_iv_bag" -> art.heart;
+            case "rusted_scalpel" -> art.attackIntent;
+            case "rorschach_inkblot" -> art.debuffIntent;
+            default -> art.buffIntent;
+        };
+    }
+
+    private void drawPile(Batch batch, TextureRegion icon, float x, int count, String label, float alpha) {
+        batch.setColor(1f, 1f, 1f, alpha);
+        CombatUiAssets.drawFitted(batch, icon, x, 30f, 80f, 66f);
+        font.setColor(0.02f, 0.03f, 0.05f, alpha);
+        font.draw(batch, Integer.toString(count), x + 60f, 46f, 30f, Align.center, false);
+        font.setColor(1f, 1f, 1f, alpha);
+        font.draw(batch, Integer.toString(count), x + 59f, 47f, 30f, Align.center, false);
+        tinyFont.setColor(0.86f, 0.83f, 0.74f, alpha);
+        tinyFont.draw(batch, label, x, 23f, 90f, Align.center, false);
     }
 
     /** Draw a small coloured status summary string. */
@@ -348,36 +415,6 @@ public class HUD extends Group {
         if (summary == null || summary.isEmpty()) return;
         tinyFont.setColor(new Color(0.9f, 0.7f, 0.2f, 1f));
         tinyFont.draw(batch, summary, x, y);
-    }
-
-    /** Draws an HP bar with background, fill, text, and optional block indicator. */
-    private void drawHpBar(Batch batch, float alpha,
-                           float x, float y, float w, float h,
-                           int hp, int maxHp, Texture fillTex, int block) {
-        batch.setColor(1, 1, 1, alpha);
-        batch.draw(hpBarBgTex, x - 2, y - 2, w + 4, h + 4);
-
-        float fillRatio = Math.max(0, Math.min(1, (float) hp / maxHp));
-        batch.draw(fillTex, x, y, w * fillRatio, h);
-
-        smallFont.setColor(Color.WHITE);
-        smallFont.draw(batch, hp + "/" + maxHp, x + w / 2f - 20, y + h - 2);
-
-        if (block > 0) {
-            batch.setColor(1, 1, 1, alpha);
-            batch.draw(blockBarTex, x + w + 5, y, 50, h);
-            smallFont.setColor(Color.WHITE);
-            smallFont.draw(batch, "BLK " + block, x + w + 8, y + h - 2);
-        }
-    }
-
-    private static Texture solidPixel(Color c) {
-        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm.setColor(c);
-        pm.fill();
-        Texture t = new Texture(pm);
-        pm.dispose();
-        return t;
     }
 
     public float getPlayerX()  { return PLAYER_X;  }
@@ -389,19 +426,8 @@ public class HUD extends Group {
         largeFont.dispose();
         smallFont.dispose();
         tinyFont.dispose();
+        healthBar.dispose();
         barTexture.dispose();
-        hpBarBgTex.dispose();
-        hpBarFillTex.dispose();
-        hpBarEnemyFillTex.dispose();
-        blockBarTex.dispose();
-        potionSlotTex.dispose();
-        potionSlotEmptyTex.dispose();
-        if (energyImage  != null) energyImage.dispose();
-        if (endTurnImage != null) endTurnImage.dispose();
-        if (heartImage   != null) heartImage.dispose();
-        if (goldImage    != null) goldImage.dispose();
-        if (drawImage    != null) drawImage.dispose();
-        if (discardImage != null) discardImage.dispose();
         for (Texture t : potionTextures) if (t != null) t.dispose();
         potionTextures.clear();
     }

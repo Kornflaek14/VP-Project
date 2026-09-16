@@ -21,6 +21,7 @@ import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -46,6 +47,8 @@ public class RestScreen implements Screen {
     private Group cardPickerOverlay;
     private final List<CardActor> overlayCardActors = new ArrayList<>();
     private boolean pickMode = false; // true = active overlay
+    private Texture pickerBackdrop;
+    private BitmapFont pickerFont;
 
     public RestScreen(CardBattlerGame game) {
         this.game = game;
@@ -57,7 +60,8 @@ public class RestScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/play/restBg.jpg"));
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png"));
+            bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {
             Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
             pm.setColor(new Color(0.12f, 0.07f, 0.05f, 1f));
@@ -66,14 +70,11 @@ public class RestScreen implements Screen {
             pm.dispose();
         }
 
-        font = new BitmapFont();
-        font.getData().setScale(1.2f);
+        font = UiTheme.font(16f);
 
-        smallFont = new BitmapFont();
-        smallFont.getData().setScale(0.95f);
+        smallFont = UiTheme.font(13f);
 
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(2.5f);
+        titleFont = UiTheme.font(34f);
         titleFont.setColor(Color.ORANGE);
 
         buildUI();
@@ -152,6 +153,7 @@ public class RestScreen implements Screen {
         pm.setColor(new Color(0f, 0f, 0f, 0.82f));
         pm.fill();
         Texture backdropTex = new Texture(pm);
+        pickerBackdrop = backdropTex;
         pm.dispose();
 
         cardPickerOverlay = new Group() {
@@ -165,12 +167,13 @@ public class RestScreen implements Screen {
         cardPickerOverlay.setSize(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
 
         // Title
-        BitmapFont overlayFont = new BitmapFont();
-        overlayFont.getData().setScale(1.8f);
+        BitmapFont overlayFont = UiTheme.font(24f);
+        pickerFont = overlayFont;
         overlayFont.setColor(Color.WHITE);
         String prompt = removeMode ? "Choose a card to REMOVE from your deck" : "Choose a card to UPGRADE (+3 dmg/blk)";
         Label promptLabel = new Label(prompt, new Label.LabelStyle(overlayFont, overlayFont.getColor()));
-        promptLabel.setPosition(Constants.VIEWPORT_WIDTH / 2f - 280, Constants.VIEWPORT_HEIGHT - 80);
+        promptLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        promptLabel.setBounds(40, Constants.VIEWPORT_HEIGHT - 80, Constants.VIEWPORT_WIDTH - 80, 50);
         cardPickerOverlay.addActor(promptLabel);
 
         // Card grid in a scroll pane
@@ -237,12 +240,13 @@ public class RestScreen implements Screen {
         }
         for (CardActor ca : overlayCardActors) ca.dispose();
         overlayCardActors.clear();
+        if (pickerBackdrop != null) { pickerBackdrop.dispose(); pickerBackdrop = null; }
+        if (pickerFont != null) { pickerFont.dispose(); pickerFont = null; }
         pickMode = false;
     }
 
     private TextButton.TextButtonStyle makeBtnStyle(Color color, Color hover) {
-        TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
-        s.font = font;
+        TextButton.TextButtonStyle s = UiTheme.button(font);
         s.fontColor = color;
         s.overFontColor = hover;
         return s;
@@ -252,11 +256,15 @@ public class RestScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0.1f, 0.05f, 0.05f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getViewport().apply();
+        stage.getBatch().setProjectionMatrix(stage.getCamera().combined);
 
         if (bgTexture != null) {
             Batch batch = stage.getBatch();
             batch.begin();
+            batch.setColor(0.35f, 0.32f, 0.32f, 1f);
             batch.draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+            batch.setColor(Color.WHITE);
             batch.end();
         }
 

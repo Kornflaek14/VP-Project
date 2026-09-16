@@ -48,12 +48,10 @@ public class PileViewerOverlay extends Group {
         headerBgTex = new Texture(pm);
         pm.dispose();
 
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(1.8f);
+        titleFont = UiTheme.font(24f);
         titleFont.setColor(Color.WHITE);
 
-        countFont = new BitmapFont();
-        countFont.getData().setScale(1.0f);
+        countFont = UiTheme.font(14f);
         countFont.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
 
         setVisible(false);
