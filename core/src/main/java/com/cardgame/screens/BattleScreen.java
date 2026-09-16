@@ -843,8 +843,8 @@ public class BattleScreen implements Screen {
                     if (enemyAnimation != null) {
                         TextureRegion enemyFrame = enemyAnimation.getKeyFrame(enemyStateTime, enemyAnimation == enemyIdleAnim);
                         float scale = enemyUnifiedScale;
-                        float width = enemyFrame.getRegionWidth() * scale;
-                        float height = enemyFrame.getRegionHeight() * scale;
+                        width = enemyFrame.getRegionWidth() * scale;
+                        height = enemyFrame.getRegionHeight() * scale;
                         batch.draw(enemyFrame, m.drawX - width / 2f + shakeOffsetX, my + shakeOffsetY, width, height);
                     } else {
                         batch.draw(m.getTexture(), m.drawX - 140f + shakeOffsetX, my + shakeOffsetY, 280f, 320f);
