@@ -200,7 +200,7 @@ public class BattleScreen implements Screen {
                 "1.png", "2.png", "3.png", "4.png"
         }), 0.35f, false, playerAnimationTextures);
         // One scale for ALL states so no pose shrinks or grows relative to the others.
-        playerUnifiedScale = unifiedScale(250f, 300f,
+        playerUnifiedScale = unifiedScale(400f, 480f,
                 playerIdleAnim, playerAttackAnim, playerHurtAnim, playerDefendAnim);
     }
 
@@ -497,10 +497,9 @@ public class BattleScreen implements Screen {
     }
 
     private void processAnimationEvent(GameEvent event, AbstractMonster target) {
-        if (event instanceof CardPlayedEvent) {
+        if (event instanceof CardPlayedEvent cpe && cpe.card().cardType == com.cardgame.data.CardType.ATTACK) {
             setPlayerState(PlayerAnimState.ATTACK);
-        } else if (event instanceof BlockGainedEvent block
-                && "player".equals(block.target()) && block.amount() > 0) {
+        } else if (event instanceof com.cardgame.logic.events.PlayerDefendedEvent) {
             setPlayerState(PlayerAnimState.DEFEND);
         } else if (event instanceof PlayerDamagedEvent damage && damage.amount() > 0) {
             setPlayerState(PlayerAnimState.HURT);
@@ -576,9 +575,21 @@ public class BattleScreen implements Screen {
                     ? playerAnimation.getKeyFrame(playerStateTime, playerAnimation == playerIdleAnim) : null;
             float frameWidth = playerFrame != null ? playerFrame.getRegionWidth() : playerTexture.getWidth();
             float frameHeight = playerFrame != null ? playerFrame.getRegionHeight() : playerTexture.getHeight();
-            // Always use the unified scale so all states draw at the same size.
-            float scale = playerFrame != null
-                    ? playerUnifiedScale : Math.min(250f / frameWidth, 300f / frameHeight);
+            // Calculate a unified scale based on the idle frame, so all animations match the base character size.
+            float scale = 1f;
+            if (playerIdleAnim != null) {
+                TextureRegion idleRef = playerIdleAnim.getKeyFrame(0);
+                scale = Math.min(250f / idleRef.getRegionWidth(), 300f / idleRef.getRegionHeight());
+            } else if (playerTexture != null) {
+                scale = Math.min(250f / playerTexture.getWidth(), 300f / playerTexture.getHeight());
+            }
+            
+            // The character takes up more canvas space in the attack frames.
+            // Shrink only the attack animation (by 0.58x) so it visually matches the idle character's size.
+            if (playerAnimation == playerAttackAnim && playerAnimation != null) {
+                scale *= 0.58f;
+            }
+            
             float pw = frameWidth * scale;
             float ph = frameHeight * scale;
             float px = hud.getPlayerX() - pw / 2f + shakeOffsetX;
@@ -602,8 +613,15 @@ public class BattleScreen implements Screen {
                     if (m == animatedMonster && enemyAnimation == null) enemyAnimation = enemyIdleAnim;
                     if (enemyAnimation != null) {
                         TextureRegion enemyFrame = enemyAnimation.getKeyFrame(enemyStateTime, enemyAnimation == enemyIdleAnim);
-                        float width = enemyFrame.getRegionWidth() * enemyUnifiedScale;
-                        float height = enemyFrame.getRegionHeight() * enemyUnifiedScale;
+                        float scale = 1f;
+                        if (enemyIdleAnim != null) {
+                            TextureRegion idleRef = enemyIdleAnim.getKeyFrame(0);
+                            scale = Math.min(280f / idleRef.getRegionWidth(), 320f / idleRef.getRegionHeight());
+                        } else {
+                            scale = Math.min(280f / enemyFrame.getRegionWidth(), 320f / enemyFrame.getRegionHeight());
+                        }
+                        float width = enemyFrame.getRegionWidth() * scale;
+                        float height = enemyFrame.getRegionHeight() * scale;
                         batch.draw(enemyFrame, m.drawX - width / 2f, my, width, height);
                     } else {
                         batch.draw(m.getTexture(), m.drawX - 140f, my, 280f, 320f);
