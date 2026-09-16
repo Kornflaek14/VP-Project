@@ -36,7 +36,6 @@ public final class CombatResolver {
         state.hand.remove(card);
         state.discardPile.add(card);
         events.add(new CardPlayedEvent(card, 0, 0));
-        RunManager.getInstance().getRelics().forEach(r -> r.onPlayCard(card, state));
         events.addAll(card.use(state, target));
         state.checkWinCondition().ifPresent(events::add);
         return events;

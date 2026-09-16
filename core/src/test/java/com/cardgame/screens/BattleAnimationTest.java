@@ -12,30 +12,31 @@ import com.cardgame.logic.monsters.AbstractMonster;
 import com.cardgame.logic.monsters.CrawlingEye;
 import com.cardgame.logic.monsters.FrenziedPatient;
 import com.cardgame.logic.monsters.MonsterGroup;
+import com.cardgame.ui.EnemyAnimation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BattleAnimationTest {
     private BattleScreen screen;
     private FrenziedPatient enemy;
+    private EnemyAnimation enemyAnimation;
 
     @BeforeEach
     void setUp() throws Exception {
         enemy = new FrenziedPatient(1000f, 250f);
         screen = new BattleScreen(null, new MonsterGroup(enemy));
-        set("animatedMonster", enemy);
         set("playerIdleAnim", animation(0.4f));
         set("playerAttackAnim", animation(0.12f));
         set("playerHurtAnim", animation(0.15f));
         set("playerDefendAnim", animation(0.35f));
-        set("enemyIdleAnim", animation(0.4f));
-        set("enemyAttackAnim", animation(0.12f));
-        set("enemyHurtAnim", animation(0.15f));
+        enemyAnimation = new EnemyAnimation(animation(0.4f), animation(0.12f), animation(0.15f), animation(0.2f), 1f);
+        enemyAnimations().put(enemy, enemyAnimation);
     }
 
     @Test
@@ -97,7 +98,8 @@ class BattleAnimationTest {
     @Test
     void missingActionFramesReturnToIdle() throws Exception {
         set("playerAttackAnim", null);
-        set("enemyHurtAnim", null);
+        enemyAnimation = new EnemyAnimation(animation(0.4f), animation(0.12f), null, null, 1f);
+        enemyAnimations().put(enemy, enemyAnimation);
         event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         event(new DamageDealtEvent("player", "monster", 7), enemy);
         advance(0.01f);
@@ -116,11 +118,7 @@ class BattleAnimationTest {
 
     @Test
     void enemyAttackPlaysOnce() throws Exception {
-        Field state = field("enemyState");
-        Object attack = state.getType().getEnumConstants()[1];
-        Method setter = BattleScreen.class.getDeclaredMethod("setEnemyState", state.getType());
-        setter.setAccessible(true);
-        setter.invoke(screen, attack);
+        enemyAnimation.play(EnemyAnimation.State.ATTACK);
         advance(0.47f);
         assertEquals("ATTACK", get("enemyState").toString());
         advance(0.02f);
@@ -131,6 +129,52 @@ class BattleAnimationTest {
         // Empty regions let timing tests run without textures or an OpenGL context.
         return new Animation<>(duration, new TextureRegion(), new TextureRegion(),
                 new TextureRegion(), new TextureRegion());
+    }
+
+    @Test
+    void onlyDamagedEnemyReactsInMixedEncounter() throws Exception {
+        CrawlingEye second = new CrawlingEye(1200f, 280f);
+        EnemyAnimation secondAnimation = new EnemyAnimation(animation(0.4f), animation(0.12f),
+                animation(0.15f), animation(0.2f), 1f);
+        enemyAnimations().put(second, secondAnimation);
+        enemyAnimation.play(EnemyAnimation.State.ATTACK);
+        advance(0.2f);
+        event(new DamageDealtEvent("player", "monster", 7, second), enemy);
+        assertEquals(EnemyAnimation.State.ATTACK, enemyAnimation.state());
+        assertEquals(0.2f, enemyAnimation.time());
+        assertEquals(EnemyAnimation.State.HURT, secondAnimation.state());
+        assertEquals(0f, secondAnimation.time());
+        advance(0.3f);
+        assertEquals(EnemyAnimation.State.IDLE, enemyAnimation.state());
+        assertEquals(EnemyAnimation.State.HURT, secondAnimation.state());
+    }
+
+    @Test
+    void allLivingEnemiesAnimateTheirOwnIntent() throws Exception {
+        CrawlingEye second = new CrawlingEye(1200f, 280f);
+        FrenziedPatient dead = new FrenziedPatient(800f, 280f);
+        dead.currentHp = 0;
+        set("monsters", new MonsterGroup(enemy, second, dead));
+        enemy.intentType = "ATTACK_DEFEND";
+        second.intentType = "BUFF";
+        EnemyAnimation secondAnimation = new EnemyAnimation(animation(0.4f), animation(0.12f),
+                animation(0.15f), animation(0.2f), 1f);
+        EnemyAnimation deadAnimation = new EnemyAnimation(animation(0.4f), animation(0.12f), null, null, 1f);
+        enemyAnimations().put(second, secondAnimation);
+        enemyAnimations().put(dead, deadAnimation);
+        Method method = BattleScreen.class.getDeclaredMethod("animateEnemyTurn");
+        method.setAccessible(true);
+        method.invoke(screen);
+        assertEquals(EnemyAnimation.State.ATTACK, enemyAnimation.state());
+        assertEquals(EnemyAnimation.State.BUFF, secondAnimation.state());
+        assertEquals(EnemyAnimation.State.IDLE, deadAnimation.state());
+        advance(0.81f);
+        assertEquals(EnemyAnimation.State.IDLE, secondAnimation.state());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<AbstractMonster, EnemyAnimation> enemyAnimations() throws Exception {
+        return (Map<AbstractMonster, EnemyAnimation>) get("enemyAnimations");
     }
 
     private void event(GameEvent event, AbstractMonster target) throws Exception {
@@ -152,5 +196,9 @@ class BattleAnimationTest {
     }
 
     private void set(String name, Object value) throws Exception { field(name).set(screen, value); }
-    private Object get(String name) throws Exception { return field(name).get(screen); }
+    private Object get(String name) throws Exception {
+        if (name.equals("enemyState")) return enemyAnimation.state();
+        if (name.equals("enemyStateTime")) return enemyAnimation.time();
+        return field(name).get(screen);
+    }
 }

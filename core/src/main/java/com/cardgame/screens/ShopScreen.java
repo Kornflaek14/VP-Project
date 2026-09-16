@@ -15,7 +15,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.potions.AbstractPotion;
-import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.UiTheme;
@@ -103,30 +102,9 @@ public class ShopScreen implements Screen {
         }
         root.add(cardsTable).colspan(2).padBottom(30).row();
 
-        // 2. Relics & Potions
+        // Potions
         Table itemsTable = new Table();
         
-        // Relic
-        List<AbstractRelic> relics = new ArrayList<>(game.getAllRelics());
-        Collections.shuffle(relics);
-        if (!relics.isEmpty()) {
-            AbstractRelic relic = relics.get(0);
-            int price = 150 + new Random().nextInt(50);
-            TextButton buyRelicBtn = new TextButton("Relic: " + relic.name + "\n" + price + " Gold", btnStyle);
-            buyRelicBtn.addListener(new ChangeListener() {
-                @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    if (rm.spendGold(price)) {
-                        rm.addRelic(relic);
-                        updateGold();
-                        buyRelicBtn.setDisabled(true);
-                        buyRelicBtn.setText("SOLD");
-                    }
-                }
-            });
-            itemsTable.add(buyRelicBtn).size(300, 80).pad(10);
-        }
-
         // Potion
         List<AbstractPotion> potions = new ArrayList<>(game.getAllPotions());
         Collections.shuffle(potions);

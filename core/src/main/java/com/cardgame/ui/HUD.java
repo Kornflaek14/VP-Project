@@ -22,7 +22,6 @@ import com.badlogic.gdx.utils.Align;
 import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.logic.GameState;
 import com.cardgame.logic.RunManager;
-import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ import java.util.List;
  * Combat HUD:
  * - Top bar: HP, Gold, Floor info
  * - Bottom-left: Energy orb
- * - Header: Potion holsters, relic shelf, deck and map navigation
+ * - Header: Potion holsters, deck and map navigation
  * - Bottom-right: End Turn button
  * - Player HP bar and status effects below the character
  * - Monster intent display
@@ -159,13 +158,6 @@ public class HUD extends Group {
         addNavigation(art.map, Constants.VIEWPORT_WIDTH - 108f, "View map", () -> {
             if (navigationCallback != null) navigationCallback.onMapClicked();
         });
-        List<AbstractRelic> relics = RunManager.getInstance().getRelics();
-        for (int i = 0; i < Math.min(relics.size(), 26); i++) {
-            Actor relicHit = new Actor();
-            relicHit.setBounds(24f + i * 50f, Constants.VIEWPORT_HEIGHT - 107f, 42f, 42f);
-            relicHit.addListener(new TextTooltip(relics.get(i).name + "\n" + relics.get(i).description, tooltipStyle));
-            addActor(relicHit);
-        }
         refreshPotionTextures();
     }
 
@@ -302,7 +294,6 @@ public class HUD extends Group {
         font.draw(batch, "" + RunManager.getInstance().getGold(), 234f, topY);
         font.setColor(0.92f, 0.88f, 0.8f, parentAlpha);
         font.draw(batch, "FLOOR " + (RunManager.getInstance().getCurrentNodeIndex() + 1), 355f, topY);
-        drawRelics(batch, parentAlpha);
 
         // ── Player HP bar ─────────────────────────────────────
         float playerBarY = CHAR_Y - CombatHealthBar.OFFSET_BELOW_FEET;
@@ -372,31 +363,6 @@ public class HUD extends Group {
                 // Show name on hover / always
             }
         }
-    }
-
-    private void drawRelics(Batch batch, float alpha) {
-        List<AbstractRelic> relics = RunManager.getInstance().getRelics();
-        batch.setColor(1f, 1f, 1f, alpha);
-        for (int i = 0; i < Math.min(relics.size(), 26); i++) {
-            CombatUiAssets.drawFitted(batch, relicIcon(relics.get(i)),
-                    24f + i * 50f, Constants.VIEWPORT_HEIGHT - 107f, 42f, 42f);
-        }
-        tinyFont.setColor(0.7f, 0.67f, 0.58f, alpha);
-        if (relics.isEmpty()) tinyFont.draw(batch, "RELICS", 30f, Constants.VIEWPORT_HEIGHT - 82f);
-        else if (relics.size() > 26) tinyFont.draw(batch, "+" + (relics.size() - 26), 1340f, Constants.VIEWPORT_HEIGHT - 82f);
-    }
-
-    private TextureRegion relicIcon(AbstractRelic relic) {
-        if (relic.imagePath != null && Gdx.files.internal(relic.imagePath).exists()) {
-            return new TextureRegion(relic.getTexture());
-        }
-        // Several existing relic definitions reference missing files, including their fallback.
-        return switch (relic.id) {
-            case "tainted_iv_bag" -> art.heart;
-            case "rusted_scalpel" -> art.attackIntent;
-            case "rorschach_inkblot" -> art.debuffIntent;
-            default -> art.buffIntent;
-        };
     }
 
     private void drawPile(Batch batch, TextureRegion icon, float x, int count, String label, float alpha) {

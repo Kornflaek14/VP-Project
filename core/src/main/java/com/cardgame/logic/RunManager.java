@@ -2,7 +2,6 @@ package com.cardgame.logic;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.rooms.*;
 import com.cardgame.logic.cards.AbstractCard;
-import com.cardgame.logic.relics.*;
 import com.cardgame.logic.potions.*;
 
 import com.cardgame.data.*;
@@ -13,7 +12,7 @@ import java.util.Random;
 
 /**
  * Manages the persistent roguelike run state between battles.
- * Tracks: selected character, HP, gold, deck, relics, potions, floor progress.
+ * Tracks: selected character, HP, gold, deck, potions, floor progress.
  */
 public class RunManager {
 
@@ -24,7 +23,6 @@ public class RunManager {
     private int currentHp = 80;
     private int gold = 99;
     private final List<AbstractCard> deck = new ArrayList<>();
-    private final List<AbstractRelic> relics = new ArrayList<>();
     private final List<AbstractPotion> potions = new ArrayList<>();
 
     // Map tracking
@@ -76,8 +74,6 @@ public class RunManager {
         this.gold = character.gold();
         this.deck.clear();
         this.deck.addAll(characterCards);
-        this.relics.clear();
-        addRelic(new TaintedIVBag());
         this.potions.clear();
         this.currentNodeIndex = 0;
         this.lastVisitedNodeId = -1;
@@ -355,17 +351,13 @@ public class RunManager {
     public void addCardToDeck(AbstractCard card) { deck.add(card); }
     public void removeCardFromDeck(AbstractCard card) { deck.remove(card); }
 
-    // ── Relics ────────────────────────────────────────────────
-    public List<AbstractRelic> getRelics() { return relics; }
-    public void addRelic(AbstractRelic relic) { relics.add(relic); relic.onEquip(); }
-
-    /** Sum of all relic attack boosts. */
+    /** Reserved attack modifier. */
     public int getTotalAttackBoost() { return 0; }
 
-    /** Sum of all relic defence boosts. */
+    /** Reserved defence modifier. */
     public int getTotalDefenceBoost() { return 0; }
 
-    /** Sum of all relic energy boosts. */
+    /** Reserved energy modifier. */
     public int getTotalEnergyBoost() { return 0; }
 
     // ── Potions ───────────────────────────────────────────────

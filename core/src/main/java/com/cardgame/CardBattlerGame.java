@@ -18,7 +18,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.data.*;
-import com.cardgame.logic.relics.*;
 import com.cardgame.logic.potions.*;
 import com.cardgame.ui.DevModeOverlay;
 import com.cardgame.utils.Constants;
@@ -92,12 +91,6 @@ public class CardBattlerGame extends Game {
             
             
         } catch (Exception e) {
-            Gdx.app.error("Game", "Failed to load relics.json", e);
-        }
-        try {
-            
-            
-        } catch (Exception e) {
             Gdx.app.error("Game", "Failed to load potions.json", e);
         }
 
@@ -109,9 +102,6 @@ public class CardBattlerGame extends Game {
 
     public List<CharacterData> getAllCharacters() { return allCharacters; }
     public List<MonsterData>   getAllMonsters()   { return allMonsters;   }
-    public List<AbstractRelic> getAllRelics() {
-        return java.util.Arrays.asList(new TaintedIVBag(), new RustedScalpel(), new RorschachInkblot());
-    }
     public List<AbstractPotion> getAllPotions() {
         return java.util.Arrays.asList(new AdrenalineSyringe(), new VialOfAcid(), new SteroidAmpoule());
     }
@@ -138,31 +128,30 @@ public class CardBattlerGame extends Game {
         try {
             devStage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
 
-            badgeFont = new BitmapFont();
-            badgeFont.getData().setScale(0.95f);
+            badgeFont = com.cardgame.ui.UiTheme.font(12f);
 
             Pixmap pmNorm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-            pmNorm.setColor(new Color(0.08f, 0.12f, 0.18f, 0.85f));
+            pmNorm.setColor(Color.valueOf("22292a"));
             pmNorm.fill();
             badgeNormalTex = new Texture(pmNorm);
             pmNorm.dispose();
 
             Pixmap pmHov = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-            pmHov.setColor(new Color(0.24f, 0.35f, 0.52f, 0.95f));
+            pmHov.setColor(Color.valueOf("38332d"));
             pmHov.fill();
             badgeHoverTex = new Texture(pmHov);
             pmHov.dispose();
 
             TextButton.TextButtonStyle badgeStyle = new TextButton.TextButtonStyle();
             badgeStyle.font = badgeFont;
-            badgeStyle.fontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
+            badgeStyle.fontColor = Color.valueOf("d6a67a");
             badgeStyle.overFontColor = Color.WHITE;
             badgeStyle.up = new TextureRegionDrawable(new TextureRegion(badgeNormalTex));
             badgeStyle.over = new TextureRegionDrawable(new TextureRegion(badgeHoverTex));
 
-            devBadge = new TextButton("[DEV: F1]", badgeStyle);
-            devBadge.setPosition(Constants.VIEWPORT_WIDTH - 125f, Constants.VIEWPORT_HEIGHT - 32f);
-            devBadge.setSize(115f, 26f);
+            devBadge = new TextButton("Dev tools  /  F1", badgeStyle);
+            devBadge.setPosition(Constants.VIEWPORT_WIDTH - 174f, Constants.VIEWPORT_HEIGHT - 109f);
+            devBadge.setSize(154f, 32f);
             devBadge.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
