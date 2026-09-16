@@ -30,9 +30,6 @@ public final class TurnManager {
         turnNumber = 1;
         state.setTurnNumber(turnNumber);
         state.setPlayerTurn(true);
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
-        // Relic hook
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
 
         // Draw initial hand
         events.addAll(drawCards(state, CARDS_PER_TURN));
@@ -68,9 +65,6 @@ public final class TurnManager {
         turnNumber++;
         state.setTurnNumber(turnNumber);
         state.setPlayerTurn(true);
-        RunManager.getInstance().getRelics().forEach(r -> r.atTurnStart(state));
-        // Relic hook
-        RunManager.getInstance().getRelics().forEach(r -> r.atBattleStart(state));
 
         // Tick poison on both combatants at turn start
         int playerPoison = state.playerStatus.tickPoison();

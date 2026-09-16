@@ -8,7 +8,7 @@ public class Boss extends AbstractMonster {
     private int turnCount = 0;
 
     public Boss(float x, float y) {
-        super("Boss", 160, "Character sprite/Enemies/Boss/idle/idle1.png");
+        super("The Surgeon", 160, "Character sprite/Enemies/Boss/idle/idle1.png");
         this.drawX = x;
         this.drawY = y;
         rollMove();

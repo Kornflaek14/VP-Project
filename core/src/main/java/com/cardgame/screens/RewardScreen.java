@@ -18,7 +18,6 @@ import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.potions.AbstractPotion;
-import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
@@ -37,12 +36,10 @@ public class RewardScreen implements Screen {
     
     private int goldReward;
     private AbstractPotion potionReward;
-    private AbstractRelic relicReward;
     private List<AbstractCard> cardRewards = new ArrayList<>();
     
     private boolean goldClaimed = false;
     private boolean potionClaimed = false;
-    private boolean relicClaimed = false;
     private boolean cardClaimed = false;
 
     private Table rewardsTable;
@@ -55,29 +52,6 @@ public class RewardScreen implements Screen {
     
     private void generateRewards() {
         Random rand = new Random();
-        RunManager rm = RunManager.getInstance();
-        RunManager.MapNodeData lastNode = rm.getNodeById(rm.getLastVisitedNodeId());
-        if (lastNode != null && "ELITE".equals(lastNode.type)) {
-            List<AbstractRelic> allRelics = game.getAllRelics();
-            List<AbstractRelic> ownedRelics = rm.getRelics();
-            List<AbstractRelic> available = new ArrayList<>();
-            for (AbstractRelic r : allRelics) {
-                boolean owns = false;
-                for (AbstractRelic owned : ownedRelics) {
-                    if (owned.getClass().equals(r.getClass())) {
-                        owns = true;
-                        break;
-                    }
-                }
-                if (!owns) {
-                    available.add(r);
-                }
-            }
-            if (!available.isEmpty()) {
-                relicReward = available.get(rand.nextInt(available.size()));
-            }
-        }
-
         // 10-25 Gold
         goldReward = 10 + rand.nextInt(16);
         
@@ -159,19 +133,6 @@ public class RewardScreen implements Screen {
                 }
             });
             rewardsTable.add(goldBtn).pad(10).row();
-        }
-        
-        if (relicReward != null && !relicClaimed) {
-            TextButton relicBtn = new TextButton("Relic: " + relicReward.name, btnStyle);
-            relicBtn.addListener(new ChangeListener() {
-                @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    RunManager.getInstance().addRelic(relicReward);
-                    relicClaimed = true;
-                    refreshRewardsTable(btnStyle);
-                }
-            });
-            rewardsTable.add(relicBtn).pad(10).row();
         }
         
         if (potionReward != null && !potionClaimed) {

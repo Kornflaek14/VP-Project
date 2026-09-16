@@ -6,6 +6,7 @@ public class BossRoom extends AbstractRoom {
     public void onPlayerEntry(CardBattlerGame game) {
         // For now, immediately transition to the hardcoded screen.
         // In later phases, we will shift to RoomPhase state checking.
-        game.setScreen(new com.cardgame.screens.BattleScreen(game, new com.cardgame.logic.monsters.MonsterGroup(new com.cardgame.logic.monsters.FleshAmalgam(1000f, 250f))));
+        game.setScreen(new com.cardgame.screens.BattleScreen(game,
+                new com.cardgame.logic.monsters.MonsterGroup(new com.cardgame.logic.monsters.Boss(1000f, 280f)), true));
     }
 }

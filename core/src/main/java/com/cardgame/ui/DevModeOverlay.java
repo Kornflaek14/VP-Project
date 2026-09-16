@@ -1,13 +1,11 @@
 package com.cardgame.ui;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -18,7 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
 import com.cardgame.logic.monsters.CrawlingEye;
@@ -60,14 +58,15 @@ public class DevModeOverlay extends Group {
     private final DevCloseCallback closeCallback;
 
     private final Texture bgTexture;
-    private final Texture btnNormalTex;
-    private final Texture btnHoverTex;
-    private final Texture btnActionTex;
-    private final Texture btnCloseTex;
+    private static final Color IVORY = Color.valueOf("eee7da");
+    private static final Color MUTED = Color.valueOf("aca99f");
+    private static final Color COPPER = Color.valueOf("d6a67a");
+    private static final Color SAGE = Color.valueOf("91b9aa");
 
     private final BitmapFont titleFont;
     private final BitmapFont headerFont;
     private final BitmapFont bodyFont;
+    private final BitmapFont captionFont;
 
     private final Label statusLabel;
     private final List<Texture> ownedTextures = new ArrayList<>();
@@ -81,42 +80,35 @@ public class DevModeOverlay extends Group {
         setTouchable(Touchable.childrenOnly);
 
         // Dark modal background
-        bgTexture = createSolidTexture(new Color(0.04f, 0.06f, 0.10f, 0.93f));
-        btnNormalTex = createBorderedTexture(new Color(0.12f, 0.16f, 0.24f, 1f), new Color(0.24f, 0.35f, 0.52f, 1f));
-        btnHoverTex = createBorderedTexture(new Color(0.18f, 0.25f, 0.38f, 1f), new Color(0.96f, 0.84f, 0.38f, 1f));
-        btnActionTex = createBorderedTexture(new Color(0.12f, 0.28f, 0.20f, 1f), new Color(0.30f, 0.75f, 0.45f, 1f));
-        btnCloseTex = createBorderedTexture(new Color(0.35f, 0.12f, 0.14f, 1f), new Color(0.85f, 0.30f, 0.35f, 1f));
-
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(1.8f);
-        titleFont.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
-
-        headerFont = new BitmapFont();
-        headerFont.getData().setScale(1.3f);
-        headerFont.setColor(new Color(0.40f, 0.80f, 1.0f, 1f));
-
-        bodyFont = new BitmapFont();
-        bodyFont.getData().setScale(1.05f);
+        bgTexture = createSolidTexture(new Color(0.035f, 0.042f, 0.047f, 0.98f));
+        titleFont = UiTheme.font(38f);
+        headerFont = UiTheme.font(23f);
+        bodyFont = UiTheme.font(17f);
+        captionFont = UiTheme.font(12f);
 
         // TextButton styles
-        TextButton.TextButtonStyle defaultBtnStyle = createButtonStyle(btnNormalTex, btnHoverTex, Color.WHITE, new Color(0.96f, 0.84f, 0.38f, 1f));
-        TextButton.TextButtonStyle actionBtnStyle = createButtonStyle(btnActionTex, btnHoverTex, new Color(0.85f, 1f, 0.85f, 1f), Color.WHITE);
-        TextButton.TextButtonStyle closeBtnStyle = createButtonStyle(btnCloseTex, btnHoverTex, Color.WHITE, new Color(1f, 0.8f, 0.8f, 1f));
+        TextButton.TextButtonStyle defaultBtnStyle = createButtonStyle(COPPER, false);
+        TextButton.TextButtonStyle actionBtnStyle = createButtonStyle(SAGE, true);
+        TextButton.TextButtonStyle closeBtnStyle = createButtonStyle(COPPER, false);
 
         // Status notification label
-        Label.LabelStyle statusStyle = new Label.LabelStyle(bodyFont, new Color(0.5f, 1.0f, 0.6f, 1f));
-        statusLabel = new Label("Press F1 or ~ to toggle at any time", statusStyle);
+        Label.LabelStyle statusStyle = new Label.LabelStyle(captionFont, SAGE);
+        statusLabel = new Label("Ready. Select a destination or apply a run adjustment.", statusStyle);
+        statusLabel.setWrap(true);
 
         // Build layout
         Table root = new Table();
         root.setFillParent(true);
-        root.center().top().pad(25f, 40f, 25f, 40f);
+        root.center().pad(24f, 70f, 24f, 70f);
 
         // Title row
-        Label title = new Label("[ DEVELOPER MODE - ROOM SELECTOR ]", new Label.LabelStyle(titleFont, titleFont.getColor()));
-        Label subtitle = new Label("Jump into any room or battle encounter instantly to test its features", new Label.LabelStyle(bodyFont, Color.LIGHT_GRAY));
-        root.add(title).padBottom(5f).row();
-        root.add(subtitle).padBottom(20f).row();
+        root.add(new Label("LOCURA   /   DEVELOPMENT", new Label.LabelStyle(captionFont, COPPER)))
+                .left().padBottom(10f).row();
+        Label title = new Label("Developer tools", new Label.LabelStyle(titleFont, IVORY));
+        Label subtitle = new Label("Stage an encounter. Explore the asylum. Shape your run.",
+                new Label.LabelStyle(bodyFont, MUTED));
+        root.add(title).left().padBottom(14f).row();
+        root.add(subtitle).left().padBottom(22f).row();
 
         // 3-column table
         Table grid = new Table();
@@ -124,96 +116,96 @@ public class DevModeOverlay extends Group {
 
         // Column 1: Combat Rooms & Encounters
         Table colCombat = new Table();
-        colCombat.top();
-        colCombat.add(new Label("COMBAT ENCOUNTERS", new Label.LabelStyle(headerFont, headerFont.getColor()))).padBottom(12f).row();
+        styleColumn(colCombat);
+        addSectionHeading(colCombat, "01  /  COMBAT", "Encounters", "Jump straight into a fight.", COPPER);
         
-        addNavButton(colCombat, "FINAL BOSS ROOM", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "The Surgeon (boss)", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new BossRoom().onPlayerEntry(game);
-            notifyStatus("Loaded Final Boss Room (with custom BG & Boss animations)!");
+            notifyStatus("Boss encounter loaded.");
         });
-        addNavButton(colCombat, "Frenzied Patient (Chained)", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Frenzied Patient", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new BattleScreen(game, new MonsterGroup(new FrenziedPatient(1000f, 250f))));
-            notifyStatus("Loaded Battle: Frenzied Patient (Chained attack & idle)!");
+            notifyStatus("Frenzied Patient encounter loaded.");
         });
         addNavButton(colCombat, "Flesh Amalgam", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new BattleScreen(game, new MonsterGroup(new FleshAmalgam(1000f, 250f))));
             notifyStatus("Loaded Battle: Flesh Amalgam!");
         });
-        addNavButton(colCombat, "Crawling Eye Duo", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Crawling Eyes (pair)", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new BattleScreen(game, new MonsterGroup(new CrawlingEye(850f, 250f), new CrawlingEye(1150f, 250f))));
-            notifyStatus("Loaded Battle: Crawling Eye Duo!");
+            notifyStatus("Loaded Battle: Crawling Eye / Pair!");
         });
-        addNavButton(colCombat, "Elite Room", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Elite encounter", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new EliteRoom().onPlayerEntry(game);
             notifyStatus("Loaded Elite Combat Room!");
         });
-        addNavButton(colCombat, "Random Monster Room", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Random encounter", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new MonsterRoom().onPlayerEntry(game);
-            notifyStatus("Loaded Random Monster Room!");
+            notifyStatus("Loaded Random Encounter!");
         });
 
         // Column 2: Non-Combat Rooms & Navigation
         Table colRooms = new Table();
-        colRooms.top();
-        colRooms.add(new Label("ROOMS & SCREENS", new Label.LabelStyle(headerFont, headerFont.getColor()))).padBottom(12f).row();
+        styleColumn(colRooms);
+        addSectionHeading(colRooms, "02  /  EXPLORE", "Destinations", "Visit a room or inspect your deck.", COPPER);
 
-        addNavButton(colRooms, "Rest Site (Campfire)", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Rest site", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new RestRoom().onPlayerEntry(game);
             notifyStatus("Loaded Rest Site (heal & upgrades)!");
         });
-        addNavButton(colRooms, "Shop Room (Merchant)", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Merchant", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new ShopRoom().onPlayerEntry(game);
             notifyStatus("Loaded Merchant Shop Room!");
         });
-        addNavButton(colRooms, "Treasure Room (Relics)", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Treasure vault", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new TreasureRoom().onPlayerEntry(game);
             notifyStatus("Loaded Treasure Room!");
         });
-        addNavButton(colRooms, "World Map Screen", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Asylum map", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new MapScreen(game));
-            notifyStatus("Loaded World Map Screen!");
+            notifyStatus("Loaded World Map!");
         });
-        addNavButton(colRooms, "Reward Screen", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Battle rewards", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new RewardScreen(game));
-            notifyStatus("Loaded Card & Gold Reward Screen!");
+            notifyStatus("Loaded Card & Gold Combat Rewards!");
         });
-        addNavButton(colRooms, "Deck Viewer Screen", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Card collection", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             game.setScreen(new DeckViewerScreen(game, game.getScreen()));
-            notifyStatus("Loaded Deck Viewer Screen!");
+            notifyStatus("Loaded Deck Viewer!");
         });
-        addNavButton(colRooms, "Return to Main Menu", defaultBtnStyle, () -> {
+        addNavButton(colRooms, "Main menu", defaultBtnStyle, () -> {
             game.setScreen(new MainMenuScreen(game));
             notifyStatus("Returned to Main Menu!");
         });
 
         // Column 3: Cheats & Testing Tools
         Table colCheats = new Table();
-        colCheats.top();
-        colCheats.add(new Label("DEV TOOLBOX & CHEATS", new Label.LabelStyle(headerFont, headerFont.getColor()))).padBottom(12f).row();
+        styleColumn(colCheats);
+        addSectionHeading(colCheats, "03  /  ADJUST", "Run controls", "Apply changes to the saved run.", SAGE);
 
-        addToolButton(colCheats, "Heal HP to Full", actionBtnStyle, () -> {
+        addToolButton(colCheats, "Restore health", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().setCurrentHp(RunManager.getInstance().getMaxHp());
             notifyStatus("Player HP restored to " + RunManager.getInstance().getMaxHp() + "!");
         });
-        addToolButton(colCheats, "+250 Gold", actionBtnStyle, () -> {
+        addToolButton(colCheats, "Grant 250 gold", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().addGold(250);
             notifyStatus("Added 250 Gold! Current: " + RunManager.getInstance().getGold());
         });
-        addToolButton(colCheats, "Fill 3 Potions", actionBtnStyle, () -> {
+        addToolButton(colCheats, "Refill potions", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().getPotions().clear();
             RunManager.getInstance().addPotion(new AdrenalineSyringe());
@@ -221,27 +213,33 @@ public class DevModeOverlay extends Group {
             RunManager.getInstance().addPotion(new SteroidAmpoule());
             notifyStatus("Added Adrenaline Syringe, Vial of Acid & Steroid Ampoule!");
         });
-        addToolButton(colCheats, "+20 Max HP", actionBtnStyle, () -> {
+        addToolButton(colCheats, "Raise max health by 20", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().setMaxHp(RunManager.getInstance().getMaxHp() + 20);
             RunManager.getInstance().setCurrentHp(RunManager.getInstance().getCurrentHp() + 20);
             notifyStatus("Max HP increased to " + RunManager.getInstance().getMaxHp() + "!");
         });
-        addToolButton(colCheats, "Add All Cards to Deck", actionBtnStyle, () -> {
+        addToolButton(colCheats, "Add all cards", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().getDeck().addAll(game.getAllCards());
             notifyStatus("Added all " + game.getAllCards().size() + " game cards to your deck!");
         });
 
-        grid.add(colCombat).width(360f).top().padRight(25f);
-        grid.add(colRooms).width(360f).top().padRight(25f);
-        grid.add(colCheats).width(340f).top();
+        grid.add(colCombat).width(380f).fillY().padRight(18f);
+        grid.add(colRooms).width(380f).fillY().padRight(18f);
+        grid.add(colCheats).width(380f).fillY();
 
-        root.add(grid).padBottom(15f).row();
-        root.add(statusLabel).padBottom(15f).row();
+        ScrollPane scroll = new ScrollPane(grid);
+        scroll.setScrollingDisabled(true, false);
+        scroll.setFadeScrollBars(false);
+        root.add(scroll).width(1176f).height(534f).padBottom(18f).row();
+        Table footer = new Table();
+        footer.add(statusLabel).expandX().fillX().padRight(24f);
+        footer.add(new Label("F1 / ~  Toggle     ESC  Close", new Label.LabelStyle(captionFont, MUTED))).right();
+        root.add(footer).width(1176f).height(34f).padBottom(14f).row();
 
         // Close button
-        TextButton closeBtn = new TextButton("RESUME GAME (ESC / F1)", closeBtnStyle);
+        TextButton closeBtn = new TextButton("Resume game", closeBtnStyle);
         closeBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -261,11 +259,11 @@ public class DevModeOverlay extends Group {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.F1 || keycode == Input.Keys.GRAVE) {
+                if (keycode == Input.Keys.ESCAPE) {
                     close();
                     return true;
                 }
-                return false;
+                return true;
             }
         });
     }
@@ -279,7 +277,8 @@ public class DevModeOverlay extends Group {
                 close();
             }
         });
-        table.add(btn).size(340f, 42f).padBottom(8f).row();
+        btn.getLabel().setAlignment(Align.left);
+        table.add(btn).size(340f, 46f).padBottom(8f).row();
     }
 
     private void addToolButton(Table table, String text, TextButton.TextButtonStyle style, Runnable action) {
@@ -290,20 +289,35 @@ public class DevModeOverlay extends Group {
                 action.run();
             }
         });
-        table.add(btn).size(320f, 42f).padBottom(8f).row();
+        btn.getLabel().setAlignment(Align.left);
+        table.add(btn).size(340f, 46f).padBottom(8f).row();
     }
 
     private void notifyStatus(String msg) {
         statusLabel.setText(msg);
     }
 
-    private TextButton.TextButtonStyle createButtonStyle(Texture normal, Texture hover, Color fontColor, Color hoverFontColor) {
+    private void styleColumn(Table table) {
+        table.top().pad(20f);
+        table.setBackground(UiTheme.panel(Color.valueOf("151c1e"), Color.valueOf("37403e")));
+    }
+
+    private void addSectionHeading(Table table, String eyebrow, String title, String description, Color accent) {
+        table.add(new Label(eyebrow, new Label.LabelStyle(captionFont, accent))).left().padBottom(12f).row();
+        table.add(new Label(title, new Label.LabelStyle(headerFont, IVORY))).left().padBottom(10f).row();
+        table.add(new Label(description, new Label.LabelStyle(captionFont, MUTED))).left().padBottom(24f).row();
+    }
+
+    private TextButton.TextButtonStyle createButtonStyle(Color accent, boolean action) {
         TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
         s.font = bodyFont;
-        s.fontColor = fontColor;
-        s.overFontColor = hoverFontColor;
-        s.up = new TextureRegionDrawable(new TextureRegion(normal));
-        s.over = new TextureRegionDrawable(new TextureRegion(hover));
+        s.fontColor = IVORY;
+        s.overFontColor = accent;
+        s.downFontColor = Color.WHITE;
+        s.up = UiTheme.panel(Color.valueOf(action ? "20312d" : "22292a"), Color.valueOf(action ? "3d574e" : "424846"));
+        s.over = UiTheme.panel(Color.valueOf(action ? "2b443b" : "38332d"), accent);
+        s.down = UiTheme.panel(Color.valueOf("101817"), accent);
+        s.focused = s.over;
         return s;
     }
 
@@ -311,20 +325,6 @@ public class DevModeOverlay extends Group {
         Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pm.setColor(c);
         pm.fill();
-        Texture tex = new Texture(pm);
-        pm.dispose();
-        ownedTextures.add(tex);
-        return tex;
-    }
-
-    private Texture createBorderedTexture(Color bg, Color border) {
-        int w = 64, h = 32;
-        Pixmap pm = new Pixmap(w, h, Pixmap.Format.RGBA8888);
-        pm.setColor(bg);
-        pm.fill();
-        pm.setColor(border);
-        pm.drawRectangle(0, 0, w, h);
-        pm.drawRectangle(1, 1, w - 2, h - 2);
         Texture tex = new Texture(pm);
         pm.dispose();
         ownedTextures.add(tex);
@@ -345,10 +345,13 @@ public class DevModeOverlay extends Group {
 
     public void show() {
         setVisible(true);
-        setTouchable(Touchable.childrenOnly);
+        setTouchable(Touchable.enabled);
+        toFront();
+        if (getStage() != null) getStage().setKeyboardFocus(this);
     }
 
     public void hide() {
+        if (getStage() != null && getStage().getKeyboardFocus() == this) getStage().setKeyboardFocus(null);
         setVisible(false);
         setTouchable(Touchable.disabled);
     }
@@ -371,5 +374,6 @@ public class DevModeOverlay extends Group {
         titleFont.dispose();
         headerFont.dispose();
         bodyFont.dispose();
+        captionFont.dispose();
     }
 }

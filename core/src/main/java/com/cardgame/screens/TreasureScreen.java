@@ -15,13 +15,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
-import java.util.List;
-import java.util.Random;
 
 public class TreasureScreen implements Screen {
 
@@ -32,7 +29,6 @@ public class TreasureScreen implements Screen {
     
     private Texture chestClosedTex;
     private Texture chestOpenTex;
-    private Texture relicTex;
     
     private boolean opened = false;
 
@@ -91,20 +87,8 @@ public class TreasureScreen implements Screen {
                     openBtn.setVisible(false);
                     leaveBtn.setVisible(true);
 
-                    List<AbstractRelic> allRelics = game.getAllRelics();
-                    if (!allRelics.isEmpty()) {
-                        AbstractRelic reward = allRelics.get(new Random().nextInt(allRelics.size()));
-                        RunManager.getInstance().addRelic(reward);
-                        RunManager.getInstance().addGold(50);
-                        
-                        rewardLabel.setText("You found: " + reward.name + " and 50 Gold!");
-                        
-                        try {
-                            if (reward.imagePath != null && !reward.imagePath.isEmpty()) {
-                                relicTex = new Texture(Gdx.files.internal(reward.imagePath));
-                            }
-                        } catch (Exception e) {}
-                    }
+                    RunManager.getInstance().addGold(50);
+                    rewardLabel.setText("You found 50 Gold!");
                 }
             }
         });
@@ -131,9 +115,6 @@ public class TreasureScreen implements Screen {
             float h = 256;
             batch.draw(tex, Constants.VIEWPORT_WIDTH / 2f - w/2f, Constants.VIEWPORT_HEIGHT / 2f - 60, w, h);
         }
-        if (opened && relicTex != null) {
-            batch.draw(relicTex, Constants.VIEWPORT_WIDTH / 2f - 32, Constants.VIEWPORT_HEIGHT / 2f + 40, 64, 64);
-        }
         batch.end();
 
         stage.act(delta);
@@ -156,6 +137,5 @@ public class TreasureScreen implements Screen {
         if (titleFont != null) titleFont.dispose();
         if (chestClosedTex != null) chestClosedTex.dispose();
         if (chestOpenTex != null) chestOpenTex.dispose();
-        if (relicTex != null) relicTex.dispose();
     }
 }

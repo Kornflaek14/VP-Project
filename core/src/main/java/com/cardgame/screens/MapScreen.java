@@ -60,10 +60,15 @@ public class MapScreen implements Screen {
     private ScrollPane mapScroller;
     
     private Texture glowTexture;
-    private TextureRegion dotRegion;
+    private Texture pathTexture;
+    private TextureRegion pathRegion;
     private float stateTime;
-    private static final float DOT_SPACING = 16f;
+    private static final float DOT_SPACING = 22f;
     private static final float DOT_SPEED = 25f;
+    private static final Color ROUTE_AVAILABLE = Color.valueOf("185c55");
+    private static final Color ROUTE_TRAVELED = Color.valueOf("87432e");
+    private static final Color ROUTE_FUTURE = Color.valueOf("554536");
+    private static final Color ROUTE_PAST = Color.valueOf("655342");
     private BitmapFont font;
     private BitmapFont smallFont;
     private BitmapFont tinyFont;
@@ -263,7 +268,16 @@ public class MapScreen implements Screen {
         topBar.add(floorLabel).expandX().left();
         topBar.add(deckBtn).height(44f);
 
-        topBarContainer.add(topBar).expandX().fillX();
+        topBarContainer.add(topBar).expandX().fillX().row();
+        Table legend = new Table();
+        legend.setBackground(UiTheme.panel(Color.valueOf("dfcfb3"), Color.valueOf("a58c6a")));
+        legend.pad(12f, 28f, 12f, 28f);
+        legend.add(new Label("ASYLUM MAP", new Label.LabelStyle(tinyFont, ROUTE_FUTURE))).padRight(30f);
+        legend.add(new Label("---  Available", new Label.LabelStyle(tinyFont, ROUTE_AVAILABLE))).padRight(26f);
+        legend.add(new Label("___  Traveled", new Label.LabelStyle(tinyFont, ROUTE_TRAVELED))).padRight(26f);
+        legend.add(new Label("---  Unexplored", new Label.LabelStyle(tinyFont, ROUTE_FUTURE))).expandX().left();
+        legend.add(new Label("Scroll to explore", new Label.LabelStyle(tinyFont, ROUTE_FUTURE))).padRight(184f);
+        topBarContainer.add(legend).expandX().fillX();
         uiStage.addActor(topBarContainer);
     }
 
@@ -281,7 +295,13 @@ public class MapScreen implements Screen {
         glowTexture = new Texture(glow);
         glowTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         glow.dispose();
-        dotRegion = new TextureRegion(glowTexture);
+        // Opaque geometry keeps routes readable on textured parchment.
+        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixel.setColor(Color.WHITE);
+        pixel.fill();
+        pathTexture = new Texture(pixel);
+        pathRegion = new TextureRegion(pathTexture);
+        pixel.dispose();
     }
 
     private ParticleEffect createNodeParticles(float x, float y) {
@@ -354,25 +374,34 @@ public class MapScreen implements Screen {
             float end = distance - 32f * path.to.button.getScaleX() - 8f;
             if (end <= start) continue;
             float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
-            float alpha = path.available ? 0.7f + 0.3f * MathUtils.sin(stateTime * 4f)
-                    : path.traversed ? 0.85f : path.past ? 0.2f : 0.35f;
-            float r = path.available || path.traversed ? 1f : 0.24f;
-            float g = path.available || path.traversed ? 0.8f : 0.25f;
-            float b = path.available || path.traversed ? 0.35f : 0.3f;
-            // Dots move from the source toward the next floor; trim beneath both icons.
-            float first = movement + (float) Math.ceil((start - movement) / DOT_SPACING) * DOT_SPACING;
+            Color ink = path.available ? ROUTE_AVAILABLE : path.traversed ? ROUTE_TRAVELED
+                    : path.past ? ROUTE_PAST : ROUTE_FUTURE;
+            float width = path.available ? 5f : 4f;
+            float alpha = path.past && !path.traversed ? 0.9f : 1f;
+            if (path.traversed) {
+                drawRouteSegment(batch, path, start, end - start, distance, angle, width, ink, parentAlpha);
+                continue;
+            }
+            // Only available routes move. Solid traveled paths remain distinct without color.
+            float offset = path.available ? movement : 0f;
+            float first = start + offset - DOT_SPACING;
             for (float d = first; d < end; d += DOT_SPACING) {
-                float x = path.from.x + dx * d / distance;
-                float y = path.from.y + dy * d / distance;
-                float edgeAlpha = MathUtils.clamp(Math.min(d - start, end - d) / 8f, 0f, 1f);
-                if (path.available) {
-                    batch.setColor(r, g, b, alpha * edgeAlpha * parentAlpha * 0.3f);
-                    batch.draw(dotRegion, x - 6f, y - 6f, 12f, 12f);
+                float segmentStart = Math.max(start, d);
+                float segmentEnd = Math.min(end, d + 13f);
+                if (segmentEnd > segmentStart) {
+                    drawRouteSegment(batch, path, segmentStart, segmentEnd - segmentStart,
+                            distance, angle, width, ink, alpha * parentAlpha);
                 }
-                batch.setColor(r, g, b, alpha * edgeAlpha * parentAlpha);
-                batch.draw(dotRegion, x - 3f, y - 2f, 3f, 2f, 6f, 4f, 1f, 1f, angle);
             }
         }
+    }
+
+    private void drawRouteSegment(Batch batch, PathVisual path, float start, float length,
+                                  float distance, float angle, float width, Color ink, float alpha) {
+        float x = path.from.x + (path.to.x - path.from.x) * start / distance;
+        float y = path.from.y + (path.to.y - path.from.y) * start / distance;
+        batch.setColor(ink.r, ink.g, ink.b, alpha);
+        batch.draw(pathRegion, x, y - width / 2f, 0f, width / 2f, length, width, 1f, 1f, angle);
     }
 
     private void drawNodeParticles(Batch batch) {
@@ -538,6 +567,7 @@ public class MapScreen implements Screen {
         nodeVisuals.clear();
         paths.clear();
         if (glowTexture != null) glowTexture.dispose();
+        if (pathTexture != null) pathTexture.dispose();
         // Missing room icons can share the combat texture fallback.
         Set<Texture> icons = new HashSet<>();
         icons.add(combatTex);
