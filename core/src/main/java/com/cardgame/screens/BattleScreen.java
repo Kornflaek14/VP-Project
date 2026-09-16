@@ -32,6 +32,8 @@ import com.cardgame.logic.events.DamageDealtEvent;
 import com.cardgame.logic.events.PlayerDamagedEvent;
 import com.cardgame.logic.monsters.AbstractMonster;
 import com.cardgame.logic.monsters.FrenziedPatient;
+import com.cardgame.logic.monsters.HeadNurse;
+import com.cardgame.logic.monsters.MaskedPatient;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.CombatHealthBar;
 import com.cardgame.ui.CombatMapOverlay;
@@ -101,6 +103,26 @@ public class BattleScreen implements Screen {
         "Character sprite/Enemies/common enemy/chained/attack/attack2.png",
         "Character sprite/Enemies/common enemy/chained/attack/attack3.png",
         "Character sprite/Enemies/common enemy/chained/attack/attack4.png"
+    };
+
+    private static final String[] MASKED_IDLE_FRAME_FILES = {
+        "Character sprite/Enemies/Elite enemy/masked/idle/Idle.png"
+    };
+    private static final String[] MASKED_ATTACK_FRAME_FILES = {
+        "Character sprite/Enemies/Elite enemy/masked/attack/attack1.png",
+        "Character sprite/Enemies/Elite enemy/masked/attack/attack2.png",
+        "Character sprite/Enemies/Elite enemy/masked/attack/attack3.png",
+        "Character sprite/Enemies/Elite enemy/masked/attack/attack4.png"
+    };
+
+    private static final String[] NURSE_IDLE_FRAME_FILES = {
+        "Character sprite/Enemies/Elite enemy/nurse/idle/Idle.png"
+    };
+    private static final String[] NURSE_ATTACK_FRAME_FILES = {
+        "Character sprite/Enemies/Elite enemy/nurse/attack/ChatGPT_Image_Sep_17_2026_04_44_31_AM_1.png",
+        "Character sprite/Enemies/Elite enemy/nurse/attack/attack2.png",
+        "Character sprite/Enemies/Elite enemy/nurse/attack/attack3.png",
+        "Character sprite/Enemies/Elite enemy/nurse/attack/ChatGPT_Image_Sep_17_2026_04_44_32_AM_4.png"
     };
 
     private final List<Texture> playerAnimationTextures = new ArrayList<>();
@@ -293,7 +315,10 @@ public class BattleScreen implements Screen {
         Map<String, EnemyFrames> sets = new HashMap<>();
         for (AbstractMonster monster : monsters.monsters) {
             String kind = monster.isBoss() || (isBossFight && monster == monsters.monsters.get(0))
-                    ? "boss" : monster instanceof FrenziedPatient ? "patient" : "chained";
+                    ? "boss"
+                    : monster instanceof MaskedPatient ? "masked"
+                    : monster instanceof HeadNurse ? "nurse"
+                    : monster instanceof FrenziedPatient ? "patient" : "chained";
             EnemyFrames frames = sets.computeIfAbsent(kind, this::loadEnemyFrames);
             if (frames != null) {
                 enemyAnimations.put(monster, new EnemyAnimation(frames.idle, frames.attack,
@@ -317,6 +342,12 @@ public class BattleScreen implements Screen {
                 }
                 idle = new Animation<>(0.4f, poses[3]);
                 attack = new Animation<>(0.12f, poses[0], poses[1], poses[2], poses[3]);
+            } else if ("masked".equals(kind)) {
+                idle = loadEnemyFrames(MASKED_IDLE_FRAME_FILES, 0.4f);
+                attack = loadEnemyFrames(MASKED_ATTACK_FRAME_FILES, 0.12f);
+            } else if ("nurse".equals(kind)) {
+                idle = loadEnemyFrames(NURSE_IDLE_FRAME_FILES, 0.4f);
+                attack = loadEnemyFrames(NURSE_ATTACK_FRAME_FILES, 0.12f);
             } else {
                 boolean boss = "boss".equals(kind);
                 idle = loadEnemyFrames(boss ? BOSS_IDLE_FRAME_FILES : COMMON_CHAINED_IDLE_FILES, 0.4f);
@@ -333,13 +364,15 @@ public class BattleScreen implements Screen {
                         "Character sprite/Enemies/Boss/buff/buff4.png"
                     }, 0.2f)
                     : new Animation<>(0.2f, idle.getKeyFrames());
-            float scale = unifiedScale("boss".equals(kind) ? 420f : 280f,
-                    "boss".equals(kind) ? 380f : 320f, idle, attack);
+            boolean isElite = "masked".equals(kind) || "nurse".equals(kind);
+            float targetWidth = "boss".equals(kind) ? 420f : isElite ? 340f : 280f;
+            float targetHeight = "boss".equals(kind) ? 380f : isElite ? 350f : 320f;
+            float scale = unifiedScale(targetWidth, targetHeight, idle, attack);
             Map<TextureRegion, Float> frameScales = new HashMap<>();
             if (!"patient".equals(kind)) {
                 // These exports use different canvas scales for idle and attack. Match body
                 // height to the standing attack pose, retaining one scale across the attack.
-                float height = "boss".equals(kind) ? 380f : 320f;
+                float height = targetHeight;
                 for (TextureRegion frame : idle.getKeyFrames()) {
                     frameScales.put(frame, height / frame.getRegionHeight());
                 }
@@ -848,8 +881,12 @@ public class BattleScreen implements Screen {
                     }
 
                     // ── Monster name ──
+                    float nameY = my + (m.isBoss() ? 400f : m.isElite() ? 370f : 340f);
+                    monsterFont.setColor(0.02f, 0.02f, 0.04f, 0.9f);
+                    monsterFont.draw(batch, m.name, m.drawX - 130f + 1f, nameY - 1f,
+                            260f, com.badlogic.gdx.utils.Align.center, false);
                     monsterFont.setColor(Color.WHITE);
-                    monsterFont.draw(batch, m.name, m.drawX - 130f, my + (m.isBoss() ? 400f : 340f),
+                    monsterFont.draw(batch, m.name, m.drawX - 130f, nameY,
                             260f, com.badlogic.gdx.utils.Align.center, false);
 
                     // ── Intent icon ──
@@ -898,7 +935,7 @@ public class BattleScreen implements Screen {
         boolean showAmount = attack || defend;
         float width = attack && defend ? 104f : showAmount ? 64f : 36f;
         float x = monster.drawX - width / 2f;
-        float y = monster.drawY + (monster.isBoss() ? 412f : 352f);
+        float y = monster.drawY + (monster.isBoss() ? 435f : monster.isElite() ? 405f : 375f);
         batch.setColor(Color.WHITE);
         CombatUiAssets.drawFitted(batch, icon, x, y, 36f, 36f);
         if (showAmount) {

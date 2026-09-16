@@ -4,6 +4,7 @@ import com.cardgame.logic.GameState;
 import com.cardgame.logic.events.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class StubbornDenialCard extends AbstractCard {
     public StubbornDenialCard() {
@@ -13,6 +14,11 @@ public class StubbornDenialCard extends AbstractCard {
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {
         List<GameEvent> events = new ArrayList<>();
         gainBlock(state, defence(), events);
+        if (!state.hand.isEmpty()) {
+            int randomIndex = ThreadLocalRandom.current().nextInt(state.hand.size());
+            AbstractCard exhausted = state.hand.remove(randomIndex);
+            state.exhaustPile.add(exhausted);
+        }
         return events;
     }
     
@@ -25,6 +31,8 @@ public class StubbornDenialCard extends AbstractCard {
     }
     @Override
     public AbstractCard makeCopy() {
-        return new StubbornDenialCard();
+        AbstractCard copy = new StubbornDenialCard();
+        if (this.upgraded) copy.upgrade();
+        return copy;
     }
 }

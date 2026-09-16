@@ -26,6 +26,8 @@ public class SeethingHatredCard extends AbstractCard {
     }
     @Override
     public AbstractCard makeCopy() {
-        return new SeethingHatredCard();
+        AbstractCard copy = new SeethingHatredCard();
+        if (this.upgraded) copy.upgrade();
+        return copy;
     }
 }

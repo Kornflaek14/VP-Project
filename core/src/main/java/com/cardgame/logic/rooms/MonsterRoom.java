@@ -15,15 +15,15 @@ public class MonsterRoom extends AbstractRoom {
         if (roll < 25) {
             monsters = new MonsterGroup(new FrenziedPatient(1000f, 280f));
         } else if (roll < 50) {
-            monsters = new MonsterGroup(new FleshAmalgam(1000f, 280f));
+            monsters = new MonsterGroup(new ChainedPatient(1000f, 280f));
         } else if (roll < 75) {
             monsters = new MonsterGroup(
-                new CrawlingEye(850f, 280f),
-                new CrawlingEye(1150f, 280f)
+                new FrenziedPatient(850f, 280f),
+                new ChainedPatient(1150f, 280f)
             );
         } else {
             monsters = new MonsterGroup(
-                new FleshAmalgam(850f, 280f),
+                new ChainedPatient(850f, 280f),
                 new CrawlingEye(1150f, 280f)
             );
         }

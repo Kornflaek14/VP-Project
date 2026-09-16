@@ -13,6 +13,7 @@ public class RepressCard extends AbstractCard {
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {
         List<GameEvent> events = new ArrayList<>();
         gainBlock(state, defence(), events);
+        events.addAll(state.drawCards(1));
         return events;
     }
     
@@ -25,6 +26,8 @@ public class RepressCard extends AbstractCard {
     }
     @Override
     public AbstractCard makeCopy() {
-        return new RepressCard();
+        AbstractCard copy = new RepressCard();
+        if (this.upgraded) copy.upgrade();
+        return copy;
     }
 }

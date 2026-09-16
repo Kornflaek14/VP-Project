@@ -13,6 +13,7 @@ public class ViciousStrikeCard extends AbstractCard {
     public List<GameEvent> use(GameState state, com.cardgame.logic.monsters.AbstractMonster target) {
         List<GameEvent> events = new ArrayList<>();
         dealDamage(state, target, damage(), events);
+        events.addAll(state.drawCards(1));
         return events;
     }
     
@@ -25,6 +26,8 @@ public class ViciousStrikeCard extends AbstractCard {
     }
     @Override
     public AbstractCard makeCopy() {
-        return new ViciousStrikeCard();
+        AbstractCard copy = new ViciousStrikeCard();
+        if (this.upgraded) copy.upgrade();
+        return copy;
     }
 }

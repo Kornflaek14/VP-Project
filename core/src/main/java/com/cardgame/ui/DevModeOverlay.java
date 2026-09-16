@@ -19,9 +19,12 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
+import com.cardgame.logic.monsters.ChainedPatient;
 import com.cardgame.logic.monsters.CrawlingEye;
 import com.cardgame.logic.monsters.FleshAmalgam;
 import com.cardgame.logic.monsters.FrenziedPatient;
+import com.cardgame.logic.monsters.HeadNurse;
+import com.cardgame.logic.monsters.MaskedPatient;
 import com.cardgame.logic.monsters.MonsterGroup;
 import com.cardgame.logic.potions.AdrenalineSyringe;
 import com.cardgame.logic.potions.SteroidAmpoule;
@@ -129,20 +132,30 @@ public class DevModeOverlay extends Group {
             game.setScreen(new BattleScreen(game, new MonsterGroup(new FrenziedPatient(1000f, 250f))));
             notifyStatus("Frenzied Patient encounter loaded.");
         });
-        addNavButton(colCombat, "Flesh Amalgam", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Chained Patient", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
-            game.setScreen(new BattleScreen(game, new MonsterGroup(new FleshAmalgam(1000f, 250f))));
-            notifyStatus("Loaded Battle: Flesh Amalgam!");
+            game.setScreen(new BattleScreen(game, new MonsterGroup(new ChainedPatient(1000f, 250f))));
+            notifyStatus("Loaded Battle: Chained Patient!");
         });
-        addNavButton(colCombat, "Crawling Eyes (pair)", defaultBtnStyle, () -> {
+        addNavButton(colCombat, "Patient Duo", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
-            game.setScreen(new BattleScreen(game, new MonsterGroup(new CrawlingEye(850f, 250f), new CrawlingEye(1150f, 250f))));
-            notifyStatus("Loaded Battle: Crawling Eye / Pair!");
+            game.setScreen(new BattleScreen(game, new MonsterGroup(new FrenziedPatient(850f, 250f), new ChainedPatient(1150f, 250f))));
+            notifyStatus("Loaded Battle: Patient Duo (Frenzied & Chained)!");
         });
         addNavButton(colCombat, "Elite encounter", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
             new EliteRoom().onPlayerEntry(game);
             notifyStatus("Loaded Elite Combat Room!");
+        });
+        addNavButton(colCombat, "Masked Patient (Elite)", defaultBtnStyle, () -> {
+            RunManager.getInstance().ensureRunStarted(game);
+            game.setScreen(new BattleScreen(game, new MonsterGroup(new MaskedPatient(1000f, 250f))));
+            notifyStatus("Loaded Battle: Masked Patient (Elite)!");
+        });
+        addNavButton(colCombat, "Head Nurse (Elite)", defaultBtnStyle, () -> {
+            RunManager.getInstance().ensureRunStarted(game);
+            game.setScreen(new BattleScreen(game, new MonsterGroup(new HeadNurse(1000f, 250f))));
+            notifyStatus("Loaded Battle: Head Nurse (Elite)!");
         });
         addNavButton(colCombat, "Random encounter", defaultBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);

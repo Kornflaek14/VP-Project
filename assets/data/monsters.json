@@ -147,5 +147,25 @@
         "defenceMin": 8,
         "defenceMax": 12,
         "image": "IMAGES/play/monster2.png"
+    },
+    {
+        "name": "Masked Patient",
+        "level": 2,
+        "hp": 90,
+        "attackMin": 13,
+        "attackMax": 14,
+        "defenceMin": 6,
+        "defenceMax": 8,
+        "image": "Character sprite/Enemies/Elite enemy/masked/idle/Idle.png"
+    },
+    {
+        "name": "Head Nurse",
+        "level": 2,
+        "hp": 82,
+        "attackMin": 9,
+        "attackMax": 15,
+        "defenceMin": 0,
+        "defenceMax": 10,
+        "image": "Character sprite/Enemies/Elite enemy/nurse/idle/Idle.png"
     }
 ]

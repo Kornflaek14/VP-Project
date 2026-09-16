@@ -294,6 +294,7 @@ public class HUD extends Group {
         font.draw(batch, "" + RunManager.getInstance().getGold(), 234f, topY);
         font.setColor(0.92f, 0.88f, 0.8f, parentAlpha);
         font.draw(batch, "FLOOR " + (RunManager.getInstance().getCurrentNodeIndex() + 1), 355f, topY);
+        drawTopBarStatBonuses(batch, 465f, topY, h, parentAlpha);
 
         // ── Player HP bar ─────────────────────────────────────
         float playerBarY = CHAR_Y - CombatHealthBar.OFFSET_BELOW_FEET;
@@ -310,6 +311,9 @@ public class HUD extends Group {
         // Player status effects
         drawStatusEffects(batch, snapshot.playerStatus.summaryString(),
             PLAYER_X - HP_BAR_WIDTH / 2f, playerBarY - 14f);
+
+        // Player permanent base stat bonuses (from Rest Sites)
+        drawBaseStatUpgrades(batch, playerBarY, parentAlpha);
 
         // ── Potion slots (bottom-left, above energy) ──────────
         drawPotionSlots(batch, parentAlpha);
@@ -381,6 +385,73 @@ public class HUD extends Group {
         if (summary == null || summary.isEmpty()) return;
         tinyFont.setColor(new Color(0.9f, 0.7f, 0.2f, 1f));
         tinyFont.draw(batch, summary, x, y);
+    }
+
+    private void drawTopBarStatBonuses(Batch batch, float startX, float topY, float h, float parentAlpha) {
+        int atk = RunManager.getInstance().getBaseAttackBonus();
+        int def = RunManager.getInstance().getBaseDefenseBonus();
+        if (atk <= 0 && def <= 0) return;
+
+        float curX = startX;
+        float iconSize = 20f;
+        if (atk > 0) {
+            CombatUiAssets.drawFitted(batch, art.damageBadge, curX, h - 44f, iconSize, iconSize);
+            font.setColor(1f, 0.52f, 0.42f, parentAlpha);
+            font.draw(batch, "+" + atk + " ATK", curX + iconSize + 6f, topY);
+            curX += 95f;
+        }
+        if (def > 0) {
+            CombatUiAssets.drawFitted(batch, art.blockBadge, curX, h - 44f, iconSize, iconSize);
+            font.setColor(0.42f, 0.82f, 1f, parentAlpha);
+            font.draw(batch, "+" + def + " DEF", curX + iconSize + 6f, topY);
+        }
+    }
+
+    private void drawBaseStatUpgrades(Batch batch, float playerBarY, float parentAlpha) {
+        int atk = RunManager.getInstance().getBaseAttackBonus();
+        int def = RunManager.getInstance().getBaseDefenseBonus();
+        if (atk <= 0 && def <= 0) return;
+
+        float curX = PLAYER_X + HP_BAR_WIDTH / 2f + 12f;
+        float badgeY = playerBarY - 2f;
+        float badgeH = 18f;
+        float iconSize = 16f;
+
+        if (atk > 0) {
+            String text = "+" + atk + " ATK";
+            float badgeW = 68f;
+
+            // Background pill
+            batch.setColor(0.08f, 0.03f, 0.03f, 0.85f * parentAlpha);
+            batch.draw(barTexture, curX, badgeY, badgeW, badgeH);
+
+            // Icon
+            batch.setColor(1f, 1f, 1f, parentAlpha);
+            CombatUiAssets.drawFitted(batch, art.damageBadge, curX + 2f, badgeY + 1f, iconSize, iconSize);
+
+            // Label
+            tinyFont.setColor(1f, 0.55f, 0.42f, parentAlpha);
+            tinyFont.draw(batch, text, curX + iconSize + 4f, badgeY + 14f);
+
+            curX += badgeW + 6f;
+        }
+
+        if (def > 0) {
+            String text = "+" + def + " DEF";
+            float badgeW = 68f;
+
+            // Background pill
+            batch.setColor(0.03f, 0.06f, 0.1f, 0.85f * parentAlpha);
+            batch.draw(barTexture, curX, badgeY, badgeW, badgeH);
+
+            // Icon
+            batch.setColor(1f, 1f, 1f, parentAlpha);
+            CombatUiAssets.drawFitted(batch, art.blockBadge, curX + 2f, badgeY + 1f, iconSize, iconSize);
+
+            // Label
+            tinyFont.setColor(0.42f, 0.82f, 1f, parentAlpha);
+            tinyFont.draw(batch, text, curX + iconSize + 4f, badgeY + 14f);
+        }
     }
 
     public float getPlayerX()  { return PLAYER_X;  }
