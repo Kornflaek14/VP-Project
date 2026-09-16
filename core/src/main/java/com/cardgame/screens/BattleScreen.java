@@ -31,6 +31,7 @@ import com.cardgame.logic.events.CardPlayedEvent;
 import com.cardgame.logic.events.DamageDealtEvent;
 import com.cardgame.logic.events.PlayerDamagedEvent;
 import com.cardgame.logic.monsters.AbstractMonster;
+import com.cardgame.logic.monsters.Boss;
 import com.cardgame.logic.monsters.FrenziedPatient;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.CombatHealthBar;
@@ -74,11 +75,48 @@ public class BattleScreen implements Screen {
     
     private Texture playerTexture;
     private static final String[] PLAYER_IDLE_FRAME_FILES = {
-        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png",
-        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_08.png",
-        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_10.png",
-        "Character sprite/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_12.png"
+        "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png",
+        "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_08.png",
+        "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_10.png",
+        "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_12.png"
     };
+
+    private static final String[] BOSS_IDLE_FRAME_FILES = {
+        "Character sprite/Enemies/Boss/idle/idle1.png",
+        "Character sprite/Enemies/Boss/idle/idle2.png",
+        "Character sprite/Enemies/Boss/idle/idle3.png",
+        "Character sprite/Enemies/Boss/idle/idle4.png"
+    };
+    private static final String[] BOSS_ATTACK_FRAME_FILES = {
+        "Character sprite/Enemies/Boss/attack/attack1.png",
+        "Character sprite/Enemies/Boss/attack/attack2.png",
+        "Character sprite/Enemies/Boss/attack/attack3.png",
+        "Character sprite/Enemies/Boss/attack/attack4.png"
+    };
+    private static final String[] BOSS_BUFF_FRAME_FILES = {
+        "Character sprite/Enemies/Boss/buff/buff1.png",
+        "Character sprite/Enemies/Boss/buff/buff2.png",
+        "Character sprite/Enemies/Boss/buff/buff3.png",
+        "Character sprite/Enemies/Boss/buff/buff4.png"
+    };
+
+    private static final String[] COMMON_CHAINED_IDLE_FILES = {
+        "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png",
+        "Character sprite/Enemies/common enemy/chained/idle/idle.png"
+    };
+    private static final String[] COMMON_CHAINED_ATTACK_FILES = {
+        "Character sprite/Enemies/common enemy/chained/attack/attack1.png",
+        "Character sprite/Enemies/common enemy/chained/attack/attack2.png",
+        "Character sprite/Enemies/common enemy/chained/attack/attack3.png",
+        "Character sprite/Enemies/common enemy/chained/attack/attack4.png"
+    };
+    private static final String[] COMMON_CHAINED_HURT_FILES = {
+        "Character sprite/Enemies/common enemy/chained/hurt/hurt1.png",
+        "Character sprite/Enemies/common enemy/chained/hurt/hurt2.png",
+        "Character sprite/Enemies/common enemy/chained/hurt/hurt3.png",
+        "Character sprite/Enemies/common enemy/chained/hurt/hurt4.png"
+    };
+
     private final List<Texture> playerAnimationTextures = new ArrayList<>();
     private final List<Texture> enemyAnimationTextures = new ArrayList<>();
     private Animation<TextureRegion> playerIdleAnim;
@@ -88,9 +126,10 @@ public class BattleScreen implements Screen {
     private Animation<TextureRegion> enemyIdleAnim;
     private Animation<TextureRegion> enemyAttackAnim;
     private Animation<TextureRegion> enemyHurtAnim;
+    private Animation<TextureRegion> enemyBuffAnim;
 
     private enum PlayerAnimState { IDLE, ATTACK, HURT, DEFEND }
-    private enum EnemyAnimState { IDLE, ATTACK, HURT }
+    private enum EnemyAnimState { IDLE, ATTACK, HURT, BUFF }
 
     private PlayerAnimState playerState = PlayerAnimState.IDLE;
     private EnemyAnimState enemyState = EnemyAnimState.IDLE;
@@ -128,9 +167,16 @@ public class BattleScreen implements Screen {
     private PileViewerOverlay pileViewer;
 
     private com.cardgame.logic.monsters.MonsterGroup monsters;
+    private boolean isBossFight = false;
+
     public BattleScreen(CardBattlerGame game, com.cardgame.logic.monsters.MonsterGroup monsters) {
+        this(game, monsters, false);
+    }
+
+    public BattleScreen(CardBattlerGame game, com.cardgame.logic.monsters.MonsterGroup monsters, boolean isBossFight) {
         this.game = game;
         this.monsters = monsters;
+        this.isBossFight = isBossFight;
     }
 
     @Override
@@ -249,7 +295,7 @@ public class BattleScreen implements Screen {
     }
 
     private String[] playerFramePaths(String action, String[] existingNames) {
-        String folder = "Character sprite/" + action + "/";
+        String folder = "Character sprite/Protag/" + action + "/";
         String[] paths = numberedFramePaths(folder, action);
         // Prefer the requested names; also support the frames already in the project.
         if (!Gdx.files.internal(paths[0]).exists()) {
@@ -268,10 +314,23 @@ public class BattleScreen implements Screen {
         disposeEnemyAnimation();
         setEnemyState(EnemyAnimState.IDLE);
         animatedMonster = null;
+        boolean boss = isBossFight;
         for (AbstractMonster monster : monsters.monsters) {
-            if (monster instanceof FrenziedPatient) {
+            if (monster instanceof Boss || monster.isBoss()) {
                 animatedMonster = monster;
+                boss = true;
                 break;
+            }
+        }
+        if (animatedMonster == null && boss && !monsters.monsters.isEmpty()) {
+            animatedMonster = monsters.monsters.get(0);
+        }
+        if (animatedMonster == null) {
+            for (AbstractMonster monster : monsters.monsters) {
+                if (monster instanceof FrenziedPatient) {
+                    animatedMonster = monster;
+                    break;
+                }
             }
         }
         if (animatedMonster == null) return;
@@ -348,7 +407,7 @@ public class BattleScreen implements Screen {
     }
 
     private void disposeEnemyAnimation() {
-        enemyIdleAnim = enemyAttackAnim = enemyHurtAnim = null;
+        enemyIdleAnim = enemyAttackAnim = enemyHurtAnim = enemyBuffAnim = null;
         for (Texture texture : enemyAnimationTextures) texture.dispose();
         enemyAnimationTextures.clear();
     }
@@ -377,6 +436,7 @@ public class BattleScreen implements Screen {
             case IDLE -> enemyIdleAnim;
             case ATTACK -> enemyAttackAnim;
             case HURT -> enemyHurtAnim;
+            case BUFF -> enemyBuffAnim != null ? enemyBuffAnim : enemyIdleAnim;
         };
     }
 
@@ -488,9 +548,12 @@ public class BattleScreen implements Screen {
             public void changed(ChangeEvent event, Actor actor) {
                 if (paused || battleEnding) return;
                 if (gameState.isPlayerTurn()) {
-                    if (animatedMonster != null && animatedMonster.currentHp > 0
-                            && animatedMonster.intentType.startsWith("ATTACK")) {
-                        setEnemyState(EnemyAnimState.ATTACK);
+                    if (animatedMonster != null && animatedMonster.currentHp > 0) {
+                        if (animatedMonster.intentType.startsWith("ATTACK")) {
+                            setEnemyState(EnemyAnimState.ATTACK);
+                        } else if ("BUFF".equals(animatedMonster.intentType)) {
+                            setEnemyState(EnemyAnimState.BUFF);
+                        }
                     }
                     List<GameEvent> events = turnManager.endPlayerTurn(gameState);
                     processEvents(events);
@@ -654,7 +717,7 @@ public class BattleScreen implements Screen {
         if (event instanceof CardPlayedEvent cpe && cpe.card() != null
                 && cpe.card().cardType() == com.cardgame.data.CardType.ATTACK) {
             setPlayerState(PlayerAnimState.ATTACK);
-        } else if (event instanceof com.cardgame.logic.events.PlayerDefendedEvent) {
+        } else if (event instanceof com.cardgame.logic.events.PlayerDefendedEvent || event instanceof BlockGainedEvent) {
             setPlayerState(PlayerAnimState.DEFEND);
         } else if (event instanceof PlayerDamagedEvent damage && damage.amount() > 0) {
             setPlayerState(PlayerAnimState.HURT);
@@ -773,6 +836,10 @@ public class BattleScreen implements Screen {
                     batch.setColor(1, 1, 1, 1);
                     Animation<TextureRegion> enemyAnimation = m == animatedMonster ? currentEnemyAnimation() : null;
                     if (m == animatedMonster && enemyAnimation == null) enemyAnimation = enemyIdleAnim;
+                    float targetW = (m instanceof Boss || m.isBoss()) ? 340f : 320f;
+                    float targetH = (m instanceof Boss || m.isBoss()) ? 420f : 340f;
+                    float width = targetW;
+                    float height = targetH;
                     if (enemyAnimation != null) {
                         TextureRegion enemyFrame = enemyAnimation.getKeyFrame(enemyStateTime, enemyAnimation == enemyIdleAnim);
                         float scale = enemyUnifiedScale;

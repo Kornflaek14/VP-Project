@@ -3,9 +3,25 @@ import com.cardgame.logic.cards.AbstractCard;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.data.*;
 import com.cardgame.logic.relics.*;
 import com.cardgame.logic.potions.*;
+import com.cardgame.ui.DevModeOverlay;
+import com.cardgame.utils.Constants;
 
 import java.util.*;
 
@@ -14,6 +30,13 @@ import java.util.*;
  * Loads all game data from JSON and bootstraps the first screen.
  */
 public class CardBattlerGame extends Game {
+
+    private Stage devStage;
+    private DevModeOverlay devOverlay;
+    private TextButton devBadge;
+    private Texture badgeNormalTex;
+    private Texture badgeHoverTex;
+    private BitmapFont badgeFont;
 
     private List<AbstractCard> allCards = Arrays.asList(
         new com.cardgame.logic.cards.FranticStrikeCard(),
@@ -78,6 +101,7 @@ public class CardBattlerGame extends Game {
             Gdx.app.error("Game", "Failed to load potions.json", e);
         }
 
+        initDevMode();
         setScreen(new com.cardgame.screens.MainMenuScreen(this));
     }
 
@@ -114,5 +138,120 @@ public class CardBattlerGame extends Game {
             if (m.level() == level) filtered.add(m);
         }
         return filtered;
+    }
+
+    private void initDevMode() {
+        try {
+            devStage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
+
+            badgeFont = new BitmapFont();
+            badgeFont.getData().setScale(0.95f);
+
+            Pixmap pmNorm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pmNorm.setColor(new Color(0.08f, 0.12f, 0.18f, 0.85f));
+            pmNorm.fill();
+            badgeNormalTex = new Texture(pmNorm);
+            pmNorm.dispose();
+
+            Pixmap pmHov = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            pmHov.setColor(new Color(0.24f, 0.35f, 0.52f, 0.95f));
+            pmHov.fill();
+            badgeHoverTex = new Texture(pmHov);
+            pmHov.dispose();
+
+            TextButton.TextButtonStyle badgeStyle = new TextButton.TextButtonStyle();
+            badgeStyle.font = badgeFont;
+            badgeStyle.fontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
+            badgeStyle.overFontColor = Color.WHITE;
+            badgeStyle.up = new TextureRegionDrawable(new TextureRegion(badgeNormalTex));
+            badgeStyle.over = new TextureRegionDrawable(new TextureRegion(badgeHoverTex));
+
+            devBadge = new TextButton("[DEV: F1]", badgeStyle);
+            devBadge.setPosition(Constants.VIEWPORT_WIDTH - 125f, Constants.VIEWPORT_HEIGHT - 32f);
+            devBadge.setSize(115f, 26f);
+            devBadge.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    toggleDevMode();
+                }
+            });
+
+            devOverlay = new DevModeOverlay(this, () -> updateGlobalInputProcessor());
+
+            devStage.addActor(devBadge);
+            devStage.addActor(devOverlay);
+        } catch (Exception e) {
+            Gdx.app.error("Game", "Could not initialize DevMode overlay", e);
+        }
+    }
+
+    public void toggleDevMode() {
+        if (devOverlay == null) return;
+        if (devOverlay.isOpen()) {
+            devOverlay.hide();
+        } else {
+            devOverlay.show();
+        }
+        updateGlobalInputProcessor();
+    }
+
+    public void updateGlobalInputProcessor() {
+        if (devStage == null) return;
+        InputProcessor current = Gdx.input.getInputProcessor();
+        if (current instanceof InputMultiplexer mux) {
+            if (!mux.getProcessors().contains(devStage, true)) {
+                mux.addProcessor(0, devStage);
+            }
+        } else if (current != devStage) {
+            InputMultiplexer mux = new InputMultiplexer();
+            mux.addProcessor(devStage);
+            if (current != null) {
+                mux.addProcessor(current);
+            }
+            Gdx.input.setInputProcessor(mux);
+        }
+    }
+
+    @Override
+    public void setScreen(com.badlogic.gdx.Screen screen) {
+        if (devOverlay != null && devOverlay.isOpen()) {
+            devOverlay.hide();
+        }
+        super.setScreen(screen);
+        updateGlobalInputProcessor();
+    }
+
+    @Override
+    public void render() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F1) || Gdx.input.isKeyJustPressed(Input.Keys.GRAVE)) {
+            toggleDevMode();
+        }
+        super.render();
+        if (devStage != null) {
+            if (!(Gdx.input.getInputProcessor() instanceof InputMultiplexer)) {
+                updateGlobalInputProcessor();
+            }
+            float delta = Gdx.graphics.getDeltaTime();
+            devStage.act(delta);
+            devStage.draw();
+        }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        if (devStage != null) {
+            devStage.getViewport().update(width, height, true);
+        }
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (devStage != null) devStage.dispose();
+        if (devOverlay != null) devOverlay.disposeResources();
+        if (badgeNormalTex != null) badgeNormalTex.dispose();
+        if (badgeHoverTex != null) badgeHoverTex.dispose();
+        if (badgeFont != null) badgeFont.dispose();
     }
 }

@@ -28,6 +28,10 @@ public abstract class AbstractMonster {
     public abstract void takeTurn(GameState state);
     public abstract void rollMove();
     
+    public boolean isBoss() {
+        return false;
+    }
+    
     public void damage(int amount) {
         if (block > 0) {
             if (amount <= block) {
