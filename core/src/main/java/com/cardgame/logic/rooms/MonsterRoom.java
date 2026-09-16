@@ -13,18 +13,18 @@ public class MonsterRoom extends AbstractRoom {
         
         int roll = ThreadLocalRandom.current().nextInt(100);
         if (roll < 25) {
-            monsters = new MonsterGroup(new FrenziedPatient(1000f, 250f));
+            monsters = new MonsterGroup(new FrenziedPatient(1000f, 280f));
         } else if (roll < 50) {
-            monsters = new MonsterGroup(new FleshAmalgam(1000f, 250f));
+            monsters = new MonsterGroup(new FleshAmalgam(1000f, 280f));
         } else if (roll < 75) {
             monsters = new MonsterGroup(
-                new CrawlingEye(850f, 250f),
-                new CrawlingEye(1150f, 250f)
+                new CrawlingEye(850f, 280f),
+                new CrawlingEye(1150f, 280f)
             );
         } else {
             monsters = new MonsterGroup(
-                new FleshAmalgam(850f, 250f),
-                new CrawlingEye(1150f, 250f)
+                new FleshAmalgam(850f, 280f),
+                new CrawlingEye(1150f, 280f)
             );
         }
         

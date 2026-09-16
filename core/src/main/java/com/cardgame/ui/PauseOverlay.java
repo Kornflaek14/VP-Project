@@ -44,19 +44,16 @@ public class PauseOverlay extends Group {
         overlayTex = new Texture(pm);
         pm.dispose();
 
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(3.5f);
+        titleFont = UiTheme.font(47f);
         titleFont.setColor(new Color(0.96f, 0.84f, 0.38f, 1f));
 
-        buttonFont = new BitmapFont();
-        buttonFont.getData().setScale(2.0f);
+        buttonFont = UiTheme.font(27f);
 
         // Build UI
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
         Label title = new Label("PAUSED", titleStyle);
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = buttonFont;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(buttonFont);
         btnStyle.fontColor = Color.WHITE;
         btnStyle.overFontColor = new Color(0.96f, 0.84f, 0.38f, 1f);
 

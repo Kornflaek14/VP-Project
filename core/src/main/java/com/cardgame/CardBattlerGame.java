@@ -106,6 +106,13 @@ public class CardBattlerGame extends Game {
     }
 
     public List<AbstractCard>      getAllCards()      { return allCards;      }
+
+    @Override
+    public void dispose() {
+        // Game.dispose() hides the active screen; screens release their own resources in hide().
+        super.dispose();
+        com.cardgame.ui.UiTheme.dispose();
+    }
     public List<CharacterData> getAllCharacters() { return allCharacters; }
     public List<MonsterData>   getAllMonsters()   { return allMonsters;   }
     public List<AbstractRelic> getAllRelics() {

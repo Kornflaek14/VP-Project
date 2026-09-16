@@ -18,6 +18,7 @@ import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.CardActor;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -44,10 +45,8 @@ public class ShopScreen implements Screen {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
         Gdx.input.setInputProcessor(stage);
 
-        font = new BitmapFont();
-        font.getData().setScale(1.0f);
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(2.0f);
+        font = UiTheme.font(14f);
+        titleFont = UiTheme.font(27f);
         titleFont.setColor(Color.GOLD);
 
         buildUI();
@@ -73,10 +72,8 @@ public class ShopScreen implements Screen {
         List<AbstractCard> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled);
 
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
         btnStyle.fontColor = Color.WHITE;
-        btnStyle.overFontColor = Color.YELLOW;
 
         for (int i = 0; i < 5 && i < shuffled.size(); i++) {
             AbstractCard card = shuffled.get(i);
@@ -84,10 +81,10 @@ public class ShopScreen implements Screen {
             
             Table itemTable = new Table();
             CardActor ca = new CardActor(card, (CardActor.OnClickCallback)null); // no click on actor itself
-            ca.setSize(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f);
+            ca.setSize(Constants.CARD_WIDTH, Constants.CARD_HEIGHT);
             ca.isUiElement = true;
             cardActors.add(ca);
-            itemTable.add(ca).size(Constants.CARD_WIDTH * 0.8f, Constants.CARD_HEIGHT * 0.8f).padBottom(5).row();
+            itemTable.add(ca).size(Constants.CARD_WIDTH, Constants.CARD_HEIGHT).padBottom(12).row();
             
             TextButton buyBtn = new TextButton(price + " Gold", btnStyle);
             buyBtn.addListener(new ChangeListener() {
@@ -127,7 +124,7 @@ public class ShopScreen implements Screen {
                     }
                 }
             });
-            itemsTable.add(buyRelicBtn).size(250, 80).pad(10);
+            itemsTable.add(buyRelicBtn).size(300, 80).pad(10);
         }
 
         // Potion
@@ -151,7 +148,7 @@ public class ShopScreen implements Screen {
                     }
                 }
             });
-            itemsTable.add(buyPotionBtn).size(250, 80).pad(10);
+            itemsTable.add(buyPotionBtn).size(300, 80).pad(10);
         }
         
         root.add(itemsTable).colspan(2).padBottom(40).row();

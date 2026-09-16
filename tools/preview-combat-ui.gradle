@@ -1,0 +1,23 @@
+// Usage: gradlew -I tools/preview-combat-ui.gradle :lwjgl3:previewCombatUi
+gradle.projectsEvaluated {
+    def desktop = gradle.rootProject.project(':lwjgl3')
+    def core = gradle.rootProject.project(':core')
+    def previewClasses = gradle.rootProject.layout.projectDirectory.dir('tmp/combat-ui-preview/classes')
+    def previewClasspath = desktop.configurations.runtimeClasspath + core.sourceSets.main.output.classesDirs
+    desktop.tasks.register('compileCombatUiPreview', JavaCompile) {
+        dependsOn core.tasks.named('compileJava'), desktop.tasks.named('compileJava')
+        source = gradle.rootProject.files('tools/PreviewCombatUi.java')
+        classpath = previewClasspath
+        destinationDirectory = previewClasses
+        options.encoding = 'UTF-8'
+        sourceCompatibility = '17'
+        targetCompatibility = '17'
+    }
+    desktop.tasks.register('previewCombatUi', JavaExec) {
+        dependsOn desktop.tasks.named('compileCombatUiPreview')
+        classpath = previewClasspath + gradle.rootProject.files(previewClasses)
+        mainClass = 'PreviewCombatUi'
+        workingDir = gradle.rootProject.file('assets')
+        args gradle.rootProject.file('tmp/combat-ui-preview').absolutePath
+    }
+}

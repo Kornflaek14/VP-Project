@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -13,7 +14,9 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
@@ -31,22 +34,44 @@ import com.cardgame.logic.monsters.AbstractMonster;
 import com.cardgame.logic.monsters.Boss;
 import com.cardgame.logic.monsters.FrenziedPatient;
 import com.cardgame.ui.CardActor;
+import com.cardgame.ui.CombatHealthBar;
+import com.cardgame.ui.CombatMapOverlay;
+import com.cardgame.ui.CombatUiAssets;
 import com.cardgame.ui.DamageLabel;
 import com.cardgame.ui.HUD;
 import com.cardgame.ui.HandArea;
 import com.cardgame.ui.PauseOverlay;
 import com.cardgame.ui.PileViewerOverlay;
+import com.cardgame.ui.SlashAnimationActor;
 import com.cardgame.ui.TargetingArrow;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class BattleScreen implements Screen {
 
     private final CardBattlerGame game;
     private Stage stage;
     private Texture bgTexture;
+    private Texture slashSheetTex;
+    private CombatUiAssets combatUi;
+    private TextureRegion combatTex;
+    private TextureRegion blockTex;
+    private TextureRegion heartTex;
+    private CombatMapOverlay mapPreview;
+    private Animation<TextureRegion> slashAnimation;
+    private Sound slashSound;
+    private Group effectsLayer;
+    private float effectsRemaining;
+    private boolean battleEnding;
+    private int pendingWinner;
+    private final Set<AbstractMonster> impactTargets = new HashSet<>();
     
     private Texture playerTexture;
     private static final String[] PLAYER_IDLE_FRAME_FILES = {
@@ -134,10 +159,7 @@ public class BattleScreen implements Screen {
     private float shakeOffsetX = 0f;
     private float shakeOffsetY = 0f;
 
-    // Enemy HP bar textures
-    private Texture hpBarBgTex;
-    private Texture hpBarFillTex;
-    private Texture solidWhiteTex;
+    private CombatHealthBar monsterHealthBar;
     private com.badlogic.gdx.graphics.g2d.BitmapFont monsterFont;
     private com.badlogic.gdx.graphics.g2d.BitmapFont monsterSmallFont;
 
@@ -160,19 +182,14 @@ public class BattleScreen implements Screen {
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
+        battleEnding = false;
+        effectsRemaining = 0f;
+        impactTargets.clear();
+        loadSlashEffect();
+        loadCombatIcons();
 
         try {
-            boolean boss = isBossFight;
-            if (!boss && monsters != null) {
-                for (AbstractMonster m : monsters.monsters) {
-                    if (m instanceof Boss || m.isBoss()) {
-                        boss = true;
-                        break;
-                    }
-                }
-            }
-            String bgPath = boss ? "IMAGES/Backgrounds/bossbattlebg.png" : "IMAGES/Backgrounds/battle1.png";
-            bgTexture = new Texture(Gdx.files.internal(bgPath));
+            bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png"));
         } catch (Exception e) {}
 
         gameState = new GameState();
@@ -201,23 +218,10 @@ public class BattleScreen implements Screen {
         gameState.initMonsters(this.monsters);
         loadEnemyAnimation();
 
-        // Init monster HP bar rendering resources
-        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm.setColor(new Color(0.2f, 0.05f, 0.05f, 0.9f));
-        pm.fill();
-        hpBarBgTex = new Texture(pm);
-        pm.setColor(new Color(0.85f, 0.15f, 0.15f, 1f));
-        pm.fill();
-        hpBarFillTex = new Texture(pm);
-        pm.setColor(Color.WHITE);
-        pm.fill();
-        solidWhiteTex = new Texture(pm);
-        pm.dispose();
+        monsterHealthBar = new CombatHealthBar();
 
-        monsterFont = new com.badlogic.gdx.graphics.g2d.BitmapFont();
-        monsterFont.getData().setScale(1.0f);
-        monsterSmallFont = new com.badlogic.gdx.graphics.g2d.BitmapFont();
-        monsterSmallFont.getData().setScale(0.8f);
+        monsterFont = UiTheme.font(14f);
+        monsterSmallFont = UiTheme.font(13f);
 
         buildUI();
         buildPauseOverlay();
@@ -227,7 +231,12 @@ public class BattleScreen implements Screen {
         multiplexer.addProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.ESCAPE) { togglePause(); return true; }
+                if (keycode == Input.Keys.ESCAPE) {
+                    if (mapPreview != null && mapPreview.isVisible()) mapPreview.hide();
+                    else if (pileViewer != null && pileViewer.isVisible()) pileViewer.hide();
+                    else togglePause();
+                    return true;
+                }
                 return false;
             }
         });
@@ -237,6 +246,13 @@ public class BattleScreen implements Screen {
         // Start combat
         turnManager.startCombat(gameState);
         updateUI();
+    }
+
+    private void loadCombatIcons() {
+        combatUi = new CombatUiAssets();
+        combatTex = combatUi.damageBadge;
+        blockTex = combatUi.blockBadge;
+        heartTex = combatUi.heart;
     }
 
     private void loadPlayerAnimation() {
@@ -258,6 +274,24 @@ public class BattleScreen implements Screen {
         // One scale for ALL states so no pose shrinks or grows relative to the others.
         playerUnifiedScale = unifiedScale(400f, 480f,
                 playerIdleAnim, playerAttackAnim, playerHurtAnim, playerDefendAnim);
+    }
+
+    private void loadSlashEffect() {
+        try {
+            slashSheetTex = new Texture(Gdx.files.internal("IMAGES/play/slash_anim.png"));
+            slashSheetTex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            slashAnimation = SlashAnimationActor.frames(slashSheetTex, 6, 1);
+        } catch (Exception e) {
+            Gdx.app.error("BattleScreen", "Could not load slash effect", e);
+            if (slashSheetTex != null) slashSheetTex.dispose();
+            slashSheetTex = null;
+            slashAnimation = null;
+        }
+        try {
+            slashSound = Gdx.audio.newSound(Gdx.files.internal("audio/slash.wav"));
+        } catch (Exception e) {
+            Gdx.app.log("BattleScreen", "Slash sound unavailable; visual effects remain enabled.");
+        }
     }
 
     private String[] playerFramePaths(String action, String[] existingNames) {
@@ -300,41 +334,45 @@ public class BattleScreen implements Screen {
             }
         }
         if (animatedMonster == null) return;
+        try {
+            TextureRegion[] poses = new TextureRegion[4];
+            for (int i = 0; i < poses.length; i++) {
+                poses[i] = loadEnemyPose("Character sprite/enemy/patient/pose-" + (i + 1) + ".png");
+            }
+            enemyIdleAnim = new Animation<>(0.4f, poses[3]);
+            enemyIdleAnim.setPlayMode(Animation.PlayMode.LOOP);
+            enemyAttackAnim = new Animation<>(0.12f, poses[0], poses[1], poses[2], poses[3]);
+            enemyHurtAnim = new Animation<>(0.15f, poses[0], poses[3]);
+        } catch (RuntimeException e) {
+            disposeEnemyAnimation();
+            Gdx.app.error("BattleScreen", "Could not load patient poses; using static texture.", e);
+        }
+        // One scale for ALL enemy states.
+        enemyUnifiedScale = unifiedScale(280f, 320f,
+                enemyIdleAnim, enemyAttackAnim, enemyHurtAnim);
+    }
 
-        if (boss) {
-            enemyIdleAnim = loadAnimation(BOSS_IDLE_FRAME_FILES, 0.4f, true, enemyAnimationTextures);
-            enemyAttackAnim = loadAnimation(BOSS_ATTACK_FRAME_FILES, 0.15f, false, enemyAnimationTextures);
-            enemyBuffAnim = loadAnimation(BOSS_BUFF_FRAME_FILES, 0.2f, false, enemyAnimationTextures);
-            enemyHurtAnim = null; // Boss currently has idle & attack frames
-            enemyUnifiedScale = unifiedScale(340f, 420f, enemyIdleAnim, enemyAttackAnim, enemyBuffAnim);
-        } else {
-            // Common enemy: chained animation set (with fallback to legacy paths if needed)
-            String chainedIdle = null;
-            for (String f : COMMON_CHAINED_IDLE_FILES) {
-                if (Gdx.files.internal(f).exists()) {
-                    chainedIdle = f;
-                    break;
+    /** Ignore transparent canvas margins while retaining the original art and one shared scale. */
+    private TextureRegion loadEnemyPose(String path) {
+        Pixmap pixels = new Pixmap(Gdx.files.internal(path));
+        try {
+            int left = pixels.getWidth(), top = pixels.getHeight(), right = -1, bottom = -1;
+            for (int y = 0; y < pixels.getHeight(); y++) {
+                for (int x = 0; x < pixels.getWidth(); x++) {
+                    if ((pixels.getPixel(x, y) & 0xff) <= 8) continue;
+                    left = Math.min(left, x);
+                    top = Math.min(top, y);
+                    right = Math.max(right, x);
+                    bottom = Math.max(bottom, y);
                 }
             }
-            if (chainedIdle != null) {
-                enemyIdleAnim = loadAnimation(new String[] { chainedIdle }, 0.4f, true, enemyAnimationTextures);
-                enemyAttackAnim = loadAnimation(COMMON_CHAINED_ATTACK_FILES, 0.14f, false, enemyAnimationTextures);
-                if (Gdx.files.internal(COMMON_CHAINED_HURT_FILES[0]).exists()) {
-                    enemyHurtAnim = loadAnimation(COMMON_CHAINED_HURT_FILES, 0.14f, false, enemyAnimationTextures);
-                } else {
-                    enemyHurtAnim = null;
-                }
-            } else {
-                enemyIdleAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/idle/", "idle"),
-                        0.4f, true, enemyAnimationTextures);
-                enemyAttackAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/attack/", "attack"),
-                        0.12f, false, enemyAnimationTextures);
-                enemyHurtAnim = loadAnimation(numberedFramePaths("Character sprite/enemy/hurt/", "hurt"),
-                        0.15f, false, enemyAnimationTextures);
-            }
-            // One scale for ALL enemy states.
-            enemyUnifiedScale = unifiedScale(320f, 340f,
-                    enemyIdleAnim, enemyAttackAnim, enemyHurtAnim);
+            if (right < left) throw new IllegalArgumentException("Empty enemy pose: " + path);
+            Texture texture = new Texture(pixels, true);
+            enemyAnimationTextures.add(texture);
+            texture.setFilter(Texture.TextureFilter.MipMapLinearLinear, Texture.TextureFilter.Linear);
+            return new TextureRegion(texture, left, top, right - left + 1, bottom - top + 1);
+        } finally {
+            pixels.dispose();
         }
     }
 
@@ -453,7 +491,7 @@ public class BattleScreen implements Screen {
         handArea = new HandArea(new CardActor.OnDragCallback() {
             @Override
             public void onDragStart(CardActor actor) {
-                if (paused || !gameState.isPlayerTurn()) return;
+                if (paused || battleEnding || !gameState.isPlayerTurn()) return;
                 // If it's an attack, start targeting
                 if (actor.getCard().cardType() == com.cardgame.data.CardType.ATTACK) {
                     targetingArrow.start.set(actor.getX() + actor.getWidth() / 2f, actor.getY() + actor.getHeight() / 2f);
@@ -464,7 +502,7 @@ public class BattleScreen implements Screen {
 
             @Override
             public void onDrag(CardActor actor, float x, float y) {
-                if (paused || !gameState.isPlayerTurn()) return;
+                if (paused || battleEnding || !gameState.isPlayerTurn()) return;
                 if (targetingArrow.isVisible()) {
                     targetingArrow.start.set(actor.getX() + actor.getWidth() / 2f, actor.getY() + actor.getHeight() / 2f);
                     com.cardgame.logic.monsters.AbstractMonster hovered = getHoveredMonster(x, y);
@@ -478,7 +516,7 @@ public class BattleScreen implements Screen {
 
             @Override
             public void onDragStop(CardActor actor, float x, float y) {
-                if (paused || !gameState.isPlayerTurn()) {
+                if (paused || battleEnding || !gameState.isPlayerTurn()) {
                     updateUI();
                     return;
                 }
@@ -508,7 +546,7 @@ public class BattleScreen implements Screen {
         hud = new HUD(gameState, new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (paused) return;
+                if (paused || battleEnding) return;
                 if (gameState.isPlayerTurn()) {
                     if (animatedMonster != null && animatedMonster.currentHp > 0) {
                         if (animatedMonster.intentType.startsWith("ATTACK")) {
@@ -522,17 +560,30 @@ public class BattleScreen implements Screen {
                     updateUI();
                 }
             }
-        });
+        }, combatUi);
 
         // Wire potion slots
         hud.setPotionCallback(new HUD.PotionClickCallback() {
             @Override
             public void onPotionClicked(int slotIndex) {
-                if (paused) return;
+                if (paused || battleEnding) return;
                 if (gameState.isPlayerTurn()) {
+                    int previousHp = gameState.playerHp;
+                    int previousBlock = gameState.playerBlock;
                     RunManager.getInstance().usePotion(slotIndex, gameState);
-                    // Show a floating "POTION!" label
-                    spawnDamageLabel("POTION!", hud.getPlayerX(), hud.getCharY() + 320f, Color.GREEN);
+                    int healed = gameState.playerHp - previousHp;
+                    int blockGained = gameState.playerBlock - previousBlock;
+                    if (healed > 0) {
+                        spawnDamageLabel("+" + healed, hud.getPlayerX(), hud.getCharY() + 340f,
+                                Color.GREEN, heartTex, false);
+                    }
+                    if (blockGained > 0) {
+                        spawnDamageLabel("+" + blockGained, hud.getPlayerX(), hud.getCharY() + 300f,
+                                Color.CYAN, blockTex, false);
+                    }
+                    if (healed <= 0 && blockGained <= 0) {
+                        spawnDamageLabel("POTION!", hud.getPlayerX(), hud.getCharY() + 320f, Color.GREEN);
+                    }
                     updateUI();
                 }
             }
@@ -540,9 +591,28 @@ public class BattleScreen implements Screen {
 
         stage.addActor(hud);
 
+        // Effects stay above combat actors and below pile/pause overlays.
+        effectsLayer = new Group();
+        effectsLayer.setTouchable(Touchable.disabled);
+        stage.addActor(effectsLayer);
+
         // Wire pile viewer
         pileViewer = new PileViewerOverlay();
         stage.addActor(pileViewer);
+        hud.setNavigationCallback(new HUD.NavigationCallback() {
+            @Override public void onDeckClicked() {
+                if (paused || battleEnding) return;
+                pileViewer.show(RunManager.getInstance().getDeck(), "Deck");
+            }
+            @Override public void onMapClicked() {
+                if (paused || battleEnding) return;
+                if (mapPreview == null) {
+                    mapPreview = new CombatMapOverlay();
+                    stage.addActor(mapPreview);
+                }
+                mapPreview.show();
+            }
+        });
 
         hud.setPileCallback(new HUD.PileClickCallback() {
             @Override
@@ -563,41 +633,89 @@ public class BattleScreen implements Screen {
     }
 
     private void processEvents(List<GameEvent> events, AbstractMonster target) {
+        if (battleEnding) return;
+        Map<AbstractMonster, Integer> hitCounts = new HashMap<>();
+        int playerHits = 0;
+        AbstractCard playedCard = null;
         for (GameEvent e : events) {
-            processAnimationEvent(e, target);
+            AbstractMonster hitTarget = e instanceof DamageDealtEvent damage && damage.targetMonster() != null
+                    ? damage.targetMonster() : target;
+            processAnimationEvent(e, hitTarget);
+            if (e instanceof CardPlayedEvent played) playedCard = played.card();
             if (e instanceof com.cardgame.logic.events.GameOverEvent) {
                 com.cardgame.logic.events.GameOverEvent goe = (com.cardgame.logic.events.GameOverEvent) e;
-                if (goe.winnerIndex() == 0) {
-                    // Player won!
-                    RunManager.getInstance().getRelics().forEach(r -> r.onVictory());
-                }
-                RunManager.getInstance().setCurrentHp(gameState.playerHp);
-                if (goe.winnerIndex() == 0) {
-                    game.setScreen(new RewardScreen(game));
-                } else {
-                    game.setScreen(new GameOverScreen(game, goe.winnerIndex()));
-                }
+                battleEnding = true;
+                pendingWinner = goe.winnerIndex();
+                // Keep the final impact visible, then transition after the render pass.
+                effectsRemaining = Math.max(effectsRemaining, 0.3f);
+                targetingArrow.setVisible(false);
                 return;
             }
-            if (e instanceof PlayerDamagedEvent) {
-                // Trigger screen shake
-                shakeTimer = SHAKE_DURATION;
-                // Spawn damage number
-                PlayerDamagedEvent dmgEvt = (PlayerDamagedEvent) e;
-                spawnDamageLabel("-" + dmgEvt.amount(), hud.getPlayerX(), hud.getCharY() + 340f, Color.RED);
+            if (e instanceof PlayerDamagedEvent damage && damage.amount() > 0) {
+                if ("monster".equals(damage.source())) {
+                    boolean heavy = damage.amount() >= 14;
+                    float delay = playerHits++ * 0.1f;
+                    spawnSlashEffect(hud.getPlayerX(), hud.getCharY() + 140f, 35f, heavy ? 340f : 240f,
+                            new Color(1f, 0.25f, 0.2f, 1f), delay, () -> {
+                                triggerImpactShake(heavy);
+                                spawnDamageLabel("-" + damage.amount(), hud.getPlayerX(), hud.getCharY() + 340f,
+                                        Color.RED, combatTex, heavy);
+                            });
+                } else {
+                    spawnDamageLabel("-" + damage.amount(), hud.getPlayerX(), hud.getCharY() + 340f,
+                            Color.GREEN, combatTex, false);
+                }
+            }
+            if (e instanceof BlockGainedEvent block && "player".equals(block.target()) && block.amount() > 0) {
+                spawnDamageLabel("+" + block.amount(), hud.getPlayerX(), hud.getCharY() + 300f,
+                        Color.CYAN, blockTex, false);
             }
             if (e instanceof DamageDealtEvent dmg) {
-                if ("player".equals(dmg.source()) && "monster".equals(dmg.target()) && dmg.amount() > 0) {
-                    float x = target != null ? target.drawX : 1000f;
-                    float y = target != null ? target.drawY + 250f : 500f;
-                    spawnDamageLabel("-" + dmg.amount(), x, y, Color.ORANGE);
+                if ("player".equals(dmg.source()) && "monster".equals(dmg.target()) && dmg.amount() > 0 && hitTarget != null) {
+                    int hit = hitCounts.getOrDefault(hitTarget, 0);
+                    hitCounts.put(hitTarget, hit + 1);
+                    impactTargets.add(hitTarget);
+                    boolean heavy = playedCard != null ? playedCard.damage() >= 14 : dmg.amount() >= 14;
+                    float angle = heavy ? 90f : (hit % 2 == 0 ? -35f : 35f);
+                    float x = hitTarget.drawX;
+                    float y = hitTarget.drawY + 160f;
+                    spawnSlashEffect(x, y, angle, heavy ? 340f : 240f,
+                            heavy ? Color.ORANGE : Color.CYAN, hit * 0.1f,
+                            () -> {
+                                triggerImpactShake(heavy);
+                                spawnDamageLabel("-" + dmg.amount(), x, y + 100f, Color.ORANGE, combatTex, heavy);
+                            });
                 }
             }
         }
     }
 
+    private void triggerImpactShake(boolean heavy) {
+        shakeTimer = Math.max(shakeTimer, heavy ? 0.28f : 0.16f);
+    }
+
+    private void spawnSlashEffect(float x, float y, float angle, float size, Color tint,
+                                  float delay, Runnable onImpact) {
+        if (slashAnimation == null) {
+            onImpact.run();
+            return;
+        }
+        effectsRemaining = Math.max(effectsRemaining, delay + slashAnimation.getAnimationDuration());
+        effectsLayer.addActor(new SlashAnimationActor(slashAnimation, x, y, angle, size, tint, true, delay, () -> {
+            if (slashSound != null) slashSound.play(0.35f);
+            onImpact.run();
+        }));
+    }
+
+    private void finishCombat() {
+        if (pendingWinner == 0) RunManager.getInstance().getRelics().forEach(r -> r.onVictory());
+        RunManager.getInstance().setCurrentHp(gameState.playerHp);
+        game.setScreen(pendingWinner == 0 ? new RewardScreen(game) : new GameOverScreen(game, pendingWinner));
+    }
+
     private void processAnimationEvent(GameEvent event, AbstractMonster target) {
-        if (event instanceof CardPlayedEvent cpe && (cpe.card() == null || cpe.card().cardType == com.cardgame.data.CardType.ATTACK)) {
+        if (event instanceof CardPlayedEvent cpe && cpe.card() != null
+                && cpe.card().cardType() == com.cardgame.data.CardType.ATTACK) {
             setPlayerState(PlayerAnimState.ATTACK);
         } else if (event instanceof com.cardgame.logic.events.PlayerDefendedEvent || event instanceof BlockGainedEvent) {
             setPlayerState(PlayerAnimState.DEFEND);
@@ -612,9 +730,14 @@ public class BattleScreen implements Screen {
 
     /** Spawns a floating damage number actor at the given position. */
     private void spawnDamageLabel(String text, float x, float y, Color color) {
-        DamageLabel label = new DamageLabel(text, color);
-        label.setPosition(x - 20f, y);
-        stage.addActor(label);
+        spawnDamageLabel(text, x, y, color, null, false);
+    }
+
+    private void spawnDamageLabel(String text, float x, float y, Color color, TextureRegion icon, boolean heavy) {
+        DamageLabel label = new DamageLabel(text, color, icon, heavy);
+        label.setPosition(x - label.getWidth() / 2f, y);
+        effectsLayer.addActor(label);
+        effectsRemaining = Math.max(effectsRemaining, DamageLabel.DURATION);
     }
 
     private com.cardgame.logic.monsters.AbstractMonster getHoveredMonster(float x, float y) {
@@ -644,10 +767,12 @@ public class BattleScreen implements Screen {
         updateAnimations(delta);
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getViewport().apply();
+        stage.getBatch().setProjectionMatrix(stage.getCamera().combined);
 
         // Update shake timer
         if (shakeTimer > 0) {
-            shakeTimer -= delta;
+            if (!paused) shakeTimer = Math.max(0f, shakeTimer - delta);
             float progress = shakeTimer / SHAKE_DURATION;
             float angle = (float)(Math.sin(shakeTimer * 60f) * SHAKE_INTENSITY * progress);
             shakeOffsetX = angle;
@@ -706,7 +831,7 @@ public class BattleScreen implements Screen {
         
         if (gameState.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
-                if (m.currentHp > 0) {
+                if (m.currentHp > 0 || impactTargets.contains(m)) {
                     float my = m.drawY;
                     batch.setColor(1, 1, 1, 1);
                     Animation<TextureRegion> enemyAnimation = m == animatedMonster ? currentEnemyAnimation() : null;
@@ -717,46 +842,28 @@ public class BattleScreen implements Screen {
                     float height = targetH;
                     if (enemyAnimation != null) {
                         TextureRegion enemyFrame = enemyAnimation.getKeyFrame(enemyStateTime, enemyAnimation == enemyIdleAnim);
-                        // Scale proportionally to fill the target height without shrinking across frames
-                        float scale = Math.min(targetW / enemyFrame.getRegionWidth(), targetH / enemyFrame.getRegionHeight());
-                        width = enemyFrame.getRegionWidth() * scale;
-                        height = enemyFrame.getRegionHeight() * scale;
-                        batch.draw(enemyFrame, m.drawX - width / 2f, my, width, height);
+                        float scale = enemyUnifiedScale;
+                        float width = enemyFrame.getRegionWidth() * scale;
+                        float height = enemyFrame.getRegionHeight() * scale;
+                        batch.draw(enemyFrame, m.drawX - width / 2f + shakeOffsetX, my + shakeOffsetY, width, height);
                     } else {
-                        batch.draw(m.getTexture(), m.drawX - targetW / 2f, my, targetW, targetH);
+                        batch.draw(m.getTexture(), m.drawX - 140f + shakeOffsetX, my + shakeOffsetY, 280f, 320f);
                     }
 
                     // ── Monster name ──
                     monsterFont.setColor(Color.WHITE);
-                    monsterFont.draw(batch, m.name, m.drawX - 60f, my + height + 20f);
+                    monsterFont.draw(batch, m.name, m.drawX - 130f, my + 340f,
+                            260f, com.badlogic.gdx.utils.Align.center, false);
 
                     // ── Intent icon ──
-                    Color intentColor = "ATTACK".equals(m.intentType) ? Color.RED : Color.CYAN;
-                    monsterFont.setColor(intentColor);
-                    String intentStr = "ATTACK".equals(m.intentType) 
-                        ? "ATK " + m.intentValue 
-                        : "DEF " + m.intentValue;
-                    monsterFont.draw(batch, intentStr, m.drawX - 40f, my + height + 40f);
+                    drawMonsterIntent(batch, m);
 
                     // ── HP bar ──
-                    float barW = 180f, barH = 16f;
+                    float barW = CombatHealthBar.WIDTH;
                     float barX = m.drawX - barW / 2f;
-                    float barY = my - 25f;
-
-                    batch.setColor(1, 1, 1, 1);
-                    batch.draw(hpBarBgTex, barX - 2, barY - 2, barW + 4, barH + 4);
-
-                    float fillRatio = Math.max(0, Math.min(1, (float) m.currentHp / m.maxHp));
-                    batch.draw(hpBarFillTex, barX, barY, barW * fillRatio, barH);
-
-                    monsterSmallFont.setColor(Color.WHITE);
-                    monsterSmallFont.draw(batch, m.currentHp + "/" + m.maxHp, barX + barW / 2f - 20f, barY + barH - 1f);
-
-                    // ── Block indicator ──
-                    if (m.block > 0) {
-                        monsterSmallFont.setColor(Color.CYAN);
-                        monsterSmallFont.draw(batch, "BLK " + m.block, barX + barW + 8, barY + barH - 1f);
-                    }
+                    float barY = Math.max(my - CombatHealthBar.OFFSET_BELOW_FEET, hud.getCharY() - CombatHealthBar.OFFSET_BELOW_FEET);
+                    monsterHealthBar.draw(batch, monsterSmallFont, barX, barY,
+                            m.currentHp, m.maxHp, m.block, 1f);
 
                     // ── Status effects ──
                     String statusStr = m.status.summaryString();
@@ -771,8 +878,40 @@ public class BattleScreen implements Screen {
 
         batch.end();
 
-        stage.act(delta);
+        // Freeze delayed impacts, sound callbacks, and screen transitions while paused.
+        if (!paused) stage.act(delta);
+        else pauseOverlay.act(delta);
         stage.draw();
+        if (!paused) {
+            effectsRemaining = Math.max(0f, effectsRemaining - delta);
+            if (effectsRemaining == 0f) {
+                impactTargets.clear();
+                if (battleEnding) finishCombat();
+            }
+        }
+    }
+
+    private void drawMonsterIntent(Batch batch, AbstractMonster monster) {
+        String intent = monster.intentType == null ? "" : monster.intentType;
+        boolean attack = intent.contains("ATTACK");
+        boolean defend = intent.contains("DEFEND");
+        boolean debuff = intent.contains("DEBUFF") || intent.contains("MADNESS");
+        TextureRegion icon = attack ? combatUi.attackIntent : defend ? combatUi.defendIntent
+                : debuff ? combatUi.debuffIntent : combatUi.buffIntent;
+        boolean showAmount = attack || defend;
+        float width = attack && defend ? 104f : showAmount ? 64f : 36f;
+        float x = monster.drawX - width / 2f;
+        float y = monster.drawY + 352f;
+        batch.setColor(Color.WHITE);
+        CombatUiAssets.drawFitted(batch, icon, x, y, 36f, 36f);
+        if (showAmount) {
+            String amount = Integer.toString(monster.intentValue);
+            monsterFont.setColor(0.02f, 0.025f, 0.04f, 1f);
+            monsterFont.draw(batch, amount, x + 39f, y + 26f);
+            monsterFont.setColor(Color.WHITE);
+            monsterFont.draw(batch, amount, x + 38f, y + 27f);
+        }
+        if (attack && defend) CombatUiAssets.drawFitted(batch, combatUi.defendIntent, x + 68f, y, 36f, 36f);
     }
 
     @Override
@@ -792,6 +931,11 @@ public class BattleScreen implements Screen {
     public void dispose() {
         if (stage != null) stage.dispose();
         if (bgTexture != null) bgTexture.dispose();
+        if (slashSheetTex != null) { slashSheetTex.dispose(); slashSheetTex = null; }
+        if (combatUi != null) { combatUi.dispose(); combatUi = null; }
+        if (slashSound != null) { slashSound.dispose(); slashSound = null; }
+        slashAnimation = null;
+        impactTargets.clear();
         if (monsters != null) monsters.disposeAll();
         if (playerTexture != null) playerTexture.dispose();
         disposePlayerAnimation();
@@ -800,11 +944,10 @@ public class BattleScreen implements Screen {
         if (handArea != null) handArea.disposeAll();
         if (pauseOverlay != null) pauseOverlay.disposeResources();
         if (targetingArrow != null) targetingArrow.dispose();
-        if (hpBarBgTex != null) hpBarBgTex.dispose();
-        if (hpBarFillTex != null) hpBarFillTex.dispose();
-        if (solidWhiteTex != null) solidWhiteTex.dispose();
+        if (monsterHealthBar != null) monsterHealthBar.dispose();
         if (monsterFont != null) monsterFont.dispose();
         if (monsterSmallFont != null) monsterSmallFont.dispose();
         if (pileViewer != null) pileViewer.disposeResources();
+        if (mapPreview != null) mapPreview.disposeResources();
     }
 }

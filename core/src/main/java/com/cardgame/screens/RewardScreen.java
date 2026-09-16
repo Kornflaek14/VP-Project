@@ -20,6 +20,7 @@ import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.logic.relics.AbstractRelic;
 import com.cardgame.ui.CardActor;
+import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -101,8 +102,7 @@ public class RewardScreen implements Screen {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
         try { bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png")); } catch (Exception e) {}
         
-        font = new BitmapFont();
-        font.getData().setScale(1.5f);
+        font = UiTheme.font(20f);
         
         buildUI();
         
@@ -112,16 +112,15 @@ public class RewardScreen implements Screen {
     }
     
     private void buildUI() {
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = font;
+        TextButton.TextButtonStyle btnStyle = UiTheme.button(font);
         btnStyle.fontColor = Color.WHITE;
-        btnStyle.overFontColor = Color.YELLOW;
         btnStyle.disabledFontColor = Color.GRAY;
         
         Label.LabelStyle lblStyle = new Label.LabelStyle(font, Color.WHITE);
         
         Label titleLabel = new Label("VICTORY! Choose your rewards:", lblStyle);
-        titleLabel.setPosition(Constants.VIEWPORT_WIDTH / 2f - 200f, Constants.VIEWPORT_HEIGHT - 100f);
+        titleLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        titleLabel.setBounds(80f, Constants.VIEWPORT_HEIGHT - 110f, Constants.VIEWPORT_WIDTH - 160f, 50f);
         stage.addActor(titleLabel);
         
         rewardsTable = new Table();
@@ -136,6 +135,7 @@ public class RewardScreen implements Screen {
         
         TextButton proceedBtn = new TextButton("PROCEED", btnStyle);
         proceedBtn.setPosition(Constants.VIEWPORT_WIDTH - 200f, 50f);
+        proceedBtn.setSize(170f, 54f);
         proceedBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -237,10 +237,14 @@ public class RewardScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        stage.getViewport().apply();
+        stage.getBatch().setProjectionMatrix(stage.getCamera().combined);
 
         if (bgTexture != null) {
             stage.getBatch().begin();
+            stage.getBatch().setColor(0.28f, 0.28f, 0.32f, 1f);
             stage.getBatch().draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+            stage.getBatch().setColor(Color.WHITE);
             stage.getBatch().end();
         }
 
