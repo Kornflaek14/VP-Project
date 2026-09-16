@@ -2,6 +2,7 @@ package com.cardgame.screens;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.cardgame.logic.cards.FranticStrikeCard;
 import com.cardgame.logic.events.BlockGainedEvent;
 import com.cardgame.logic.events.CardPlayedEvent;
 import com.cardgame.logic.events.DamageDealtEvent;
@@ -39,9 +40,9 @@ class BattleAnimationTest {
 
     @Test
     void playedCardRestartsAttackAndReturnsToIdle() throws Exception {
-        event(new CardPlayedEvent(null, 0, 0), null);
+        event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         advance(0.3f);
-        event(new CardPlayedEvent(null, 0, 0), null);
+        event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         assertEquals(0f, get("playerStateTime"));
         advance(0.47f);
         assertEquals("ATTACK", get("playerState").toString());
@@ -54,7 +55,7 @@ class BattleAnimationTest {
 
     @Test
     void playerAndEnemyTimersAdvanceIndependently() throws Exception {
-        event(new CardPlayedEvent(null, 0, 0), null);
+        event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         advance(0.3f);
         event(new DamageDealtEvent("player", "monster", 7), enemy);
         advance(0.2f);
@@ -80,7 +81,7 @@ class BattleAnimationTest {
 
     @Test
     void pausedAnimationsDoNotAdvance() throws Exception {
-        event(new CardPlayedEvent(null, 0, 0), null);
+        event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         event(new DamageDealtEvent("player", "monster", 7), enemy);
         advance(0.2f);
         set("paused", true);
@@ -97,7 +98,7 @@ class BattleAnimationTest {
     void missingActionFramesReturnToIdle() throws Exception {
         set("playerAttackAnim", null);
         set("enemyHurtAnim", null);
-        event(new CardPlayedEvent(null, 0, 0), null);
+        event(new CardPlayedEvent(new FranticStrikeCard(), 0, 0), null);
         event(new DamageDealtEvent("player", "monster", 7), enemy);
         advance(0.01f);
         assertEquals("IDLE", get("playerState").toString());
