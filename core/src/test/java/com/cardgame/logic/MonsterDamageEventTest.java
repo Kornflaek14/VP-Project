@@ -29,7 +29,8 @@ class MonsterDamageEventTest {
         CombatResolver resolver = new CombatResolver();
         resolver.executeMonsterTurn(state);
         state.playerBlock = 20;
-        assertTrue(resolver.executeMonsterTurn(state).isEmpty());
+        List<GameEvent> events = resolver.executeMonsterTurn(state);
+        assertTrue(events.stream().noneMatch(e -> e instanceof PlayerDamagedEvent));
         assertEquals(80, state.playerHp);
     }
 

@@ -1,4 +1,5 @@
 package com.cardgame.logic;
+import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.rooms.*;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.relics.*;
@@ -83,6 +84,23 @@ public class RunManager {
         this.pathTaken.clear();
         this.mapNodes.clear();
         generateMap();
+    }
+
+    /**
+     * Ensures that a run is started with a valid character, starter deck, and map.
+     * Useful for developer mode testing so jumping into any room directly from any state never crashes.
+     */
+    public void ensureRunStarted(CardBattlerGame game) {
+        if (selectedCharacter == null || deck.isEmpty() || mapNodes.isEmpty()) {
+            CharacterData defChar = (game.getAllCharacters() != null && !game.getAllCharacters().isEmpty())
+                    ? game.getAllCharacters().get(0)
+                    : new CharacterData();
+            List<AbstractCard> starterCards = game.getCardsForCharacter(defChar.name());
+            if (starterCards == null || starterCards.isEmpty()) {
+                starterCards = new ArrayList<>(game.getAllCards());
+            }
+            startNewRun(defChar, starterCards);
+        }
     }
 
     // ── Map generation ────────────────────────────────────────
