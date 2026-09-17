@@ -1,6 +1,8 @@
 package com.cardgame.ui;
 
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.GameState;
 import com.cardgame.utils.Constants;
@@ -22,9 +24,17 @@ public class HandArea extends Group {
 
     private final CardActor.OnDragCallback callback;
     private final List<CardActor> cardActors = new ArrayList<>();
+    private float scrollOffset;
 
     public HandArea(CardActor.OnDragCallback callback) {
         this.callback = callback;
+        addListener(new InputListener() {
+            @Override public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+                scrollOffset = Math.max(-220f, Math.min(220f, scrollOffset + amountY * 42f));
+                layoutHand(cardActors.stream().map(CardActor::getCard).toList());
+                return true;
+            }
+        });
     }
 
     public void syncWithState(GameState state) {
@@ -65,7 +75,7 @@ public class HandArea extends Group {
                 (Constants.VIEWPORT_WIDTH - 200f) / Math.max(n, 1));
 
         float totalWidth = cardStep * (n - 1) + Constants.CARD_WIDTH;
-        float startX = (Constants.VIEWPORT_WIDTH - totalWidth) / 2f;
+        float startX = (Constants.VIEWPORT_WIDTH - totalWidth) / 2f - scrollOffset;
 
         for (int i = 0; i < hand.size(); i++) {
             AbstractCard cd = hand.get(i);
