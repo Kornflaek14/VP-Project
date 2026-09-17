@@ -130,7 +130,7 @@ public class MapScreen implements Screen {
         try { treasureTex = new Texture(Gdx.files.internal("IMAGES/play/treasureIcon.png")); } catch(Exception e) { treasureTex = combatTex; }
         try { shopTex = new Texture(Gdx.files.internal("IMAGES/play/shopIcon.png")); } catch(Exception e) { shopTex = combatTex; }
         try { restTex = new Texture(Gdx.files.internal("IMAGES/play/restIcon.png")); } catch(Exception e) { restTex = combatTex; }
-        try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/monster.png")); } catch(Exception e) { bossTex = combatTex; }
+        try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/bossIcon.png")); } catch(Exception e) { bossTex = combatTex; }
 
         createGlowTexture();
         font = UiTheme.font(20f);
@@ -184,7 +184,9 @@ public class MapScreen implements Screen {
         mapScroller = new ScrollPane(mapContainer, scrollStyle);
         mapScroller.setScrollingDisabled(true, false);
         mapScroller.setFillParent(true);
+        mapScroller.setSmoothScrolling(true);
         stage.addActor(mapScroller);
+        stage.setScrollFocus(mapScroller);
 
         InputMultiplexer multiplexer = new InputMultiplexer();
         InputAdapter escapeAdapter = new InputAdapter() {
@@ -192,6 +194,17 @@ public class MapScreen implements Screen {
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ESCAPE) {
                     togglePause();
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                if (!paused && mapScroller != null) {
+                    float step = 140f;
+                    mapScroller.setScrollY(mapScroller.getScrollY() + amountY * step);
+                    mapScroller.updateVisualScroll();
                     return true;
                 }
                 return false;
@@ -370,8 +383,8 @@ public class MapScreen implements Screen {
             float dx = path.to.x - path.from.x;
             float dy = path.to.y - path.from.y;
             float distance = (float) Math.hypot(dx, dy);
-            float start = 32f * path.from.button.getScaleX() + 8f;
-            float end = distance - 32f * path.to.button.getScaleX() - 8f;
+            float start = (path.from.button.getWidth() / 2f) * path.from.button.getScaleX() + 8f;
+            float end = distance - (path.to.button.getWidth() / 2f) * path.to.button.getScaleX() - 8f;
             if (end <= start) continue;
             float angle = MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees;
             Color ink = path.available ? ROUTE_AVAILABLE : path.traversed ? ROUTE_TRAVELED
@@ -460,9 +473,11 @@ public class MapScreen implements Screen {
                 btn.setColor(Color.GRAY);
             }
 
-            btn.setPosition(node.x - 32f, node.y - 32f);
-            btn.setSize(64f, 64f);
-            btn.setOrigin(32f, 32f);
+            float nodeSize = node.type.equals("BOSS") ? 84f : 64f;
+            float halfSize = nodeSize / 2f;
+            btn.setPosition(node.x - halfSize, node.y - halfSize);
+            btn.setSize(nodeSize, nodeSize);
+            btn.setOrigin(halfSize, halfSize);
             btn.setTransform(true);
             NodeVisual visual = new NodeVisual(node, btn,
                     isReachable && !isDone ? createNodeParticles(node.x, node.y) : null);

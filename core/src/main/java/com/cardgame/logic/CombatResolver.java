@@ -49,7 +49,7 @@ public final class CombatResolver {
         if (state.monsterGroup != null) {
             for (com.cardgame.logic.monsters.AbstractMonster m : state.monsterGroup.monsters) {
                 if (m.currentHp > 0) {
-                    boolean wasAttack = "ATTACK".equals(m.intentType);
+                    boolean wasAttack = m.intentType != null && m.intentType.contains("ATTACK");
                     int hpBefore = state.playerHp;
                     int blockBefore = state.playerBlock;
                     

@@ -1,6 +1,7 @@
 package com.cardgame.logic;
 
 import com.cardgame.logic.cards.AbstractCard;
+import com.cardgame.logic.events.CardDrawnEvent;
 import com.cardgame.logic.events.GameEvent;
 import com.cardgame.logic.events.GameOverEvent;
 
@@ -24,6 +25,7 @@ public final class GameState {
     public final List<AbstractCard> hand        = new ArrayList<>();
     public final List<AbstractCard> drawPile    = new ArrayList<>();
     public final List<AbstractCard> discardPile = new ArrayList<>();
+    public final List<AbstractCard> exhaustPile = new ArrayList<>();
 
     // ── Monster state ─────────────────────────────────────────
     public com.cardgame.logic.monsters.MonsterGroup monsterGroup;
@@ -62,6 +64,7 @@ public final class GameState {
         Collections.shuffle(this.drawPile);
         this.hand.clear();
         this.discardPile.clear();
+        this.exhaustPile.clear();
         this.playerStatus.clear();
     }
 
@@ -87,6 +90,23 @@ public final class GameState {
         if (monsterGroup != null && monsterGroup.areMonstersBasicallyDead()) return Optional.of(new GameOverEvent(0));
         if (playerHp  <= 0) return Optional.of(new GameOverEvent(1));
         return Optional.empty();
+    }
+
+    // ── Card drawing ──────────────────────────────────────────
+    public List<GameEvent> drawCards(int count) {
+        List<GameEvent> events = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            if (drawPile.isEmpty()) {
+                if (discardPile.isEmpty()) break;
+                drawPile.addAll(discardPile);
+                discardPile.clear();
+                Collections.shuffle(drawPile);
+            }
+            AbstractCard card = drawPile.remove(0);
+            hand.add(card);
+            events.add(new CardDrawnEvent(card));
+        }
+        return events;
     }
 
     // ── Event queue ───────────────────────────────────────────

@@ -25,6 +25,10 @@ public class RunManager {
     private final List<AbstractCard> deck = new ArrayList<>();
     private final List<AbstractPotion> potions = new ArrayList<>();
 
+    // Base stat upgrades (e.g. from Rest Sites)
+    private int baseAttackBonus = 0;
+    private int baseDefenseBonus = 0;
+
     // Map tracking
     private int currentNodeIndex = 0;
     private int maxNodes = 15;
@@ -75,6 +79,8 @@ public class RunManager {
         this.deck.clear();
         this.deck.addAll(characterCards);
         this.potions.clear();
+        this.baseAttackBonus = 0;
+        this.baseDefenseBonus = 0;
         this.currentNodeIndex = 0;
         this.lastVisitedNodeId = -1;
         this.pathTaken.clear();
@@ -351,11 +357,19 @@ public class RunManager {
     public void addCardToDeck(AbstractCard card) { deck.add(card); }
     public void removeCardFromDeck(AbstractCard card) { deck.remove(card); }
 
-    /** Reserved attack modifier. */
-    public int getTotalAttackBoost() { return 0; }
+    public int getBaseAttackBonus() { return baseAttackBonus; }
+    public void setBaseAttackBonus(int bonus) { this.baseAttackBonus = bonus; }
+    public void addBaseAttackBonus(int amount) { this.baseAttackBonus += amount; }
 
-    /** Reserved defence modifier. */
-    public int getTotalDefenceBoost() { return 0; }
+    public int getBaseDefenseBonus() { return baseDefenseBonus; }
+    public void setBaseDefenseBonus(int bonus) { this.baseDefenseBonus = bonus; }
+    public void addBaseDefenseBonus(int amount) { this.baseDefenseBonus += amount; }
+
+    /** Base attack modifier (applied to cards dealing damage). */
+    public int getTotalAttackBoost() { return baseAttackBonus; }
+
+    /** Base defence modifier (applied to cards gaining block). */
+    public int getTotalDefenceBoost() { return baseDefenseBonus; }
 
     /** Reserved energy modifier. */
     public int getTotalEnergyBoost() { return 0; }

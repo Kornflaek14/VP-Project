@@ -32,6 +32,10 @@ public abstract class AbstractMonster {
         return false;
     }
     
+    public boolean isElite() {
+        return false;
+    }
+    
     public void damage(int amount) {
         if (block > 0) {
             if (amount <= block) {

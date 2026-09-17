@@ -54,7 +54,7 @@ public final class CombatMapOverlay extends Group {
         loadIcon("TREASURE", "treasureIcon.png");
         loadIcon("SHOP", "shopIcon.png");
         loadIcon("REST", "restIcon.png");
-        loadIcon("BOSS", "monster.png");
+        loadIcon("BOSS", "bossIcon.png");
         float highest = 0f;
         for (MapNodeData node : RunManager.getInstance().getMapNodes()) highest = Math.max(highest, node.y);
         mapHeight = highest + 160f;
@@ -118,13 +118,18 @@ public final class CombatMapOverlay extends Group {
             }
         }
         for (MapNodeData node : rm.getMapNodes()) {
+            boolean isBoss = "BOSS".equals(node.type);
+            float discRadius = isBoss ? 42f : 34f;
+            float discDiameter = discRadius * 2f;
+            float iconSize = isBoss ? 62f : 50f;
+
             if (node.id == rm.getLastVisitedNodeId()) batch.setColor(1f, 0.8f, 0.3f, alpha);
             else if (rm.getPathTaken().contains(node.id)) batch.setColor(0.5f, 0.5f, 0.5f, alpha);
             else batch.setColor(0.73f, 0.76f, 0.72f, alpha);
-            batch.draw(nodeDisc, offsetX + node.x - 34f, offsetY + node.y - 34f, 68f, 68f);
+            batch.draw(nodeDisc, offsetX + node.x - discRadius, offsetY + node.y - discRadius, discDiameter, discDiameter);
             batch.setColor(1f, 1f, 1f, alpha);
             CombatUiAssets.drawFitted(batch, icons.getOrDefault(node.type, icons.get("COMBAT")),
-                    offsetX + node.x - 25f, offsetY + node.y - 25f, 50f, 50f);
+                    offsetX + node.x - iconSize / 2f, offsetY + node.y - iconSize / 2f, iconSize, iconSize);
         }
         batch.setPackedColor(previousColor);
     }

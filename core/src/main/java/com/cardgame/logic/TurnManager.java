@@ -110,18 +110,6 @@ public final class TurnManager {
      * If draw pile is empty, shuffle discard pile into draw pile.
      */
     private List<GameEvent> drawCards(GameState state, int count) {
-        List<GameEvent> events = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            if (state.drawPile.isEmpty()) {
-                if (state.discardPile.isEmpty()) break; // truly out of cards
-                state.drawPile.addAll(state.discardPile);
-                state.discardPile.clear();
-                Collections.shuffle(state.drawPile);
-            }
-            AbstractCard card = state.drawPile.remove(0);
-            state.hand.add(card);
-            events.add(new CardDrawnEvent(card));
-        }
-        return events;
+        return state.drawCards(count);
     }
 }

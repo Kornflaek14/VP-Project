@@ -9,30 +9,25 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
-import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.RunManager;
-import com.cardgame.ui.CardActor;
 import com.cardgame.ui.UiTheme;
 import com.cardgame.utils.Constants;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Rest site with four options:
- *   REST   – heal 30% max HP
- *   SMITH  – upgrade one card from deck (+3 damage or +3 block)
- *   REMOVE – remove one card from deck
- *   PROCEED – leave without doing anything
+ * Rest site screen with options:
+ *   REST             – heal 30% max HP
+ *   TRAIN ATTACK     – permanently increase base attack by +1
+ *   FORTIFY DEFENSE  – permanently increase base defense by +1
+ *   PROCEED          – leave without choosing an upgrade
+ *
+ * The player may choose only one option per rest site.
  */
 public class RestScreen implements Screen {
 
@@ -41,14 +36,7 @@ public class RestScreen implements Screen {
     private Texture bgTexture;
     private BitmapFont font;
     private BitmapFont titleFont;
-    private BitmapFont smallFont;
-
-    // Card picker overlay (shared for SMITH and REMOVE modes)
-    private Group cardPickerOverlay;
-    private final List<CardActor> overlayCardActors = new ArrayList<>();
-    private boolean pickMode = false; // true = active overlay
-    private Texture pickerBackdrop;
-    private BitmapFont pickerFont;
+    private BitmapFont subtitleFont;
 
     public RestScreen(CardBattlerGame game) {
         this.game = game;
@@ -71,10 +59,9 @@ public class RestScreen implements Screen {
         }
 
         font = UiTheme.font(16f);
+        subtitleFont = UiTheme.font(18f);
 
-        smallFont = UiTheme.font(13f);
-
-        titleFont = UiTheme.font(34f);
+        titleFont = UiTheme.font(36f);
         titleFont.setColor(Color.ORANGE);
 
         buildUI();
@@ -86,15 +73,21 @@ public class RestScreen implements Screen {
         root.center();
 
         Label title = new Label("REST SITE", new Label.LabelStyle(titleFont, titleFont.getColor()));
-        root.add(title).padBottom(50).colspan(2).row();
+        root.add(title).padBottom(12).colspan(3).row();
 
         RunManager rm = RunManager.getInstance();
+        int curAtk = rm.getBaseAttackBonus();
+        int curDef = rm.getBaseDefenseBonus();
+
+        Label statsLabel = new Label("CURRENT BONUSES:   ATK +" + curAtk + "   |   DEF +" + curDef,
+                new Label.LabelStyle(subtitleFont, new Color(0.9f, 0.88f, 0.82f, 1f)));
+        root.add(statsLabel).padBottom(36).colspan(3).row();
+
         int healAmount = (int)(rm.getMaxHp() * 0.3f);
 
-        TextButton.TextButtonStyle btnStyle = makeBtnStyle(Color.WHITE, Color.YELLOW);
-
         // ── REST ─────────────────────────────────────────────
-        TextButton healBtn = new TextButton("  REST\n(Heal " + healAmount + " HP)", btnStyle);
+        TextButton healBtn = new TextButton("REST\n(Heal " + healAmount + " HP)",
+                makeBtnStyle(new Color(0.45f, 0.9f, 0.55f, 1f), Color.WHITE));
         healBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -103,26 +96,31 @@ public class RestScreen implements Screen {
             }
         });
 
-        // ── SMITH (Upgrade) ──────────────────────────────────
-        TextButton smithBtn = new TextButton("  SMITH\n(Upgrade a card)", makeBtnStyle(new Color(0.4f, 0.9f, 0.4f, 1f), Color.WHITE));
-        smithBtn.addListener(new ChangeListener() {
+        // ── TRAIN ATTACK (+1 ATK) ────────────────────────────
+        TextButton atkBtn = new TextButton("TRAIN ATTACK\n(+1 Base Attack)",
+                makeBtnStyle(new Color(1f, 0.5f, 0.38f, 1f), Color.WHITE));
+        atkBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                openCardPicker(false); // false = upgrade mode
+                rm.addBaseAttackBonus(1);
+                game.setScreen(new MapScreen(game));
             }
         });
 
-        // ── REMOVE ───────────────────────────────────────────
-        TextButton removeBtn = new TextButton("  REMOVE\n(Remove a card)", makeBtnStyle(new Color(0.9f, 0.4f, 0.4f, 1f), Color.WHITE));
-        removeBtn.addListener(new ChangeListener() {
+        // ── FORTIFY DEFENSE (+1 DEF) ─────────────────────────
+        TextButton defBtn = new TextButton("FORTIFY DEFENSE\n(+1 Base Defense)",
+                makeBtnStyle(new Color(0.42f, 0.78f, 1f, 1f), Color.WHITE));
+        defBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                openCardPicker(true); // true = remove mode
+                rm.addBaseDefenseBonus(1);
+                game.setScreen(new MapScreen(game));
             }
         });
 
         // ── PROCEED ──────────────────────────────────────────
-        TextButton leaveBtn = new TextButton("  PROCEED", btnStyle);
+        TextButton leaveBtn = new TextButton("PROCEED\n(Leave Site)",
+                makeBtnStyle(new Color(0.78f, 0.78f, 0.82f, 1f), Color.YELLOW));
         leaveBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -130,119 +128,12 @@ public class RestScreen implements Screen {
             }
         });
 
-        root.add(healBtn).size(220, 90).pad(15);
-        root.add(smithBtn).size(220, 90).pad(15).row();
-        root.add(leaveBtn).size(220, 90).pad(15).colspan(2).row();
+        root.add(healBtn).size(230, 95).pad(14);
+        root.add(atkBtn).size(230, 95).pad(14);
+        root.add(defBtn).size(230, 95).pad(14).row();
+        root.add(leaveBtn).size(230, 60).padTop(18).colspan(3).row();
 
         stage.addActor(root);
-    }
-
-    /**
-     * Opens an overlay showing all deck cards.
-     * @param removeMode true = clicking a card removes it; false = clicking upgrades it
-     */
-    private void openCardPicker(boolean removeMode) {
-        if (pickMode) return;
-        pickMode = true;
-
-        RunManager rm = RunManager.getInstance();
-        List<AbstractCard> deck = rm.getDeck();
-
-        // Dark backdrop
-        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm.setColor(new Color(0f, 0f, 0f, 0.82f));
-        pm.fill();
-        Texture backdropTex = new Texture(pm);
-        pickerBackdrop = backdropTex;
-        pm.dispose();
-
-        cardPickerOverlay = new Group() {
-            @Override
-            public void draw(Batch batch, float parentAlpha) {
-                batch.setColor(1, 1, 1, 0.85f * parentAlpha);
-                batch.draw(backdropTex, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
-                super.draw(batch, parentAlpha);
-            }
-        };
-        cardPickerOverlay.setSize(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
-
-        // Title
-        BitmapFont overlayFont = UiTheme.font(24f);
-        pickerFont = overlayFont;
-        overlayFont.setColor(Color.WHITE);
-        String prompt = removeMode ? "Choose a card to REMOVE from your deck" : "Choose a card to UPGRADE (+3 dmg/blk)";
-        Label promptLabel = new Label(prompt, new Label.LabelStyle(overlayFont, overlayFont.getColor()));
-        promptLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-        promptLabel.setBounds(40, Constants.VIEWPORT_HEIGHT - 80, Constants.VIEWPORT_WIDTH - 80, 50);
-        cardPickerOverlay.addActor(promptLabel);
-
-        // Card grid in a scroll pane
-        Table cardGrid = new Table();
-        cardGrid.top().left().pad(10);
-        int cols = 5;
-        float cardW = Constants.CARD_WIDTH  * 0.8f;
-        float cardH = Constants.CARD_HEIGHT * 0.8f;
-
-        int displayedIndex = 0;
-        for (int i = 0; i < deck.size(); i++) {
-            AbstractCard cd = deck.get(i);
-            if (!removeMode && cd.isUpgraded()) continue; // Cannot upgrade an already upgraded card
-            
-            final AbstractCard selectedCard = cd;
-
-            CardActor ca = new CardActor(cd, new CardActor.OnClickCallback() {
-                @Override
-                public void onClick(CardActor actor) {
-                    if (removeMode) {
-                        rm.removeCardFromDeck(selectedCard);
-                    } else {
-                        rm.removeCardFromDeck(selectedCard);
-                        rm.addCardToDeck(selectedCard.withUpgrade());
-                    }
-                    closeCardPicker();
-                    game.setScreen(new MapScreen(game));
-                }
-            });
-            ca.isUiElement = true;
-            ca.setSize(cardW, cardH);
-            overlayCardActors.add(ca);
-            cardGrid.add(ca).size(cardW, cardH).pad(8);
-            if ((++displayedIndex) % cols == 0) cardGrid.row();
-        }
-
-        ScrollPane.ScrollPaneStyle scrollStyle = new ScrollPane.ScrollPaneStyle();
-        ScrollPane scroll = new ScrollPane(cardGrid, scrollStyle);
-        scroll.setScrollingDisabled(true, false);
-        scroll.setSize(Constants.VIEWPORT_WIDTH - 80, Constants.VIEWPORT_HEIGHT - 160);
-        scroll.setPosition(40, 80);
-        cardPickerOverlay.addActor(scroll);
-
-        // Cancel button
-        TextButton.TextButtonStyle cancelStyle = makeBtnStyle(Color.LIGHT_GRAY, Color.WHITE);
-        TextButton cancelBtn = new TextButton("CANCEL", cancelStyle);
-        cancelBtn.setSize(160, 50);
-        cancelBtn.setPosition(Constants.VIEWPORT_WIDTH / 2f - 80, 20);
-        cancelBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                closeCardPicker();
-            }
-        });
-        cardPickerOverlay.addActor(cancelBtn);
-
-        stage.addActor(cardPickerOverlay);
-    }
-
-    private void closeCardPicker() {
-        if (cardPickerOverlay != null) {
-            cardPickerOverlay.remove();
-            cardPickerOverlay = null;
-        }
-        for (CardActor ca : overlayCardActors) ca.dispose();
-        overlayCardActors.clear();
-        if (pickerBackdrop != null) { pickerBackdrop.dispose(); pickerBackdrop = null; }
-        if (pickerFont != null) { pickerFont.dispose(); pickerFont = null; }
-        pickMode = false;
     }
 
     private TextButton.TextButtonStyle makeBtnStyle(Color color, Color hover) {
@@ -283,11 +174,10 @@ public class RestScreen implements Screen {
 
     @Override
     public void dispose() {
-        closeCardPicker();
         if (stage != null) stage.dispose();
         if (bgTexture != null) bgTexture.dispose();
         if (font != null) font.dispose();
         if (titleFont != null) titleFont.dispose();
-        if (smallFont != null) smallFont.dispose();
+        if (subtitleFont != null) subtitleFont.dispose();
     }
 }
