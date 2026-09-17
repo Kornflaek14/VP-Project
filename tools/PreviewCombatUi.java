@@ -144,7 +144,57 @@ public class PreviewCombatUi extends CardBattlerGame {
             setScreen(new com.cardgame.screens.MapScreen(this));
         }
         if (frames == 185) capture("asylum-map-traveled.png");
-        if (frames == 190) Gdx.app.exit();
+        if (frames == 190) setScreen(new com.cardgame.screens.ShopScreen(this));
+        if (frames == 205) capture("pharmacy-shop.png");
+        if (frames == 206) {
+            com.badlogic.gdx.scenes.scene2d.Stage shopStage =
+                    (com.badlogic.gdx.scenes.scene2d.Stage) field(getScreen(), "stage");
+            shopStage.mouseMoved(520, 290);
+        }
+        if (frames == 209) capture("pharmacy-shop-inspect.png");
+        if (frames == 210) {
+            RunManager run = RunManager.getInstance();
+            int goldBefore = run.getGold();
+            int cardsBefore = run.getDeck().size();
+            com.badlogic.gdx.scenes.scene2d.Stage shopStage =
+                    (com.badlogic.gdx.scenes.scene2d.Stage) field(getScreen(), "stage");
+            com.badlogic.gdx.scenes.scene2d.ui.TextButton buy = shopStage.getRoot().findActor("card-offer-0");
+            buy.fire(new com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent());
+            if (run.getDeck().size() != cardsBefore + 1 || run.getGold() >= goldBefore) {
+                throw new IllegalStateException("Shop purchase failed");
+            }
+            int goldAfter = run.getGold();
+            buy.fire(new com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent());
+            if (run.getDeck().size() != cardsBefore + 1 || run.getGold() != goldAfter) {
+                throw new IllegalStateException("Sold offer charged twice");
+            }
+        }
+        if (frames == 220) capture("pharmacy-shop-purchased.png");
+        if (frames == 225) {
+            RunManager run = RunManager.getInstance();
+            run.addGold(300);
+            run.getPotions().clear();
+            for (int i = 0; i < 3; i++) run.addPotion(new com.cardgame.logic.potions.ManaPotion());
+            setScreen(new com.cardgame.screens.ShopScreen(this));
+        }
+        if (frames == 240) capture("pharmacy-shop-full.png");
+        if (frames == 245) setScreen(new com.cardgame.screens.RewardScreen(this));
+        if (frames == 260) capture("rewards.png");
+        if (frames == 262) {
+            com.badlogic.gdx.scenes.scene2d.Stage rewardStage =
+                    (com.badlogic.gdx.scenes.scene2d.Stage) field(getScreen(), "stage");
+            com.badlogic.gdx.scenes.scene2d.ui.TextButton claim = rewardStage.getRoot().findActor("claim-gold");
+            int before = RunManager.getInstance().getGold();
+            claim.fire(new com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent());
+            int after = RunManager.getInstance().getGold();
+            claim.fire(new com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent());
+            if (after <= before || RunManager.getInstance().getGold() != after) {
+                throw new IllegalStateException("Gold reward did not claim exactly once");
+            }
+        }
+        if (frames == 265) setScreen(new com.cardgame.screens.RestScreen(this));
+        if (frames == 280) capture("rest-site.png");
+        if (frames == 285) Gdx.app.exit();
     }
 
     private void enemyPose(String filename, String stateName, float time) {

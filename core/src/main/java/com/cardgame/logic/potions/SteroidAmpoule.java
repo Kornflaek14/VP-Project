@@ -5,7 +5,7 @@ import com.cardgame.data.StatusEffect;
 
 public class SteroidAmpoule extends AbstractPotion {
     public SteroidAmpoule() {
-        super("steroid_ampoule", "Steroid Ampoule", "Gain 2 Strength.", "IMAGES/play/potion3.png");
+        super("steroid_ampoule", "Strength Potion", "Gain 2 Strength for this combat.", "IMAGES/PotionImages/StrengthPotion.png");
     }
     @Override
     public boolean isTargeted() { return false; }

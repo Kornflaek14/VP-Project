@@ -35,8 +35,8 @@ public final class CombatUiAssets implements Disposable {
         try {
             energy = load("energy-orb", 1, 256)[0];
             endTurn = load("end-turn", 1, 560)[0];
-            heart = load("heart", 1, 128)[0];
-            gold = load("gold", 1, 128)[0];
+            heart = GameArt.icon(GameArt.HEART);
+            gold = GameArt.icon(GameArt.GOLD);
             potionSlot = load("potion-slot", 1, 128)[0];
             TextureRegion[] navigation = load("navigation", 2, 128);
             deck = navigation[0];

@@ -12,11 +12,13 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
@@ -47,6 +49,7 @@ import com.cardgame.ui.PileViewerOverlay;
 import com.cardgame.ui.SlashAnimationActor;
 import com.cardgame.ui.TargetingArrow;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -69,6 +72,7 @@ public class BattleScreen implements Screen {
     private CombatMapOverlay mapPreview;
     private Animation<TextureRegion> slashAnimation;
     private Sound slashSound;
+    private Sound uiSound;
     private Group effectsLayer;
     private float effectsRemaining;
     private boolean battleEnding;
@@ -189,7 +193,8 @@ public class BattleScreen implements Screen {
         loadCombatIcons();
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png"));
+            bgTexture = new Texture(Gdx.files.internal(GameArt.BATTLE));
+            bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {}
 
         gameState = new GameState();
@@ -289,6 +294,7 @@ public class BattleScreen implements Screen {
         }
         try {
             slashSound = Gdx.audio.newSound(Gdx.files.internal("audio/slash.wav"));
+            uiSound = Gdx.audio.newSound(Gdx.files.internal("audio/slash.wav"));
         } catch (Exception e) {
             Gdx.app.log("BattleScreen", "Slash sound unavailable; visual effects remain enabled.");
         }
@@ -517,6 +523,7 @@ public class BattleScreen implements Screen {
             @Override
             public void onDragStart(CardActor actor) {
                 if (paused || battleEnding || !gameState.isPlayerTurn()) return;
+                if (uiSound != null) uiSound.play(0.12f);
                 // If it's an attack, start targeting
                 if (actor.getCard().cardType() == com.cardgame.data.CardType.ATTACK) {
                     targetingArrow.start.set(actor.getX() + actor.getWidth() / 2f, actor.getY() + actor.getHeight() / 2f);
@@ -546,6 +553,7 @@ public class BattleScreen implements Screen {
                     return;
                 }
                 targetingArrow.setVisible(false);
+                if (uiSound != null) uiSound.play(0.16f);
                 
                 // Play zone threshold
                 if (y > com.cardgame.utils.Constants.VIEWPORT_HEIGHT * 0.35f) {
@@ -572,6 +580,7 @@ public class BattleScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (paused || battleEnding) return;
+                if (uiSound != null) uiSound.play(0.18f);
                 if (gameState.isPlayerTurn()) {
                     animateEnemyTurn();
                     List<GameEvent> events = turnManager.endPlayerTurn(gameState);
@@ -586,6 +595,7 @@ public class BattleScreen implements Screen {
             @Override
             public void onPotionClicked(int slotIndex) {
                 if (paused || battleEnding) return;
+                if (uiSound != null) uiSound.play(0.14f);
                 if (gameState.isPlayerTurn()) {
                     int previousHp = gameState.playerHp;
                     int previousBlock = gameState.playerBlock;
@@ -660,7 +670,10 @@ public class BattleScreen implements Screen {
             AbstractMonster hitTarget = e instanceof DamageDealtEvent damage && damage.targetMonster() != null
                     ? damage.targetMonster() : target;
             processAnimationEvent(e, hitTarget);
-            if (e instanceof CardPlayedEvent played) playedCard = played.card();
+            if (e instanceof CardPlayedEvent played) {
+                playedCard = played.card();
+                spawnCardEffectCue(played.card());
+            }
             if (e instanceof com.cardgame.logic.events.GameOverEvent) {
                 com.cardgame.logic.events.GameOverEvent goe = (com.cardgame.logic.events.GameOverEvent) e;
                 battleEnding = true;
@@ -707,6 +720,33 @@ public class BattleScreen implements Screen {
                 }
             }
         }
+    }
+
+    private void spawnCardEffectCue(AbstractCard card) {
+        if (card == null || effectsLayer == null) return;
+        String cue = null;
+        String name = card.name().toLowerCase();
+        if (name.contains("spiral")) cue = "TOP CARD  →  EXHAUST";
+        else if (name.contains("parasite")) cue = "DISCARD  →  DRAW TOP";
+        else if (name.contains("scream")) cue = "DRAW 1  →  PLACE ON TOP  →  EXHAUST";
+        else if (name.contains("shard") || name.contains("pills")) cue = "DRAW 1";
+        else if (name.contains("brick")) cue = "RANDOM HAND CARD  →  EXHAUST";
+        else if (name.contains("leap")) cue = "TRAUMA  →  DRAW PILE";
+        if (cue == null) return;
+        BitmapFont cueFont = UiTheme.font(18f);
+        cueFont.setColor(Color.valueOf("f3d49a"));
+        Label cueLabel = new Label(cue, new Label.LabelStyle(cueFont, cueFont.getColor()));
+        cueLabel.setSize(700f, 34f);
+        cueLabel.setPosition(Constants.VIEWPORT_WIDTH / 2f - 350f, Constants.VIEWPORT_HEIGHT - 175f);
+        cueLabel.getColor().a = 0f;
+        cueLabel.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn(0.12f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(0.55f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeOut(0.25f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.run(cueFont::dispose),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor()));
+        cueLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        effectsLayer.addActor(cueLabel);
     }
 
     private void triggerImpactShake(boolean heavy) {
@@ -823,7 +863,7 @@ public class BattleScreen implements Screen {
         // ── Background ────────────────────────────────────────
         if (bgTexture != null) {
             batch.setColor(1, 1, 1, 1);
-            batch.draw(bgTexture, shakeOffsetX, shakeOffsetY,
+            GameArt.cover(batch, bgTexture, shakeOffsetX, shakeOffsetY,
                     Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
         }
 
@@ -968,6 +1008,7 @@ public class BattleScreen implements Screen {
         if (slashSheetTex != null) { slashSheetTex.dispose(); slashSheetTex = null; }
         if (combatUi != null) { combatUi.dispose(); combatUi = null; }
         if (slashSound != null) { slashSound.dispose(); slashSound = null; }
+        if (uiSound != null) { uiSound.dispose(); uiSound = null; }
         slashAnimation = null;
         impactTargets.clear();
         if (monsters != null) monsters.disposeAll();

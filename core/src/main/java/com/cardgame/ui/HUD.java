@@ -412,7 +412,7 @@ public class HUD extends Group {
         int def = RunManager.getInstance().getBaseDefenseBonus();
         if (atk <= 0 && def <= 0) return;
 
-        float curX = PLAYER_X + HP_BAR_WIDTH / 2f + 12f;
+        float curX = PLAYER_X + HP_BAR_WIDTH / 2f + 38f;
         float badgeY = playerBarY - 2f;
         float badgeH = 18f;
         float iconSize = 16f;

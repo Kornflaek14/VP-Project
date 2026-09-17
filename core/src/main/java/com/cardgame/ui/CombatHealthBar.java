@@ -82,6 +82,8 @@ public final class CombatHealthBar implements Disposable {
 
             drawNumber(batch, font, Math.max(0, hp) + "/" + Math.max(0, maxHp),
                     x, y + (HEIGHT + font.getCapHeight()) / 2f, WIDTH, alpha);
+            batch.setColor(1f, 1f, 1f, alpha);
+            CombatUiAssets.drawFitted(batch, GameArt.icon(GameArt.HEART), x + WIDTH + 7f, y - 3f, 21f, 21f);
             if (shielded) {
                 float badgeWidth = 32f, badgeHeight = 36f;
                 float badgeX = x - badgeWidth / 2f + 2f;

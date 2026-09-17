@@ -348,8 +348,26 @@ public class RunManager {
     public int getGold() { return gold; }
     public void addGold(int amount) { this.gold += amount; }
     public boolean spendGold(int amount) {
+        if (amount < 0) return false;
         if (gold >= amount) { gold -= amount; return true; }
         return false;
+    }
+
+    /** Complete a purchase only when it fits the inventory and the player can pay. */
+    public boolean buyPotion(AbstractPotion potion, int price) {
+        if (potion == null || price < 0 || gold < price || potions.size() >= 3) return false;
+        AbstractPotion purchased = potion.makeCopy();
+        gold -= price;
+        potions.add(purchased);
+        return true;
+    }
+
+    public boolean buyCard(AbstractCard card, int price) {
+        if (card == null || price < 0 || gold < price) return false;
+        AbstractCard purchased = card.isUpgraded() ? card.withUpgrade() : card.makeCopy();
+        gold -= price;
+        deck.add(purchased);
+        return true;
     }
 
     // ── Deck ──────────────────────────────────────────────────

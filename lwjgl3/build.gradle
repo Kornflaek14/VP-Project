@@ -18,3 +18,65 @@ run {
 
 // Include the shared assets in the jar
 sourceSets.main.resources.srcDirs = [rootProject.file('assets')]
+
+// jpackage produces a native launcher plus a private Java runtime. Players do not
+// need Java or Gradle installed; distribute the entire Locura folder together.
+def windowsPackageInput = layout.buildDirectory.dir('windows-package-input')
+def windowsPackageDestination = layout.buildDirectory.dir('windows')
+def windowsAppImage = layout.buildDirectory.dir('windows/Locura')
+def packagingJdk = file(System.getProperty('java.home'))
+
+tasks.register('prepareWindowsPackage', Sync) {
+    dependsOn tasks.named('jar')
+    from tasks.named('jar')
+    from configurations.runtimeClasspath
+    into windowsPackageInput
+}
+
+tasks.register('packageWindows', Exec) {
+    group = 'distribution'
+    description = 'Build Locura.exe with bundled assets, libraries and a Java runtime (Windows only).'
+    dependsOn tasks.named('prepareWindowsPackage')
+    inputs.dir(windowsPackageInput)
+    inputs.property('packagingJdk', packagingJdk.absolutePath)
+    inputs.property('javaVersion', System.getProperty('java.version'))
+    inputs.property('mainClass', application.mainClass)
+    outputs.dir(windowsAppImage)
+
+    doFirst {
+        if (!System.getProperty('os.name').toLowerCase(java.util.Locale.ROOT).contains('windows')) {
+            throw new GradleException('Build the Windows executable on Windows with a JDK 17 or newer.')
+        }
+        def jpackage = new File(packagingJdk, 'bin/jpackage.exe')
+        if (!jpackage.isFile()) {
+            throw new GradleException('jpackage.exe was not found. Set JAVA_HOME to a full JDK 17 or newer.')
+        }
+
+        // jpackage requires a fresh output folder. Restrict cleanup to this task's image.
+        def imagePath = windowsAppImage.get().asFile.canonicalFile.toPath()
+        def buildPath = layout.buildDirectory.get().asFile.canonicalFile.toPath()
+        if (!imagePath.startsWith(buildPath) || imagePath == buildPath) {
+            throw new GradleException('Refusing to replace an application image outside the build directory.')
+        }
+        delete imagePath.toFile()
+        commandLine jpackage.absolutePath,
+            '--type', 'app-image',
+            '--name', 'Locura',
+            '--description', 'Locura roguelike card battler',
+            '--input', windowsPackageInput.get().asFile.absolutePath,
+            '--dest', windowsPackageDestination.get().asFile.absolutePath,
+            '--main-jar', tasks.named('jar').get().archiveFileName.get(),
+            '--main-class', application.mainClass.get()
+    }
+}
+
+tasks.register('packageWindowsZip', Zip) {
+    group = 'distribution'
+    description = 'Create a portable Windows ZIP containing Locura.exe and its bundled runtime.'
+    dependsOn tasks.named('packageWindows')
+    from(windowsAppImage) {
+        into 'Locura'
+    }
+    archiveFileName = 'Locura-windows.zip'
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+}
