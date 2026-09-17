@@ -1,6 +1,5 @@
 package com.cardgame.ui;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -53,7 +52,7 @@ public final class CombatMapOverlay extends Group {
         loadIcon("ELITE", "eliteIcon.png");
         loadIcon("TREASURE", "treasureIcon.png");
         loadIcon("SHOP", "shopIcon.png");
-        loadIcon("REST", "restIcon.png");
+        loadIcon("REST", "rest.png");
         loadIcon("BOSS", "bossIcon.png");
         float highest = 0f;
         for (MapNodeData node : RunManager.getInstance().getMapNodes()) highest = Math.max(highest, node.y);
@@ -81,9 +80,7 @@ public final class CombatMapOverlay extends Group {
     }
 
     private void loadIcon(String type, String filename) {
-        Texture texture = new Texture(Gdx.files.internal("IMAGES/play/" + filename));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        icons.put(type, new TextureRegion(texture));
+        icons.put(type, GameArt.icon("IMAGES/play/" + filename));
     }
 
     public void show() {
@@ -145,7 +142,6 @@ public final class CombatMapOverlay extends Group {
         font.dispose();
         lineTexture.dispose();
         nodeDisc.dispose();
-        for (TextureRegion icon : icons.values()) icon.getTexture().dispose();
         icons.clear();
     }
 }

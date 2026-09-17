@@ -103,7 +103,7 @@ public class CardBattlerGame extends Game {
     public List<CharacterData> getAllCharacters() { return allCharacters; }
     public List<MonsterData>   getAllMonsters()   { return allMonsters;   }
     public List<AbstractPotion> getAllPotions() {
-        return java.util.Arrays.asList(new AdrenalineSyringe(), new VialOfAcid(), new SteroidAmpoule());
+        return java.util.Arrays.asList(new AdrenalineSyringe(), new SteroidAmpoule(), new ManaPotion());
     }
 
     /** Get cards for a specific character. */

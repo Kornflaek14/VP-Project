@@ -38,6 +38,7 @@ import com.cardgame.logic.RunManager;
 import com.cardgame.logic.RunManager.MapNodeData;
 import com.cardgame.ui.PauseOverlay;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class MapScreen implements Screen {
     private Stage uiStage;
     private Texture bgTexture;
     
-    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex;
+    private Texture combatTex, eliteTex, treasureTex, shopTex, bossTex;
     
     private Group mapContainer;
     private ScrollPane mapScroller;
@@ -129,7 +130,6 @@ public class MapScreen implements Screen {
         try { eliteTex = new Texture(Gdx.files.internal("IMAGES/play/eliteIcon.png")); } catch(Exception e) { eliteTex = combatTex; }
         try { treasureTex = new Texture(Gdx.files.internal("IMAGES/play/treasureIcon.png")); } catch(Exception e) { treasureTex = combatTex; }
         try { shopTex = new Texture(Gdx.files.internal("IMAGES/play/shopIcon.png")); } catch(Exception e) { shopTex = combatTex; }
-        try { restTex = new Texture(Gdx.files.internal("IMAGES/play/restIcon.png")); } catch(Exception e) { restTex = combatTex; }
         try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/bossIcon.png")); } catch(Exception e) { bossTex = combatTex; }
 
         createGlowTexture();
@@ -276,8 +276,10 @@ public class MapScreen implements Screen {
             }
         });
 
-        topBar.add(hpLabel).padRight(40);
-        topBar.add(goldLabel).padRight(40);
+        topBar.add(GameArt.image(GameArt.HEART)).size(30f).padRight(10f);
+        topBar.add(hpLabel).padRight(32);
+        topBar.add(GameArt.image(GameArt.GOLD)).size(30f).padRight(10f);
+        topBar.add(goldLabel).padRight(32);
         topBar.add(floorLabel).expandX().left();
         topBar.add(deckBtn).height(44f);
 
@@ -454,12 +456,12 @@ public class MapScreen implements Screen {
             if (node.type.equals("ELITE")) tex = eliteTex;
             else if (node.type.equals("TREASURE")) tex = treasureTex;
             else if (node.type.equals("SHOP")) tex = shopTex;
-            else if (node.type.equals("REST")) tex = restTex;
             else if (node.type.equals("BOSS")) tex = bossTex;
 
             ImageButton.ImageButtonStyle imgStyle = new ImageButton.ImageButtonStyle();
             if (tex != null) {
-                imgStyle.imageUp = new TextureRegionDrawable(new TextureRegion(tex));
+                imgStyle.imageUp = new TextureRegionDrawable(node.type.equals("REST")
+                        ? GameArt.icon(GameArt.REST) : new TextureRegion(tex));
             }
             ImageButton btn = new ImageButton(imgStyle);
 
@@ -468,7 +470,7 @@ public class MapScreen implements Screen {
             } else if (isDone) {
                 btn.setColor(Color.DARK_GRAY);
             } else if (isReachable) {
-                btn.setColor(Color.GREEN);
+                btn.setColor(Color.WHITE);
             } else {
                 btn.setColor(Color.GRAY);
             }
@@ -589,7 +591,6 @@ public class MapScreen implements Screen {
         icons.add(eliteTex);
         icons.add(treasureTex);
         icons.add(shopTex);
-        icons.add(restTex);
         icons.add(bossTex);
         for (Texture icon : icons) {
             if (icon != null) icon.dispose();

@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 
@@ -94,6 +95,7 @@ public class TreasureScreen implements Screen {
         });
 
         root.add(openBtn).size(200, 60).padBottom(20).row();
+        root.add(GameArt.image(GameArt.GOLD)).size(38f).padBottom(12f).row();
         root.add(rewardLabel).padBottom(20).row();
         root.add(leaveBtn).size(200, 60).row();
 

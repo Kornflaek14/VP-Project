@@ -28,7 +28,7 @@ import com.cardgame.logic.monsters.MaskedPatient;
 import com.cardgame.logic.monsters.MonsterGroup;
 import com.cardgame.logic.potions.AdrenalineSyringe;
 import com.cardgame.logic.potions.SteroidAmpoule;
-import com.cardgame.logic.potions.VialOfAcid;
+import com.cardgame.logic.potions.ManaPotion;
 import com.cardgame.logic.rooms.BossRoom;
 import com.cardgame.logic.rooms.EliteRoom;
 import com.cardgame.logic.rooms.MonsterRoom;
@@ -222,9 +222,9 @@ public class DevModeOverlay extends Group {
             RunManager.getInstance().ensureRunStarted(game);
             RunManager.getInstance().getPotions().clear();
             RunManager.getInstance().addPotion(new AdrenalineSyringe());
-            RunManager.getInstance().addPotion(new VialOfAcid());
+            RunManager.getInstance().addPotion(new ManaPotion());
             RunManager.getInstance().addPotion(new SteroidAmpoule());
-            notifyStatus("Added Adrenaline Syringe, Vial of Acid & Steroid Ampoule!");
+            notifyStatus("Refilled Block, Mana and Strength potions.");
         });
         addToolButton(colCheats, "Raise max health by 20", actionBtnStyle, () -> {
             RunManager.getInstance().ensureRunStarted(game);
@@ -283,6 +283,7 @@ public class DevModeOverlay extends Group {
 
     private void addNavButton(Table table, String text, TextButton.TextButtonStyle style, Runnable action) {
         TextButton btn = new TextButton(text, style);
+        if (text.equals("Rest site")) addButtonIcon(btn, GameArt.REST);
         btn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -296,6 +297,8 @@ public class DevModeOverlay extends Group {
 
     private void addToolButton(Table table, String text, TextButton.TextButtonStyle style, Runnable action) {
         TextButton btn = new TextButton(text, style);
+        if (text.contains("health")) addButtonIcon(btn, GameArt.HEART);
+        else if (text.contains("gold")) addButtonIcon(btn, GameArt.GOLD);
         btn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -308,6 +311,12 @@ public class DevModeOverlay extends Group {
 
     private void notifyStatus(String msg) {
         statusLabel.setText(msg);
+    }
+
+    private void addButtonIcon(TextButton button, String path) {
+        button.clearChildren();
+        button.add(GameArt.image(path)).size(23f).padRight(10f);
+        button.add(button.getLabel()).expandX().fillX();
     }
 
     private void styleColumn(Table table) {

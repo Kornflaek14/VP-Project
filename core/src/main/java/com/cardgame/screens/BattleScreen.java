@@ -49,6 +49,7 @@ import com.cardgame.ui.PileViewerOverlay;
 import com.cardgame.ui.SlashAnimationActor;
 import com.cardgame.ui.TargetingArrow;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -192,7 +193,8 @@ public class BattleScreen implements Screen {
         loadCombatIcons();
 
         try {
-            bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png"));
+            bgTexture = new Texture(Gdx.files.internal(GameArt.BATTLE));
+            bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {}
 
         gameState = new GameState();
@@ -861,7 +863,7 @@ public class BattleScreen implements Screen {
         // ── Background ────────────────────────────────────────
         if (bgTexture != null) {
             batch.setColor(1, 1, 1, 1);
-            batch.draw(bgTexture, shakeOffsetX, shakeOffsetY,
+            GameArt.cover(batch, bgTexture, shakeOffsetX, shakeOffsetY,
                     Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
         }
 

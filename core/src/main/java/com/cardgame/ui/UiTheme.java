@@ -79,6 +79,7 @@ public final class UiTheme {
     }
 
     public static void dispose() {
+        GameArt.dispose();
         if (fontAtlas != null) { fontAtlas.dispose(); fontAtlas = null; }
         if (pixel != null) { pixel.dispose(); pixel = null; }
     }

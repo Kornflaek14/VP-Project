@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.cardgame.CardBattlerGame;
 import com.cardgame.logic.RunManager;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 /**
@@ -73,6 +74,7 @@ public class RestScreen implements Screen {
         root.center();
 
         Label title = new Label("REST SITE", new Label.LabelStyle(titleFont, titleFont.getColor()));
+        root.add(GameArt.image(GameArt.REST)).size(60f).padBottom(18f).colspan(3).row();
         root.add(title).padBottom(12).colspan(3).row();
 
         RunManager rm = RunManager.getInstance();
@@ -88,6 +90,9 @@ public class RestScreen implements Screen {
         // ── REST ─────────────────────────────────────────────
         TextButton healBtn = new TextButton("REST\n(Heal " + healAmount + " HP)",
                 makeBtnStyle(new Color(0.45f, 0.9f, 0.55f, 1f), Color.WHITE));
+        healBtn.clearChildren();
+        healBtn.add(GameArt.image(GameArt.HEART)).size(30f).padRight(12f);
+        healBtn.add(healBtn.getLabel());
         healBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {

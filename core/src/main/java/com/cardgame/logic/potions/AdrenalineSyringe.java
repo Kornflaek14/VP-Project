@@ -4,7 +4,7 @@ import com.cardgame.logic.monsters.AbstractMonster;
 
 public class AdrenalineSyringe extends AbstractPotion {
     public AdrenalineSyringe() {
-        super("adrenaline_syringe", "Adrenaline Syringe", "Gain 12 Block.", "IMAGES/play/potion1.png");
+        super("adrenaline_syringe", "Block Potion", "Gain 12 Block this turn.", "IMAGES/PotionImages/BlockPotion.png");
     }
     @Override
     public boolean isTargeted() { return false; }

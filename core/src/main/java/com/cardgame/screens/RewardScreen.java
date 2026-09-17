@@ -20,6 +20,7 @@ import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.logic.potions.AbstractPotion;
 import com.cardgame.ui.CardActor;
 import com.cardgame.ui.UiTheme;
+import com.cardgame.ui.GameArt;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class RewardScreen implements Screen {
     private Stage stage;
     private Texture bgTexture;
     private BitmapFont font;
+    private final List<CardActor> cardActors = new ArrayList<>();
     
     private int goldReward;
     private AbstractPotion potionReward;
@@ -74,7 +76,7 @@ public class RewardScreen implements Screen {
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
-        try { bgTexture = new Texture(Gdx.files.internal("IMAGES/Backgrounds/battle1.png")); } catch (Exception e) {}
+        try { bgTexture = new Texture(Gdx.files.internal(GameArt.BATTLE)); } catch (Exception e) {}
         
         font = UiTheme.font(20f);
         
@@ -124,19 +126,27 @@ public class RewardScreen implements Screen {
         
         if (!goldClaimed) {
             TextButton goldBtn = new TextButton(goldReward + " Gold", btnStyle);
+            goldBtn.setName("claim-gold");
+            goldBtn.clearChildren();
+            goldBtn.add(GameArt.image(GameArt.GOLD)).size(38f).padRight(18f);
+            goldBtn.add(goldBtn.getLabel());
             goldBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
+                    if (goldClaimed) return;
                     RunManager.getInstance().addGold(goldReward);
                     goldClaimed = true;
                     refreshRewardsTable(btnStyle);
                 }
             });
-            rewardsTable.add(goldBtn).pad(10).row();
+            rewardsTable.add(goldBtn).minWidth(330f).height(66f).pad(10).row();
         }
         
         if (potionReward != null && !potionClaimed) {
             TextButton potBtn = new TextButton("Potion: " + potionReward.name, btnStyle);
+            potBtn.clearChildren();
+            potBtn.add(GameArt.image(potionReward.imagePath)).size(36f).padRight(16f);
+            potBtn.add(potBtn.getLabel());
             potBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
@@ -176,6 +186,7 @@ public class RewardScreen implements Screen {
                 }
             });
             ca.isUiElement = true;
+            cardActors.add(ca);
             // We need to set a reasonable size since CardActor relies on layout
             ca.setSize(180f, 250f);
             cardsTable.add(ca).size(180f, 250f).pad(20);
@@ -204,7 +215,7 @@ public class RewardScreen implements Screen {
         if (bgTexture != null) {
             stage.getBatch().begin();
             stage.getBatch().setColor(0.28f, 0.28f, 0.32f, 1f);
-            stage.getBatch().draw(bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
+            GameArt.cover(stage.getBatch(), bgTexture, 0, 0, Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
             stage.getBatch().setColor(Color.WHITE);
             stage.getBatch().end();
         }
@@ -212,13 +223,6 @@ public class RewardScreen implements Screen {
         stage.act(delta);
         stage.draw();
         
-        if (cardClaimed) {
-            cardsTable.clearChildren();
-            // Nasty hack to clean up UI state inline
-            cardClaimed = false;
-            cardRewards.clear(); 
-            // the button is already hidden by refresh loop logic mostly
-        }
     }
 
     @Override public void resize(int width, int height) { stage.getViewport().update(width, height, true); }
@@ -230,5 +234,7 @@ public class RewardScreen implements Screen {
         if (stage != null) stage.dispose();
         if (bgTexture != null) bgTexture.dispose();
         if (font != null) font.dispose();
+        for (CardActor actor : cardActors) actor.dispose();
+        cardActors.clear();
     }
 }
