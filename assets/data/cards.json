@@ -40,7 +40,7 @@
         "damage": 6,
         "defence": 0,
         "description": "Deal 6 damage. Add a copy of this card to your discard pile.",
-        "image": "IMAGES/cards/Ironclad/Anger.png",
+        "image": "cards/Glare.png",
         "cardType": "ATTACK"
     },
     {
@@ -51,7 +51,7 @@
         "damage": 0,
         "defence": 5,
         "description": "Gain 5 Sanity. Upgrade a card in your hand for the rest of combat.",
-        "image": "IMAGES/cards/Ironclad/Armaments.png",
+        "image": "cards/Focus.png",
         "cardType": "SKILL"
     },
     {
@@ -62,7 +62,7 @@
         "damage": 0,
         "defence": 0,
         "description": "Deal damage equal to your current Sanity.",
-        "image": "IMAGES/cards/Ironclad/BodySlam.png",
+        "image": "cards/Shadow.png",
         "cardType": "ATTACK"
     },
     {
@@ -73,7 +73,7 @@
         "damage": 14,
         "defence": 0,
         "description": "Playable only if every card in your hand is an Attack. Deal 14 damage.",
-        "image": "IMAGES/cards/Ironclad/Clash.png",
+        "image": "cards/Shatter.png",
         "cardType": "ATTACK"
     },
     {
@@ -84,7 +84,7 @@
         "damage": 8,
         "defence": 0,
         "description": "Deal 8 damage to all enemies.",
-        "image": "IMAGES/cards/Ironclad/Cleave.png",
+        "image": "cards/Thrash.png",
         "cardType": "ATTACK"
     },
     {
@@ -95,7 +95,7 @@
         "damage": 12,
         "defence": 0,
         "description": "Deal 12 damage; apply 2 Despair.",
-        "image": "IMAGES/cards/Ironclad/Clothesline.png",
+        "image": "cards/Inkblot.png",
         "cardType": "ATTACK"
     },
     {
@@ -106,7 +106,7 @@
         "damage": 0,
         "defence": 0,
         "description": "Gain 2 Mania; lose 2 Mania at the end of the turn.",
-        "image": "IMAGES/cards/Ironclad/Flex.png",
+        "image": "cards/Syringe.png",
         "cardType": "SKILL"
     },
     {
@@ -117,7 +117,7 @@
         "damage": 0,
         "defence": 0,
         "description": "Play the top card of your draw pile and Exhaust it.",
-        "image": "IMAGES/cards/Ironclad/Havoc.png",
+        "image": "cards/Spiral.png",
         "cardType": "SKILL"
     },
     {
@@ -128,7 +128,7 @@
         "damage": 9,
         "defence": 0,
         "description": "Deal 9 damage. Put a card from your discard pile on top of your draw pile.",
-        "image": "IMAGES/cards/Ironclad/Headbutt.png",
+        "image": "cards/Parasite.png",
         "cardType": "ATTACK"
     },
     {
@@ -139,7 +139,7 @@
         "damage": 14,
         "defence": 0,
         "description": "Deal 14 damage. Mania affects this card 3 times instead of once.",
-        "image": "IMAGES/cards/Ironclad/HeavyBlade.png",
+        "image": "cards/Nail.png",
         "cardType": "ATTACK"
     },
     {
@@ -150,7 +150,7 @@
         "damage": 5,
         "defence": 5,
         "description": "Gain 5 Sanity and deal 5 damage.",
-        "image": "IMAGES/cards/Ironclad/IronWave.png",
+        "image": "cards/Crutch.png",
         "cardType": "ATTACK"
     },
     {
@@ -161,7 +161,7 @@
         "damage": 6,
         "defence": 0,
         "description": "Deal 6 damage, plus 2 for each card containing Strike in your deck.",
-        "image": "IMAGES/cards/Ironclad/PerfectedStrike.png",
+        "image": "cards/Delusion.png",
         "cardType": "ATTACK"
     },
     {
@@ -172,7 +172,7 @@
         "damage": 9,
         "defence": 0,
         "description": "Deal 9 damage and draw 1 card.",
-        "image": "IMAGES/cards/Ironclad/PommelStrike.png",
+        "image": "cards/Shard.png",
         "cardType": "ATTACK"
     },
     {
@@ -183,7 +183,7 @@
         "damage": 0,
         "defence": 8,
         "description": "Gain 8 Sanity and draw 1 card.",
-        "image": "IMAGES/cards/Ironclad/ShrugItOff.png",
+        "image": "cards/Pills.png",
         "cardType": "SKILL"
     },
     {
@@ -194,7 +194,7 @@
         "damage": 3,
         "defence": 0,
         "description": "Deal 3 damage to a random enemy 3 times.",
-        "image": "IMAGES/cards/Ironclad/SwordBoomerang.png",
+        "image": "cards/Flail.png",
         "cardType": "ATTACK"
     },
     {
@@ -205,7 +205,7 @@
         "damage": 4,
         "defence": 0,
         "description": "Deal 4 damage to all enemies; apply 1 Paranoid.",
-        "image": "IMAGES/cards/Ironclad/Thunderclap.png",
+        "image": "cards/Spike.png",
         "cardType": "ATTACK"
     },
     {
@@ -216,7 +216,7 @@
         "damage": 0,
         "defence": 7,
         "description": "Gain 7 Sanity; Exhaust a random card in your hand.",
-        "image": "IMAGES/cards/Ironclad/TrueGrit.png",
+        "image": "cards/Brick.png",
         "cardType": "SKILL"
     },
     {
@@ -227,7 +227,7 @@
         "damage": 5,
         "defence": 0,
         "description": "Deal 5 damage twice.",
-        "image": "IMAGES/cards/Ironclad/TwinStrike.png",
+        "image": "cards/Mirror.png",
         "cardType": "ATTACK"
     },
     {
@@ -238,7 +238,7 @@
         "damage": 0,
         "defence": 0,
         "description": "Draw 1 card, then place a card from your hand on top of your draw pile. Exhaust.",
-        "image": "IMAGES/cards/Ironclad/Warcry.png",
+        "image": "cards/Scream.png",
         "cardType": "SKILL"
     },
     {
@@ -249,7 +249,7 @@
         "damage": 12,
         "defence": 0,
         "description": "Deal 12 damage; shuffle a Trauma into your draw pile.",
-        "image": "IMAGES/cards/Ironclad/WildStrike.png",
+        "image": "cards/Leap.png",
         "cardType": "ATTACK"
     }
 ]

@@ -50,7 +50,7 @@ public class PreviewCombatUi extends CardBattlerGame {
 
     @Override public void create() {
         RunManager run = RunManager.getInstance();
-        run.startNewRun(new CharacterData("Ironclad", "IMAGES/play/character.png", "", "", 3, 80, 99, "", ""),
+        run.startNewRun(new CharacterData("The Patient", "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png", "", "", 3, 80, 99, "", ""),
                 getAllCards().subList(0, 10));
         run.addPotion(new AdrenalineSyringe());
         run.setLastVisitedNodeId(run.getReachableNodeIds().get(0));

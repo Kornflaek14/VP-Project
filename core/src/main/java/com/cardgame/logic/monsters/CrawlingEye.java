@@ -5,7 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class CrawlingEye extends AbstractMonster {
     public CrawlingEye(float x, float y) {
-        super("Crawling Eye", 15, "IMAGES/play/monster.png");
+        super("Crawling Eye", 15, "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png");
         this.drawX = x; this.drawY = y;
         this.block = 5; // Start with Curl Up effectively
     }

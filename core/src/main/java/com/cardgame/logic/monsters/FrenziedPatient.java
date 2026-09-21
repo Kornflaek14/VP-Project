@@ -6,7 +6,7 @@ public class FrenziedPatient extends AbstractMonster {
     private boolean firstTurn = true;
     
     public FrenziedPatient(float x, float y) {
-        super("Frenzied Patient", 50, "Character sprite/Enemies/common enemy/chained/idle/idle.png");
+        super("Frenzied Patient", 42, "Character sprite/enemy/patient/pose-1.png");
         this.drawX = x; this.drawY = y;
     }
     

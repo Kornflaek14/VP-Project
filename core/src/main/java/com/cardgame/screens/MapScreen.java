@@ -55,7 +55,7 @@ public class MapScreen implements Screen {
     private Stage uiStage;
     private Texture bgTexture;
     
-    private Texture combatTex, eliteTex, treasureTex, shopTex, bossTex;
+    private Texture combatTex, eliteTex, treasureTex, shopTex, restTex, bossTex;
     
     private Group mapContainer;
     private ScrollPane mapScroller;
@@ -130,6 +130,7 @@ public class MapScreen implements Screen {
         try { eliteTex = new Texture(Gdx.files.internal("IMAGES/play/eliteIcon.png")); } catch(Exception e) { eliteTex = combatTex; }
         try { treasureTex = new Texture(Gdx.files.internal("IMAGES/play/treasureIcon.png")); } catch(Exception e) { treasureTex = combatTex; }
         try { shopTex = new Texture(Gdx.files.internal("IMAGES/play/shopIcon.png")); } catch(Exception e) { shopTex = combatTex; }
+        try { restTex = new Texture(Gdx.files.internal("IMAGES/play/restIcon.png")); } catch(Exception e) { restTex = combatTex; }
         try { bossTex = new Texture(Gdx.files.internal("IMAGES/play/bossIcon.png")); } catch(Exception e) { bossTex = combatTex; }
 
         createGlowTexture();
@@ -456,12 +457,12 @@ public class MapScreen implements Screen {
             if (node.type.equals("ELITE")) tex = eliteTex;
             else if (node.type.equals("TREASURE")) tex = treasureTex;
             else if (node.type.equals("SHOP")) tex = shopTex;
+            else if (node.type.equals("REST")) tex = restTex;
             else if (node.type.equals("BOSS")) tex = bossTex;
 
             ImageButton.ImageButtonStyle imgStyle = new ImageButton.ImageButtonStyle();
             if (tex != null) {
-                imgStyle.imageUp = new TextureRegionDrawable(node.type.equals("REST")
-                        ? GameArt.icon(GameArt.REST) : new TextureRegion(tex));
+                imgStyle.imageUp = new TextureRegionDrawable(new TextureRegion(tex));
             }
             ImageButton btn = new ImageButton(imgStyle);
 
@@ -591,6 +592,7 @@ public class MapScreen implements Screen {
         icons.add(eliteTex);
         icons.add(treasureTex);
         icons.add(shopTex);
+        icons.add(restTex);
         icons.add(bossTex);
         for (Texture icon : icons) {
             if (icon != null) icon.dispose();

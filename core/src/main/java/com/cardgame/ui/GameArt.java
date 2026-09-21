@@ -14,11 +14,12 @@ import java.util.Map;
 
 /** Shared original artwork; small pixel icons retain their sharp edges. */
 public final class GameArt {
-    public static final String BATTLE = "IMAGES/Backgrounds/operating-room.jpg";
+    public static final String BATTLE = "IMAGES/Backgrounds/battle1.png";
+    public static final String BOSS_BATTLE = "IMAGES/Backgrounds/operating-room.jpg";
     public static final String SHOP = "IMAGES/Backgrounds/pharmacy-counter.png";
     public static final String HEART = "IMAGES/play/heart.png";
     public static final String GOLD = "IMAGES/play/gold.png";
-    public static final String REST = "IMAGES/play/rest.png";
+    public static final String REST = "IMAGES/play/restIcon.png";
     private static final Map<String, TextureRegion> ICONS = new HashMap<>();
 
     private GameArt() {}
@@ -37,7 +38,9 @@ public final class GameArt {
                     }
                 }
                 Texture texture = new Texture(source);
-                texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+                boolean pixelArt = source.getWidth() <= 32 && source.getHeight() <= 32;
+                Texture.TextureFilter filter = pixelArt ? Texture.TextureFilter.Nearest : Texture.TextureFilter.Linear;
+                texture.setFilter(filter, filter);
                 return right < left ? new TextureRegion(texture)
                         : new TextureRegion(texture, left, top, right - left + 1, bottom - top + 1);
             } finally {

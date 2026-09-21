@@ -3,7 +3,7 @@ import com.cardgame.logic.RunManager;
 
 public class TaintedIVBag extends AbstractRelic {
     public TaintedIVBag() {
-        super("tainted_iv_bag", "Tainted IV Bag", "Heal 6 HP at the end of combat.", "IMAGES/play/relic1.png");
+        super("tainted_iv_bag", "Tainted IV Bag", "Heal 6 HP at the end of combat.", "cards/Pills.png");
     }
     @Override
     public void onVictory() {

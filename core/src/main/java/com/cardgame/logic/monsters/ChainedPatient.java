@@ -6,15 +6,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class ChainedPatient extends AbstractMonster {
     public ChainedPatient(float x, float y) {
-        super("Chained Patient", 42, "IMAGES/play/monster2.png");
+        super("Chained Patient", 36, "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png");
         this.drawX = x; this.drawY = y;
     }
     
     @Override
     public void rollMove() {
         int roll = ThreadLocalRandom.current().nextInt(100);
-        if (roll < 45) { intentType = "ATTACK"; intentValue = 11; }
-        else if (roll < 75) { intentType = "ATTACK_DEFEND"; intentValue = 7; }
+        if (roll < 45) { intentType = "ATTACK"; intentValue = 9; }
+        else if (roll < 75) { intentType = "ATTACK_DEFEND"; intentValue = 6; }
         else { intentType = "BUFF"; intentValue = 0; }
     }
     

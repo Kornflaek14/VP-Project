@@ -1,12 +1,12 @@
 [
     {
         "name": "The Patient",
-        "image": "IMAGES/play/Ironclad.png",
-        "portrait": "IMAGES/play/ironcladPortrait.png",
-        "buttonImage": "IMAGES/play/ironcladButton.png",
+        "image": "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png",
+        "portrait": "Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png",
+        "buttonImage": "IMAGES/menu_buttons/press_start.png",
         "energy": 3,
-        "hp": 80,
-        "gold": 99,
+        "hp": 95,
+        "gold": 140,
         "description": "A lost soul wandering the halls of their own fractured mind.",
         "startingRelicName": "Burning Blood"
     }

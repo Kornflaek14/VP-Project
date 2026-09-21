@@ -8,7 +8,7 @@ public class Boss extends AbstractMonster {
     private int turnCount = 0;
 
     public Boss(float x, float y) {
-        super("The Surgeon", 160, "Character sprite/Enemies/Boss/idle/idle1.png");
+        super("The Surgeon", 130, "Character sprite/Enemies/Boss/idle/idle1.png");
         this.drawX = x;
         this.drawY = y;
         rollMove();
@@ -26,13 +26,13 @@ public class Boss extends AbstractMonster {
         if (turnCount > 0 && turnCount % 3 == 0) {
             // Powerful attack every 3 turns
             intentType = "ATTACK";
-            intentValue = 18 + status.get(StatusEffect.STRENGTH);
+            intentValue = 15 + status.get(StatusEffect.STRENGTH);
         } else if (roll < 45) {
             intentType = "ATTACK";
-            intentValue = 12 + status.get(StatusEffect.STRENGTH);
+            intentValue = 10 + status.get(StatusEffect.STRENGTH);
         } else if (roll < 75) {
             intentType = "ATTACK_DEFEND";
-            intentValue = 8 + status.get(StatusEffect.STRENGTH);
+            intentValue = 7 + status.get(StatusEffect.STRENGTH);
         } else {
             intentType = "BUFF";
             intentValue = 0;
@@ -45,10 +45,10 @@ public class Boss extends AbstractMonster {
             dealDmg(state, intentValue);
         } else if (intentType.equals("ATTACK_DEFEND")) {
             dealDmg(state, intentValue);
-            block += 8;
+            block += 6;
         } else if (intentType.equals("BUFF")) {
-            status.apply(StatusEffect.STRENGTH, 2);
-            block += 12;
+            status.apply(StatusEffect.STRENGTH, 1);
+            block += 8;
         }
         rollMove();
     }

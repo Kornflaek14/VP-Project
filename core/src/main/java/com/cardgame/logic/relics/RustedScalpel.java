@@ -4,7 +4,7 @@ import com.cardgame.data.StatusEffect;
 
 public class RustedScalpel extends AbstractRelic {
     public RustedScalpel() {
-        super("rusted_scalpel", "Rusted Scalpel", "Start each combat with 1 Strength.", "IMAGES/play/relic2.png");
+        super("rusted_scalpel", "Rusted Scalpel", "Start each combat with 1 Strength.", "cards/Scalpel.png");
     }
     @Override
     public void atBattleStart(GameState state) {

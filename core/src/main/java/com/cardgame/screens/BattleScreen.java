@@ -183,6 +183,16 @@ public class BattleScreen implements Screen {
         this.isBossFight = isBossFight;
     }
 
+    private boolean isBossEncounter() {
+        if (isBossFight) return true;
+        if (monsters != null && monsters.monsters != null) {
+            for (com.cardgame.logic.monsters.AbstractMonster monster : monsters.monsters) {
+                if (monster != null && monster.isBoss()) return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void show() {
         stage = new Stage(new FitViewport(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT));
@@ -193,7 +203,8 @@ public class BattleScreen implements Screen {
         loadCombatIcons();
 
         try {
-            bgTexture = new Texture(Gdx.files.internal(GameArt.BATTLE));
+            String bgPath = isBossEncounter() ? GameArt.BOSS_BATTLE : GameArt.BATTLE;
+            bgTexture = new Texture(Gdx.files.internal(bgPath));
             bgTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {}
 
@@ -213,7 +224,7 @@ public class BattleScreen implements Screen {
                 playerTexture = new Texture(Gdx.files.internal(charImage));
             }
         } catch (Exception e) {
-            try { playerTexture = new Texture(Gdx.files.internal("IMAGES/play/character.png")); } catch (Exception e2) {}
+            try { playerTexture = new Texture(Gdx.files.internal("Character sprite/Protag/idle/ChatGPT Image Sep 12, 2026, 09_47_47 PM_06.png")); } catch (Exception ignored) {}
         }
 
         loadPlayerAnimation();

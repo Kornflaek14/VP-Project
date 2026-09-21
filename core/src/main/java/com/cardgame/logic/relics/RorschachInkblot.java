@@ -5,7 +5,7 @@ import com.cardgame.data.CardType;
 
 public class RorschachInkblot extends AbstractRelic {
     public RorschachInkblot() {
-        super("rorschach_inkblot", "Rorschach Inkblot", "Every 10th Attack deals double damage.", "IMAGES/play/relic.png");
+        super("rorschach_inkblot", "Rorschach Inkblot", "Every 10th Attack deals double damage.", "cards/Inkblot.png");
         this.counter = 0;
     }
     @Override

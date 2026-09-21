@@ -52,7 +52,7 @@ public final class CombatMapOverlay extends Group {
         loadIcon("ELITE", "eliteIcon.png");
         loadIcon("TREASURE", "treasureIcon.png");
         loadIcon("SHOP", "shopIcon.png");
-        loadIcon("REST", "rest.png");
+        loadIcon("REST", "restIcon.png");
         loadIcon("BOSS", "bossIcon.png");
         float highest = 0f;
         for (MapNodeData node : RunManager.getInstance().getMapNodes()) highest = Math.max(highest, node.y);

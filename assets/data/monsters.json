@@ -7,7 +7,7 @@
         "attackMax": 12,
         "defenceMin": 3,
         "defenceMax": 6,
-        "image": "IMAGES/play/monster1.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Zealot of the Abyss",
@@ -17,7 +17,7 @@
         "attackMax": 10,
         "defenceMin": 0,
         "defenceMax": 3,
-        "image": "IMAGES/play/monster2.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Void Tick",
@@ -27,7 +27,7 @@
         "attackMax": 9,
         "defenceMin": 4,
         "defenceMax": 8,
-        "image": "IMAGES/play/monster.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Infected Host",
@@ -37,7 +37,7 @@
         "attackMax": 15,
         "defenceMin": 5,
         "defenceMax": 10,
-        "image": "IMAGES/play/monster1.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "False Prophet",
@@ -47,7 +47,7 @@
         "attackMax": 18,
         "defenceMin": 6,
         "defenceMax": 12,
-        "image": "IMAGES/play/monster2.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Serpentine Illusion",
@@ -57,7 +57,7 @@
         "attackMax": 20,
         "defenceMin": 4,
         "defenceMax": 8,
-        "image": "IMAGES/play/monster.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Tome of Agony",
@@ -67,7 +67,7 @@
         "attackMax": 22,
         "defenceMin": 8,
         "defenceMax": 14,
-        "image": "IMAGES/play/monster1.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Manifested Rage",
@@ -77,7 +77,7 @@
         "attackMax": 25,
         "defenceMin": 0,
         "defenceMax": 5,
-        "image": "IMAGES/play/monster2.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Slumbering Horror",
@@ -87,7 +87,7 @@
         "attackMax": 20,
         "defenceMin": 10,
         "defenceMax": 18,
-        "image": "IMAGES/play/monster.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Amorphous Dread",
@@ -97,7 +97,7 @@
         "attackMax": 30,
         "defenceMin": 10,
         "defenceMax": 20,
-        "image": "IMAGES/play/monster1.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "The Collective Trauma",
@@ -107,7 +107,7 @@
         "attackMax": 35,
         "defenceMin": 12,
         "defenceMax": 22,
-        "image": "IMAGES/play/monster2.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Unyielding Ward",
@@ -126,7 +126,7 @@
         "attackMax": 10,
         "defenceMin": 5,
         "defenceMax": 10,
-        "image": "IMAGES/play/monster.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Abyssal Nob",
@@ -136,7 +136,7 @@
         "attackMax": 18,
         "defenceMin": 0,
         "defenceMax": 4,
-        "image": "IMAGES/play/monster1.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Slumbering Behemoth",
@@ -146,7 +146,7 @@
         "attackMax": 20,
         "defenceMin": 8,
         "defenceMax": 12,
-        "image": "IMAGES/play/monster2.png"
+        "image": "Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"
     },
     {
         "name": "Masked Patient",

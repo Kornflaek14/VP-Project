@@ -85,7 +85,7 @@ public class RestScreen implements Screen {
                 new Label.LabelStyle(subtitleFont, new Color(0.9f, 0.88f, 0.82f, 1f)));
         root.add(statsLabel).padBottom(36).colspan(3).row();
 
-        int healAmount = (int)(rm.getMaxHp() * 0.3f);
+        int healAmount = (int)(rm.getMaxHp() * 0.40f);
 
         // ── REST ─────────────────────────────────────────────
         TextButton healBtn = new TextButton("REST\n(Heal " + healAmount + " HP)",
@@ -101,24 +101,24 @@ public class RestScreen implements Screen {
             }
         });
 
-        // ── TRAIN ATTACK (+1 ATK) ────────────────────────────
-        TextButton atkBtn = new TextButton("TRAIN ATTACK\n(+1 Base Attack)",
+        // ── TRAIN ATTACK (+2 ATK) ────────────────────────────
+        TextButton atkBtn = new TextButton("TRAIN ATTACK\n(+2 Base Attack)",
                 makeBtnStyle(new Color(1f, 0.5f, 0.38f, 1f), Color.WHITE));
         atkBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                rm.addBaseAttackBonus(1);
+                rm.addBaseAttackBonus(2);
                 game.setScreen(new MapScreen(game));
             }
         });
 
-        // ── FORTIFY DEFENSE (+1 DEF) ─────────────────────────
-        TextButton defBtn = new TextButton("FORTIFY DEFENSE\n(+1 Base Defense)",
+        // ── FORTIFY DEFENSE (+2 DEF) ─────────────────────────
+        TextButton defBtn = new TextButton("FORTIFY DEFENSE\n(+2 Base Defense)",
                 makeBtnStyle(new Color(0.42f, 0.78f, 1f, 1f), Color.WHITE));
         defBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                rm.addBaseDefenseBonus(1);
+                rm.addBaseDefenseBonus(2);
                 game.setScreen(new MapScreen(game));
             }
         });

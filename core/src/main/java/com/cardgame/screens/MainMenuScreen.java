@@ -263,7 +263,8 @@ public class MainMenuScreen implements Screen {
         for (AbstractCard card : game.getAllCards()) {
             int copies = card.name().equalsIgnoreCase("Scalpel") ? 5
                     : card.name().equalsIgnoreCase("Cower") ? 4
-                    : card.name().equalsIgnoreCase("Pipe") ? 1 : 0;
+                    : card.name().equalsIgnoreCase("Pipe") ? 1
+                    : card.name().equalsIgnoreCase("Focus") ? 1 : 0;
             for (int i = 0; i < copies; i++) starterDeck.add(card.makeCopy());
         }
         if (starterDeck.isEmpty()) {

@@ -54,7 +54,9 @@ public abstract class AbstractMonster {
             try {
                 texture = new Texture(Gdx.files.internal(imagePath));
             } catch (Exception e) {
-                texture = new Texture(Gdx.files.internal("IMAGES/play/monster.png"));
+                try {
+                    texture = new Texture(Gdx.files.internal("Character sprite/Enemies/common enemy/chained/idle/ChatGPT Image Sep 16, 2026, 11_13_41 PM.png"));
+                } catch (Exception ignored) {}
             }
         }
         return texture;

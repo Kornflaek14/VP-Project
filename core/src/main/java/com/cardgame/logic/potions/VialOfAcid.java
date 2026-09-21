@@ -4,7 +4,7 @@ import com.cardgame.logic.monsters.AbstractMonster;
 
 public class VialOfAcid extends AbstractPotion {
     public VialOfAcid() {
-        super("vial_of_acid", "Vial of Acid", "Deal 20 damage to an enemy.", "IMAGES/play/potion2.png");
+        super("vial_of_acid", "Vial of Acid", "Deal 20 damage to an enemy.", "IMAGES/PotionImages/StrengthPotion.png");
     }
     @Override
     public boolean isTargeted() { return true; }

@@ -29,7 +29,8 @@ public abstract class AbstractRelic {
             try {
                 texture = new Texture(Gdx.files.internal(imagePath));
             } catch (Exception e) {
-                texture = new Texture(Gdx.files.internal("IMAGES/play/relic.png")); // fallback
+                // Relic texture is not rendered on screen directly
+                return null;
             }
         }
         return texture;

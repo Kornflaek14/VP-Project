@@ -24,7 +24,9 @@ public abstract class AbstractPotion {
             try {
                 texture = new Texture(Gdx.files.internal(imagePath));
             } catch (Exception e) {
-                texture = new Texture(Gdx.files.internal("IMAGES/play/potion.png")); // fallback
+                try {
+                    texture = new Texture(Gdx.files.internal("IMAGES/PotionImages/EnergyPotion.png")); // fallback
+                } catch (Exception ignored) {}
             }
         }
         return texture;
