@@ -74,6 +74,11 @@ public class MapScreen implements Screen {
     private BitmapFont smallFont;
     private BitmapFont tinyFont;
 
+    private Label hpLabel;
+    private Label goldLabel;
+    private Label floorLabel;
+    private TextButton deckBtn;
+
     public static float savedScrollPercentY = 1.0f;
 
     private PauseOverlay pauseOverlay;
@@ -260,15 +265,15 @@ public class MapScreen implements Screen {
         topBar.pad(14f, 28f, 14f, 28f);
 
         String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
-        Label hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, new Color(0.65f, 0.88f, 0.70f, 1f)));
-        Label goldLabel  = new Label("Gold: " + rm.getGold(), new Label.LabelStyle(font, Color.GOLD));
-        Label floorLabel = new Label("Floor: " + (rm.getCurrentNodeIndex() + 1), new Label.LabelStyle(font, Color.WHITE));
+        hpLabel    = new Label(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp(), new Label.LabelStyle(font, new Color(0.65f, 0.88f, 0.70f, 1f)));
+        goldLabel  = new Label("Gold: " + rm.getGold(), new Label.LabelStyle(font, Color.GOLD));
+        floorLabel = new Label("Floor: " + (rm.getCurrentNodeIndex() + 1), new Label.LabelStyle(font, Color.WHITE));
 
         TextButton.TextButtonStyle deckBtnStyle = UiTheme.button(smallFont);
         deckBtnStyle.fontColor = new Color(0.7f, 0.85f, 1f, 1f);
         deckBtnStyle.overFontColor = Color.WHITE;
 
-        TextButton deckBtn = new TextButton("VIEW DECK (" + rm.getDeck().size() + ")", deckBtnStyle);
+        deckBtn = new TextButton("VIEW DECK (" + rm.getDeck().size() + ")", deckBtnStyle);
         deckBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -542,8 +547,18 @@ public class MapScreen implements Screen {
         }
     }
 
+    public void updateHUD() {
+        RunManager rm = RunManager.getInstance();
+        String charName = rm.getSelectedCharacter() != null ? rm.getSelectedCharacter().name() : "Player";
+        if (hpLabel != null) hpLabel.setText(charName + " | HP: " + rm.getCurrentHp() + "/" + rm.getMaxHp());
+        if (goldLabel != null) goldLabel.setText("Gold: " + rm.getGold());
+        if (floorLabel != null) floorLabel.setText("Floor: " + (rm.getCurrentNodeIndex() + 1));
+        if (deckBtn != null) deckBtn.setText("VIEW DECK (" + rm.getDeck().size() + ")");
+    }
+
     @Override
     public void render(float delta) {
+        updateHUD();
         Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 

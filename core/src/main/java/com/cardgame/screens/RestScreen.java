@@ -38,6 +38,7 @@ public class RestScreen implements Screen {
     private BitmapFont font;
     private BitmapFont titleFont;
     private BitmapFont subtitleFont;
+    private TextButton healBtn;
 
     public RestScreen(CardBattlerGame game) {
         this.game = game;
@@ -88,7 +89,7 @@ public class RestScreen implements Screen {
         int healAmount = (int)(rm.getMaxHp() * 0.40f);
 
         // ── REST ─────────────────────────────────────────────
-        TextButton healBtn = new TextButton("REST\n(Heal " + healAmount + " HP)",
+        healBtn = new TextButton("REST\n(Heal " + healAmount + " HP)",
                 makeBtnStyle(new Color(0.45f, 0.9f, 0.55f, 1f), Color.WHITE));
         healBtn.clearChildren();
         healBtn.add(GameArt.image(GameArt.HEART)).size(30f).padRight(12f);
@@ -96,7 +97,8 @@ public class RestScreen implements Screen {
         healBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                rm.heal(healAmount);
+                int amount = (int)(RunManager.getInstance().getMaxHp() * 0.40f);
+                rm.heal(amount);
                 game.setScreen(new MapScreen(game));
             }
         });
@@ -148,8 +150,16 @@ public class RestScreen implements Screen {
         return s;
     }
 
+    public void updateUI() {
+        if (healBtn != null) {
+            int healAmount = (int)(RunManager.getInstance().getMaxHp() * 0.40f);
+            healBtn.getLabel().setText("REST\n(Heal " + healAmount + " HP)");
+        }
+    }
+
     @Override
     public void render(float delta) {
+        updateUI();
         Gdx.gl.glClearColor(0.1f, 0.05f, 0.05f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.getViewport().apply();

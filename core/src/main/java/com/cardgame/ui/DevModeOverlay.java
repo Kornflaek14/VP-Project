@@ -39,7 +39,10 @@ import com.cardgame.screens.BattleScreen;
 import com.cardgame.screens.DeckViewerScreen;
 import com.cardgame.screens.MainMenuScreen;
 import com.cardgame.screens.MapScreen;
+import com.cardgame.screens.RestScreen;
 import com.cardgame.screens.RewardScreen;
+import com.cardgame.screens.ShopScreen;
+import com.cardgame.logic.cards.AbstractCard;
 import com.cardgame.utils.Constants;
 
 import java.util.ArrayList;
@@ -208,35 +211,14 @@ public class DevModeOverlay extends Group {
         styleColumn(colCheats);
         addSectionHeading(colCheats, "03  /  ADJUST", "Run controls", "Apply changes to the saved run.", SAGE);
 
-        addToolButton(colCheats, "Restore health", actionBtnStyle, () -> {
-            RunManager.getInstance().ensureRunStarted(game);
-            RunManager.getInstance().setCurrentHp(RunManager.getInstance().getMaxHp());
-            notifyStatus("Player HP restored to " + RunManager.getInstance().getMaxHp() + "!");
-        });
-        addToolButton(colCheats, "Grant 250 gold", actionBtnStyle, () -> {
-            RunManager.getInstance().ensureRunStarted(game);
-            RunManager.getInstance().addGold(250);
-            notifyStatus("Added 250 Gold! Current: " + RunManager.getInstance().getGold());
-        });
-        addToolButton(colCheats, "Refill potions", actionBtnStyle, () -> {
-            RunManager.getInstance().ensureRunStarted(game);
-            RunManager.getInstance().getPotions().clear();
-            RunManager.getInstance().addPotion(new AdrenalineSyringe());
-            RunManager.getInstance().addPotion(new ManaPotion());
-            RunManager.getInstance().addPotion(new SteroidAmpoule());
-            notifyStatus("Refilled Block, Mana and Strength potions.");
-        });
-        addToolButton(colCheats, "Raise max health by 20", actionBtnStyle, () -> {
-            RunManager.getInstance().ensureRunStarted(game);
-            RunManager.getInstance().setMaxHp(RunManager.getInstance().getMaxHp() + 20);
-            RunManager.getInstance().setCurrentHp(RunManager.getInstance().getCurrentHp() + 20);
-            notifyStatus("Max HP increased to " + RunManager.getInstance().getMaxHp() + "!");
-        });
-        addToolButton(colCheats, "Add all cards", actionBtnStyle, () -> {
-            RunManager.getInstance().ensureRunStarted(game);
-            RunManager.getInstance().getDeck().addAll(game.getAllCards());
-            notifyStatus("Added all " + game.getAllCards().size() + " game cards to your deck!");
-        });
+        addToolButton(colCheats, "Restore health", actionBtnStyle, this::restoreHealthCheat);
+        addToolButton(colCheats, "Raise max health by 20", actionBtnStyle, this::raiseMaxHealthCheat);
+        addToolButton(colCheats, "Grant 250 gold", actionBtnStyle, this::grantGoldCheat);
+        addToolButton(colCheats, "Refill potions", actionBtnStyle, this::refillPotionsCheat);
+        addToolButton(colCheats, "Add all cards", actionBtnStyle, this::addAllCardsCheat);
+        addToolButton(colCheats, "Refill energy", actionBtnStyle, this::refillEnergyCheat);
+        addToolButton(colCheats, "Defeat encounter", actionBtnStyle, this::defeatEncounterCheat);
+        addToolButton(colCheats, "Draw 3 cards", actionBtnStyle, this::drawCardsCheat);
 
         grid.add(colCombat).width(380f).fillY().padRight(18f);
         grid.add(colRooms).width(380f).fillY().padRight(18f);
@@ -307,6 +289,127 @@ public class DevModeOverlay extends Group {
         });
         btn.getLabel().setAlignment(Align.left);
         table.add(btn).size(340f, 46f).padBottom(8f).row();
+    }
+
+    private void restoreHealthCheat() {
+        RunManager rm = RunManager.getInstance();
+        rm.ensureRunStarted(game);
+        rm.setCurrentHp(rm.getMaxHp());
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.healPlayerToFull();
+        } else if (currentScreen instanceof MapScreen ms) {
+            ms.updateHUD();
+        } else if (currentScreen instanceof ShopScreen ss) {
+            ss.updateHUD();
+        } else if (currentScreen instanceof RestScreen rs) {
+            rs.updateUI();
+        }
+        notifyStatus("Player HP restored to " + rm.getMaxHp() + "!");
+    }
+
+    private void raiseMaxHealthCheat() {
+        RunManager rm = RunManager.getInstance();
+        rm.ensureRunStarted(game);
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.raisePlayerMaxHp(20);
+        } else {
+            rm.setMaxHp(rm.getMaxHp() + 20);
+            rm.setCurrentHp(rm.getCurrentHp() + 20);
+            if (currentScreen instanceof MapScreen ms) {
+                ms.updateHUD();
+            } else if (currentScreen instanceof ShopScreen ss) {
+                ss.updateHUD();
+            } else if (currentScreen instanceof RestScreen rs) {
+                rs.updateUI();
+            }
+        }
+        notifyStatus("Max HP increased to " + rm.getMaxHp() + "!");
+    }
+
+    private void grantGoldCheat() {
+        RunManager rm = RunManager.getInstance();
+        rm.ensureRunStarted(game);
+        rm.addGold(250);
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.updateUI();
+        } else if (currentScreen instanceof MapScreen ms) {
+            ms.updateHUD();
+        } else if (currentScreen instanceof ShopScreen ss) {
+            ss.updateHUD();
+        }
+        notifyStatus("Added 250 Gold! Current: " + rm.getGold());
+    }
+
+    private void refillPotionsCheat() {
+        RunManager rm = RunManager.getInstance();
+        rm.ensureRunStarted(game);
+        rm.getPotions().clear();
+        rm.addPotion(new AdrenalineSyringe());
+        rm.addPotion(new ManaPotion());
+        rm.addPotion(new SteroidAmpoule());
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.updateUI();
+        } else if (currentScreen instanceof ShopScreen ss) {
+            ss.updateHUD();
+        }
+        notifyStatus("Refilled Block, Mana and Strength potions.");
+    }
+
+    private void addAllCardsCheat() {
+        RunManager rm = RunManager.getInstance();
+        rm.ensureRunStarted(game);
+        List<AbstractCard> copies = new ArrayList<>();
+        for (AbstractCard card : game.getAllCards()) {
+            copies.add(card.makeCopy());
+        }
+        rm.getDeck().addAll(copies);
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            if (bs.getGameState() != null) {
+                for (AbstractCard card : game.getAllCards()) {
+                    bs.getGameState().drawPile.add(card.makeCopy());
+                }
+            }
+            bs.updateUI();
+        } else if (currentScreen instanceof MapScreen ms) {
+            ms.updateHUD();
+        }
+        notifyStatus("Added all " + game.getAllCards().size() + " game cards to your deck!");
+    }
+
+    private void refillEnergyCheat() {
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.refillPlayerEnergy();
+            notifyStatus("Player energy refilled!");
+        } else {
+            notifyStatus("Energy can only be refilled during combat.");
+        }
+    }
+
+    private void defeatEncounterCheat() {
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.killAllMonsters();
+            notifyStatus("All enemies defeated!");
+            close();
+        } else {
+            notifyStatus("Enemies can only be defeated during combat.");
+        }
+    }
+
+    private void drawCardsCheat() {
+        com.badlogic.gdx.Screen currentScreen = game.getScreen();
+        if (currentScreen instanceof BattleScreen bs) {
+            bs.drawCheatCards(3);
+            notifyStatus("Drew 3 cards!");
+        } else {
+            notifyStatus("Cards can only be drawn during combat.");
+        }
     }
 
     private void notifyStatus(String msg) {

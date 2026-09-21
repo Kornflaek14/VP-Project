@@ -5,13 +5,19 @@ libGDX. Play as **The Patient**, choose a route through a branching map, and fac
 grotesque enemies in turn-based card battles. Build your deck, manage limited
 energy, and decide when to fight, shop, or recover before the boss encounter.
 
+## Video Demonstration
+
+[![Watch the Explanation Video](https://img.shields.io/badge/YouTube-Explanation%20Video-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=YOUR_YOUTUBE_VIDEO_ID_HERE)
+
+> **Gameplay & Architecture Walkthrough:** [Watch the explanation video on YouTube](https://www.youtube.com/watch?v=YOUR_YOUTUBE_VIDEO_ID_HERE) *(Placeholder: replace `YOUR_YOUTUBE_VIDEO_ID_HERE` with your video link)*
+
 ## Features
 
 - **Card combat:** play attacks, gain block, and apply status effects while
   managing energy, your draw pile, discard pile, and exhausted cards.
 - **Branching runs:** choose between combat, elite encounters, rest sites,
   treasure rooms, shops, and a boss battle.
-- **Deckbuilding:** start with Scalpel, Cower, and Pipe cards, then expand your
+- **Deckbuilding:** start with Scalpel, Cower, Pipe, and Focus cards, then expand your
   deck through rewards and purchases.
 - **Run progression:** carry health, gold, cards, and potions between rooms;
   rest to heal or improve your attack and defense bonuses.
@@ -50,7 +56,7 @@ To create this ZIP from source, follow [Build a Windows executable](#build-a-win
 
 Gradle is provided through the wrapper; a separate Gradle installation is not
 required. Run the following commands from the directory containing this README,
-`settings.gradle`, and `gradlew.bat` (`VP-Project/` in the enclosing workspace).
+`settings.gradle`, and `gradlew.bat` in the repository root directory.
 
 ### Windows
 

@@ -123,10 +123,10 @@ public class BattleScreen implements Screen {
         "Character sprite/Enemies/Elite enemy/nurse/idle/Idle.png"
     };
     private static final String[] NURSE_ATTACK_FRAME_FILES = {
-        "Character sprite/Enemies/Elite enemy/nurse/attack/ChatGPT_Image_Sep_17_2026_04_44_31_AM_1.png",
+        "Character sprite/Enemies/Elite enemy/nurse/attack/attack1.png",
         "Character sprite/Enemies/Elite enemy/nurse/attack/attack2.png",
         "Character sprite/Enemies/Elite enemy/nurse/attack/attack3.png",
-        "Character sprite/Enemies/Elite enemy/nurse/attack/ChatGPT_Image_Sep_17_2026_04_44_32_AM_4.png"
+        "Character sprite/Enemies/Elite enemy/nurse/attack/attack4.png"
     };
 
     private final List<Texture> playerAnimationTextures = new ArrayList<>();
@@ -843,9 +843,57 @@ public class BattleScreen implements Screen {
         return null;
     }
 
-    private void updateUI() {
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public void updateUI() {
         handArea.syncWithState(gameState);
         hud.update(gameState);
+    }
+
+    public void healPlayerToFull() {
+        if (gameState != null) {
+            gameState.playerHp = gameState.playerMaxHp;
+            RunManager.getInstance().setCurrentHp(RunManager.getInstance().getMaxHp());
+            updateUI();
+        }
+    }
+
+    public void raisePlayerMaxHp(int amount) {
+        if (gameState != null) {
+            RunManager.getInstance().setMaxHp(RunManager.getInstance().getMaxHp() + amount);
+            RunManager.getInstance().setCurrentHp(RunManager.getInstance().getCurrentHp() + amount);
+            gameState.playerMaxHp = RunManager.getInstance().getMaxHp();
+            gameState.playerHp = Math.min(gameState.playerHp + amount, gameState.playerMaxHp);
+            updateUI();
+        }
+    }
+
+    public void refillPlayerEnergy() {
+        if (gameState != null) {
+            gameState.playerEnergy = Math.max(gameState.playerEnergy, gameState.playerMaxEnergy) + 3;
+            updateUI();
+        }
+    }
+
+    public void killAllMonsters() {
+        if (gameState != null && gameState.monsterGroup != null) {
+            for (com.cardgame.logic.monsters.AbstractMonster m : gameState.monsterGroup.monsters) {
+                m.currentHp = 0;
+            }
+            battleEnding = true;
+            pendingWinner = 0;
+            effectsRemaining = 0.3f;
+            updateUI();
+        }
+    }
+
+    public void drawCheatCards(int count) {
+        if (gameState != null) {
+            gameState.drawCards(count);
+            updateUI();
+        }
     }
 
     @Override

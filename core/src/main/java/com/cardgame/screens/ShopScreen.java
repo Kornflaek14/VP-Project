@@ -46,6 +46,7 @@ public class ShopScreen implements Screen {
     private BitmapFont titleFont;
     private BitmapFont smallFont;
     private Label goldLabel;
+    private Label hpLabel;
     private Label bagLabel;
     private Label statusLabel;
 
@@ -91,7 +92,8 @@ public class ShopScreen implements Screen {
         goldLabel.setName("shop-gold");
         wallet.add(goldLabel).minWidth(44f).left().row();
         wallet.add(GameArt.image(GameArt.HEART)).size(24f).padRight(10f).padTop(10f);
-        wallet.add(label(run.getCurrentHp() + "/" + run.getMaxHp(), smallFont, PAPER)).left().padTop(10f);
+        hpLabel = label(run.getCurrentHp() + "/" + run.getMaxHp(), smallFont, PAPER);
+        wallet.add(hpLabel).left().padTop(10f);
         header.add(wallet).right().padLeft(20f);
         stage.addActor(header);
 
@@ -236,7 +238,15 @@ public class ShopScreen implements Screen {
         return new Label(text, new Label.LabelStyle(type, color));
     }
 
+    public void updateHUD() {
+        RunManager run = RunManager.getInstance();
+        if (goldLabel != null) goldLabel.setText(Integer.toString(run.getGold()));
+        if (hpLabel != null) hpLabel.setText(run.getCurrentHp() + "/" + run.getMaxHp());
+        refreshOffers();
+    }
+
     @Override public void render(float delta) {
+        updateHUD();
         Gdx.gl.glClearColor(0.05f, 0.08f, 0.08f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.getViewport().apply();
