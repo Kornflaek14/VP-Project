@@ -7,9 +7,9 @@ energy, and decide when to fight, shop, or recover before the boss encounter.
 
 ## Video Demonstration
 
-[![Watch the Explanation Video](https://img.shields.io/badge/YouTube-Explanation%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/6tTsfolxebo?si=g547-sN6DwmbXmpp)
+[![Watch the Explanation Video](https://img.shields.io/badge/YouTube-Explanation%20Video-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=6tTsfolxebo&feature=youtu.be)
 
-> **Gameplay & Architecture Walkthrough:** [Watch the explanation video on YouTube](https://www.youtube.com/watch?v=YOUR_YOUTUBE_VIDEO_ID_HERE) *(Placeholder: replace `YOUR_YOUTUBE_VIDEO_ID_HERE` with your video link)*
+> **Gameplay & Architecture Walkthrough:** [Watch the explanation video on YouTube](https://www.youtube.com/watch?v=6tTsfolxebo&feature=youtu.be)
 
 ## Features
 
